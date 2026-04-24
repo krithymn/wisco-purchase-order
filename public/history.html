@@ -212,7 +212,8 @@ async function init(){
   _all=orders.map(o=>({
     ...o,
     items:Array.isArray(o.items)&&o.items.length?o.items.map(it=>({...it,subItems:(it.subItems&&it.subItems.length)?it.subItems:[{product:it.product||'',quantity:it.quantity||''}]})):[{customer:o.customer||'',prNumber:'',subItems:[{product:o.product||'',quantity:o.quantity||''}]}],
-    skippedSteps:Array.isArray(o.skippedSteps)?o.skippedSteps:Array(o.totalSteps||17).fill(false)
+    skippedSteps:Array.isArray(o.skippedSteps)?o.skippedSteps:Array(o.totalSteps||17).fill(false),
+    isPartial:!!o.isPartial
   }));
   // populate supplier filter
   const sups=[...new Set(_all.map(o=>o.factory).filter(Boolean))].sort();
@@ -292,7 +293,7 @@ function doSearch(){
     const products=(o.items||[]).flatMap(it=>(it.subItems||[]).map(s=>s.product)).filter(Boolean).slice(0,2).join(', ')||(o.product||'—');
     const fcol=fColor(s);
     return`<tr onclick="openDetail('${o.id}')">
-      <td><div class="poi-id">${highlight(o.id,q)}</div>${o.customerPO?`<div style="font-size:11px;color:var(--mu)">PO: ${highlight(o.customerPO,q)}</div>`:''}</td>
+      <td><div class="poi-id">${highlight(o.id,q)}${o.isPartial?'<span style="font-size:9px;font-weight:700;padding:1px 6px;border-radius:99px;background:#fff7ed;color:#92400e;border:1px solid #f59e0b;margin-left:5px">📦 PARTIAL</span>':''}</div>${o.customerPO?`<div style="font-size:11px;color:var(--mu)">PO: ${highlight(o.customerPO,q)}</div>`:''}</td>
       <td style="font-size:13px">${highlight(o.factory||'—',q)}</td>
       <td><div class="customers-cell" title="${customers}">${highlight(customers,q)}</div><div style="font-size:11px;color:var(--mu);margin-top:2px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${highlight(products,q)}</div></td>
       <td style="font-size:12px;color:${s==='late'?'var(--late)':'var(--mu)'};font-weight:${s==='late'?'600':'400'}">${o.dueDate||'—'}</td>

@@ -111,6 +111,13 @@ header{background:linear-gradient(90deg,#08090e,#0e1018);border-bottom:1px solid
 .items-table th{font-size:10px;font-weight:700;color:var(--mu);text-transform:uppercase;padding:5px 8px;border-bottom:1px solid var(--bd2);background:var(--sur2);text-align:left}
 .items-table td{padding:6px 8px;border-bottom:1px solid var(--bd2);font-size:13px}
 .items-table tr:last-child td{border-bottom:none}
+/* PARTIAL SHIPMENT */
+.partial-banner{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:var(--r);margin-bottom:12px;font-size:13px;background:#fff7ed;border:1px solid #f59e0b;color:#92400e}
+.ship-status{display:flex;align-items:center;gap:6px;margin-top:4px;flex-wrap:wrap}
+.ship-tag{display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:3px 9px;border-radius:99px;cursor:pointer;border:1px solid;transition:all .15s;white-space:nowrap}
+.ship-tag.received{background:var(--done-bg);color:var(--done);border-color:var(--done-bd)}
+.ship-tag.pending{background:var(--sur2);color:var(--mu);border-color:var(--bd)}
+.ship-note-input{font-size:11px;padding:3px 8px;border:1px solid var(--bd);border-radius:4px;width:200px;font-family:'Sarabun',sans-serif;margin-top:3px}
 /* SUPPLIER SEARCH DROPDOWN */
 .sup-wrap{position:relative}
 .sup-input{width:100%;font-size:13px;padding:7px 10px;border:1px solid var(--bd);border-radius:var(--r);background:var(--sur);color:var(--tx);font-family:'Sarabun',sans-serif}
@@ -296,9 +303,13 @@ input:focus,select:focus{outline:none;border-color:var(--ac);box-shadow:0 0 0 3p
         <div id="items-list" class="items-list"></div>
         <button type="button" class="add-item-btn" onclick="addItemRow()">＋ เพิ่มรายการ</button>
       </div>
-      <div style="padding:12px;background:var(--spec-bg);border:1px solid var(--spec-bd);border-radius:var(--r);display:flex;align-items:center;gap:10px">
+      <div style="padding:12px;background:var(--spec-bg);border:1px solid var(--spec-bd);border-radius:var(--r);display:flex;align-items:center;gap:10px;margin-bottom:8px">
         <input type="checkbox" id="f-prepay" style="width:16px;height:16px;cursor:pointer">
         <label for="f-prepay" style="font-size:13px;cursor:pointer;color:var(--spec);font-weight:500">💳 Order นี้ต้องจ่ายเงินล่วงหน้าก่อนผลิต</label>
+      </div>
+      <div style="padding:12px;background:#fff7ed;border:1px solid #f59e0b;border-radius:var(--r);display:flex;align-items:center;gap:10px">
+        <input type="checkbox" id="f-partial" style="width:16px;height:16px;cursor:pointer">
+        <label for="f-partial" style="font-size:13px;cursor:pointer;color:#92400e;font-weight:500">📦 Partial Shipment — แบ่งส่งหลายรอบ</label>
       </div>
     </div>
     <div class="modal-ftr">
@@ -432,6 +443,13 @@ function rDetail(id){
     if(isStepSpecial(o,i)) specCount++;
   }
 
+  // Per-item shipment tracking
+  function getItemShipStatus(o,idx){
+    const items=o.items||[];
+    const it=items[idx]||{};
+    return it.shipStatus||{received:false,note:''};
+  }
+
   let prepBanner='';
   if(o.prepayment){
     if(o.prepaymentDone) prepBanner=`<div class="prepay-banner pb-done">💳 <strong>จ่ายเงินล่วงหน้าแล้ว</strong></div>`;
@@ -495,6 +513,13 @@ function rDetail(id){
   </div>
 </div>
 ${prepBanner}
+${o.isPartial?`<div class="partial-banner">
+  <span style="font-size:18px">📦</span>
+  <div style="flex:1">
+    <strong>Partial Shipment</strong> — Order นี้แบ่งส่งหลายรอบ
+    <div style="font-size:12px;margin-top:2px;color:#a16207">ติดตามสถานะการรับสินค้าแต่ละรายการด้านล่าง</div>
+  </div>
+</div>`:''}
 ${(()=>{
   const items=o.items&&o.items.length?o.items:[{customer:o.customer||'',prNumber:'',subItems:[{product:o.product||'',quantity:o.quantity||''}]}];
   if(items.length===1&&!items[0].customer&&!(items[0].subItems&&items[0].subItems[0]&&items[0].subItems[0].product))return'';
@@ -508,8 +533,8 @@ ${(()=>{
     </tr>`);
   }).join('');
   return`<div class="card" style="margin-bottom:14px">
-    <div class="card-hdr"><span class="card-title">📦 รายการสินค้าใน Order (${items.length} ลูกค้า · ${totalSubs} รายการ)</span></div>
-    <table class="items-table"><thead><tr><th>ลูกค้า</th><th>PR Number</th><th>สินค้า / Valve</th><th>จำนวน</th></tr></thead><tbody>${rows}</tbody></table>
+    <div class="card-hdr"><span class="card-title">📦 รายการสินค้าใน Order (${items.length} ลูกค้า · ${totalSubs} รายการ)</span>${o.isPartial?`<span style="font-size:12px;color:${receivedCount===totalSubs?'var(--done)':'var(--warn)'}">📦 รับแล้ว ${receivedCount}/${totalSubs}</span>`:''}</div>
+    <table class="items-table"><thead><tr><th>ลูกค้า</th><th>PR Number</th><th>สินค้า / Valve</th><th>จำนวน</th>${o.isPartial?'<th>สถานะรับสินค้า</th>':''}</tr></thead><tbody>${rows}</tbody></table>
   </div>`;
 })()}
 <div class="sum-row">
@@ -553,6 +578,19 @@ async function undoStep(id,i){
   }
   await Promise.all(clears);
   await loadAll();rSide();rDetail(id);
+}
+async function togShipItem(orderId,itemIdx,subIdx,val){
+  const o=_orders.find(x=>x.id===orderId);if(!o||!o.items)return;
+  if(!o.items[itemIdx].shipStatus)o.items[itemIdx].shipStatus={};
+  o.items[itemIdx].shipStatus[subIdx]=val;
+  await put(`/api/orders/${orderId}`,{...o,items:o.items});
+  await loadAll();rSide();rDetail(orderId);
+}
+async function updShipNote(orderId,itemIdx,subIdx,note){
+  const o=_orders.find(x=>x.id===orderId);if(!o||!o.items)return;
+  if(!o.items[itemIdx].shipStatus)o.items[itemIdx].shipStatus={};
+  o.items[itemIdx].shipStatus['note_'+subIdx]=note;
+  await put(`/api/orders/${orderId}`,{...o,items:o.items});
 }
 async function updStep(id,i,field,val){
   const body={};body[field]=val;
@@ -658,6 +696,7 @@ async function addSupFromDrop(name){
 function openNew(){
   document.getElementById('modal-t').textContent='เพิ่ม Order ใหม่';
   ['f-id','f-fac','f-start','f-prod-finish','f-due'].forEach(x=>document.getElementById(x).value='');
+  document.getElementById('f-partial').checked=false;
   document.getElementById('f-id').disabled=false;
   document.getElementById('f-prepay').checked=false;
   document.getElementById('modal-alert').innerHTML='';
@@ -674,6 +713,7 @@ function editOrder(id){
   document.getElementById('f-prod-finish').value=o.productionFinishDate||'';
   document.getElementById('f-due').value=o.dueDate||'';
   document.getElementById('f-prepay').checked=o.prepayment;
+  document.getElementById('f-partial').checked=o.isPartial||false;
   document.getElementById('modal-alert').innerHTML='';
   const items=(o.items&&o.items.length)?o.items.map(it=>({
     ...it,
@@ -745,7 +785,7 @@ async function saveOrder(){
   const items=getItems();
   if(!items.length){document.getElementById('modal-alert').innerHTML='<div class="alert alert-error">กรุณาเพิ่มรายการสินค้าอย่างน้อย 1 รายการ</div>';return;}
   const firstItem=items[0];
-  const body={id,customer:firstItem.customer||'',factory:fac,product:firstItem.product||'',quantity:firstItem.quantity||'',customerPO:'',startDate:document.getElementById('f-start').value,productionFinishDate:document.getElementById('f-prod-finish').value,dueDate:document.getElementById('f-due').value,prepayment:document.getElementById('f-prepay').checked,items};
+  const body={id,customer:firstItem.customer||'',factory:fac,product:firstItem.product||'',quantity:firstItem.quantity||'',customerPO:'',startDate:document.getElementById('f-start').value,productionFinishDate:document.getElementById('f-prod-finish').value,dueDate:document.getElementById('f-due').value,prepayment:document.getElementById('f-prepay').checked,isPartial:document.getElementById('f-partial').checked,items};
   if(_editId){await put(`/api/orders/${_editId}`,body);}
   else{const r=await post('/api/orders',body);if(r.error){document.getElementById('modal-alert').innerHTML=`<div class="alert alert-error">${r.error==='Order ID already exists'?'เลขที่ Order นี้มีอยู่แล้ว':r.error}</div>`;return;}}
   try{

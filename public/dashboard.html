@@ -309,6 +309,7 @@ async function loadAll(){
       subItems:(it.subItems&&it.subItems.length)?it.subItems:[{product:it.product||'',quantity:it.quantity||''}]
     })) : [{customer:o.customer||'',prNumber:'',subItems:[{product:o.product||'',quantity:o.quantity||''}]}],
     skippedSteps: Array.isArray(o.skippedSteps)?o.skippedSteps:Array(o.totalSteps||17).fill(false),
+    isPartial: !!o.isPartial,
     poOpenDate: o.poOpenDate||o.startDate||'',
     productionFinishDate: o.productionFinishDate||'',
     mfgSteps: Array.isArray(o.mfgSteps)
@@ -469,7 +470,7 @@ function render(){
     return`<div class="ocard st-${s}" onclick="openM('${o.id}')">
       <div class="ct">
         <div class="ct-main">
-          <div class="ct-id">${o.id}${ppFlag}</div>
+          <div class="ct-id">${o.id}${ppFlag}${o.isPartial?'<span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:99px;background:#fff7ed;color:#92400e;border:1px solid #f59e0b;margin-left:6px">📦 PARTIAL</span>':''}</div>
           <div class="ct-fac">🏭 ${o.factory||'—'}</div>
           <div style="font-size:11px;color:var(--mu);margin-top:2px">${(o.items&&o.items.length?o.items:[{customer:o.customer}]).slice(0,2).map(it=>it.customer).filter(Boolean).join(' · ')}${o.items&&o.items.length>2?` +${o.items.length-2} more`:''}</div>
           <div style="display:flex;gap:10px;font-size:10px;color:var(--mu);margin-top:3px">${o.poOpenDate?`<span>📋 ${o.poOpenDate}</span>`:''} ${o.dueDate?`<span>📦 ${o.dueDate}</span>`:''}</div>
@@ -568,14 +569,16 @@ function openM(id){
         </tr>`);
       }).join('');
       const totalSubs=items.reduce((a,it)=>a+((it.subItems&&it.subItems.length)||1),0);
+      const receivedCount=items.reduce((a,it)=>{const ss=it.shipStatus||{};const n=(it.subItems&&it.subItems.length)||1;return a+Array.from({length:n},(_,i)=>ss[i]?1:0).reduce((x,y)=>x+y,0);},0);
       return`<div style="background:var(--s1);border:1px solid var(--bd);border-radius:8px;margin-bottom:14px;overflow:hidden">
-        <div style="padding:8px 12px;background:var(--s2);border-bottom:1px solid var(--bd);font-size:10px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.6px">📦 รายการสินค้า (${items.length} ลูกค้า · ${totalSubs} รายการ)</div>
+        <div style="padding:8px 12px;background:var(--s2);border-bottom:1px solid var(--bd);font-size:10px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.6px;display:flex;justify-content:space-between;align-items:center"><span>📦 รายการสินค้า (${items.length} ลูกค้า · ${totalSubs} รายการ)</span>${o.isPartial?`<span style="color:${receivedCount===totalSubs?'var(--done)':'var(--warn)'}; font-size:10px">รับแล้ว ${receivedCount}/${totalSubs}</span>`:''}</div>
         <table style="width:100%;border-collapse:collapse">
           <thead><tr>
             <th style="font-size:10px;font-weight:700;color:var(--mu);text-transform:uppercase;padding:6px 10px;text-align:left;border-bottom:1px solid var(--bd2)">ลูกค้า</th>
             <th style="font-size:10px;font-weight:700;color:var(--mu);text-transform:uppercase;padding:6px 10px;text-align:left;border-bottom:1px solid var(--bd2)">PR Number</th>
             <th style="font-size:10px;font-weight:700;color:var(--mu);text-transform:uppercase;padding:6px 10px;text-align:left;border-bottom:1px solid var(--bd2)">สินค้า / Valve</th>
             <th style="font-size:10px;font-weight:700;color:var(--mu);text-transform:uppercase;padding:6px 10px;text-align:left;border-bottom:1px solid var(--bd2)">จำนวน</th>
+            ${o.isPartial?'<th style="font-size:10px;font-weight:700;color:var(--mu);text-transform:uppercase;padding:6px 10px;text-align:left;border-bottom:1px solid var(--bd2)">สถานะ</th>':''}
           </tr></thead>
           <tbody>${rows}</tbody>
         </table>
