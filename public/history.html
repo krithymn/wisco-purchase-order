@@ -109,7 +109,6 @@ td{padding:10px 14px;font-size:13px;vertical-align:middle}
   </div>
   <div style="display:flex;gap:8px">
     <a href="dashboard.html" class="btn">📊 Dashboard</a>
-    <a href="edit.html" class="btn btn-primary">✏️ จัดการ Order</a>
   </div>
 </header>
 
@@ -373,9 +372,7 @@ function openDetail(id){
       <div class="modal-section-title">ขั้นตอนที่ดำเนินการแล้ว</div>
       ${tl||'<div style="font-size:13px;color:var(--mu)">ยังไม่มีขั้นตอนที่เสร็จ</div>'}
     </div>
-    <div style="margin-top:16px;display:flex;gap:8px">
-      <a href="edit.html" class="btn btn-primary" style="flex:1;justify-content:center">✏️ เปิดแก้ไข Order นี้</a>
-    </div>`;
+`;
   document.getElementById('modal').classList.add('open');
 }
 function closeM(){document.getElementById('modal').classList.remove('open')}
