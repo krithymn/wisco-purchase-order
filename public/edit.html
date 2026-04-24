@@ -183,11 +183,13 @@ input:focus,select:focus{outline:none;border-color:var(--ac);box-shadow:0 0 0 3p
   <div class="logo"><img src="logo.png" style="height:32px;width:auto;object-fit:contain" alt="Wisco"><span style="color:#e84050;font-size:15px;font-weight:600;margin-left:4px">Order Tracker</span></div>
   <div style="display:flex;gap:8px">
     <a href="dashboard.html" target="_blank"><button class="btn btn-secondary">📊 Dashboard</button></a>
+    <a href="history.html" target="_blank"><button class="btn btn-secondary">🔍 ค้นหา / History</button></a>
     <button class="btn btn-primary" onclick="openNew()">+ เพิ่ม Order ใหม่</button>
   </div>
 </header>
 <div class="nav-tabs">
-  <button class="nav-tab active" onclick="swTab('orders',this)">📦 รายการ Order</button>
+  <button class="nav-tab active" onclick="swTab('orders',this)">📦 Active Orders</button>
+  <button class="nav-tab" onclick="swTab('archive',this)">🗄 Archive (เสร็จแล้ว)</button>
   <button class="nav-tab" onclick="swTab('config',this)">⚙️ ตั้งค่า</button>
 </div>
 
@@ -205,6 +207,31 @@ input:focus,select:focus{outline:none;border-color:var(--ac);box-shadow:0 0 0 3p
   </div>
 </div>
 </div>
+
+<!-- TAB: ARCHIVE -->
+<div id="tab-archive" style="padding:20px 24px">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+    <div>
+      <div style="font-size:18px;font-weight:700">🗄 Archive — Order ที่เสร็จแล้ว</div>
+      <div style="font-size:13px;color:var(--mu);margin-top:3px" id="archive-count"></div>
+    </div>
+    <a href="history.html" target="_blank"><button class="btn btn-secondary">🔍 ค้นหาขั้นสูง</button></a>
+  </div>
+  <div style="background:var(--sur);border:1px solid var(--bd);border-radius:var(--rl);overflow:hidden">
+    <table style="width:100%;border-collapse:collapse">
+      <thead><tr style="background:var(--sur2);border-bottom:1px solid var(--bd)">
+        <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase">POI Number</th>
+        <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase">Supplier</th>
+        <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase">ลูกค้า</th>
+        <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase">วันที่ส่งมอบ</th>
+        <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase">การดำเนินการ</th>
+      </tr></thead>
+      <tbody id="archive-body"></tbody>
+    </table>
+    <div id="archive-empty" style="display:none;padding:40px;text-align:center;font-size:14px;color:var(--mu)">ยังไม่มี Order ที่เสร็จสมบูรณ์</div>
+  </div>
+</div>
+
 <div id="tab-config">
   <div style="padding:24px;max-width:760px">
     <!-- TEAM -->
@@ -809,7 +836,26 @@ function swTab(tab,el){
   if(tab==='config'&&!_pwUnlocked){document.getElementById('pw-gate').classList.add('show');setTimeout(()=>document.getElementById('pw-inp').focus(),50);return}
   _doSwTab(tab,el);
 }
+// also expose for onclick calls
+window.swTab=swTab;
 
+function rArchive(){
+  const done=_orders.filter(o=>o.completedSteps>=o.totalSteps)
+    .sort((a,b)=>{const pa=(a.id||'').match(/POI(\d{4})-(\d+)/i);const pb=(b.id||'').match(/POI(\d{4})-(\d+)/i);
+      const na=pa?parseInt(pa[1])*10000+parseInt(pa[2]):0;const nb=pb?parseInt(pb[1])*10000+parseInt(pb[2]):0;return nb-na;});
+  document.getElementById('archive-count').textContent=`${done.length} Order เสร็จสมบูรณ์`;
+  document.getElementById('archive-empty').style.display=done.length?'none':'block';
+  document.getElementById('archive-body').innerHTML=done.map(o=>{
+    const customers=(o.items||[]).map(it=>it.customer).filter(Boolean).join(', ')||o.customer||'—';
+    return`<tr style="border-bottom:1px solid var(--bd2)">
+      <td style="padding:10px 14px;font-weight:700;font-size:13px">${o.id}</td>
+      <td style="padding:10px 14px;font-size:13px">${o.factory||'—'}</td>
+      <td style="padding:10px 14px;font-size:12px;color:var(--mu);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${customers}</td>
+      <td style="padding:10px 14px;font-size:12px;color:var(--done);font-weight:600">${o.dueDate||'—'}</td>
+      <td style="padding:10px 14px"><button class="btn btn-sm btn-secondary" onclick="activePO='${o.id}';swTab('orders',document.querySelectorAll('.nav-tab')[0]);setTimeout(()=>openOrder('${o.id}'),100)">เปิด</button></td>
+    </tr>`;
+  }).join('');
+}
 async function init(){await loadAll();rSide();rTeam();rSupGrid();rStepsCfg()}
 init();
 </script>
