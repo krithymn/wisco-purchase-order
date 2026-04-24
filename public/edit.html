@@ -496,11 +496,19 @@ function rDetail(id){
 </div>
 ${prepBanner}
 ${(()=>{
-  const items=o.items&&o.items.length?o.items:[{customer:o.customer||'',product:o.product||'',quantity:o.quantity||''}];
-  if(items.length===1&&!items[0].customer&&!items[0].product)return'';
-  const rows=items.map((it,idx)=>`<tr><td style="font-weight:500">${it.customer||'—'}</td><td style="color:var(--mu)">${it.prNumber||'—'}</td><td>${it.product||'—'}</td><td style="color:var(--mu)">${it.quantity||'—'}</td></tr>`).join('');
+  const items=o.items&&o.items.length?o.items:[{customer:o.customer||'',prNumber:'',subItems:[{product:o.product||'',quantity:o.quantity||''}]}];
+  if(items.length===1&&!items[0].customer&&!(items[0].subItems&&items[0].subItems[0]&&items[0].subItems[0].product))return'';
+  const totalSubs=items.reduce((a,it)=>a+((it.subItems&&it.subItems.length)||1),0);
+  const rows=items.flatMap((it)=>{
+    const subs=(it.subItems&&it.subItems.length)?it.subItems:[{product:it.product||'',quantity:it.quantity||''}];
+    return subs.map((s,si)=>`<tr>
+      ${si===0?`<td rowspan="${subs.length}" style="font-weight:600;vertical-align:top;border-right:1px solid var(--bd2)">${it.customer||'—'}</td>
+       <td rowspan="${subs.length}" style="color:var(--spec);vertical-align:top;border-right:1px solid var(--bd2)">${it.prNumber||'—'}</td>`:''}
+      <td>${s.product||'—'}</td><td style="color:var(--mu)">${s.quantity||'—'}</td>
+    </tr>`);
+  }).join('');
   return`<div class="card" style="margin-bottom:14px">
-    <div class="card-hdr"><span class="card-title">📦 รายการสินค้าใน Order (${items.length} รายการ)</span></div>
+    <div class="card-hdr"><span class="card-title">📦 รายการสินค้าใน Order (${items.length} ลูกค้า · ${totalSubs} รายการ)</span></div>
     <table class="items-table"><thead><tr><th>ลูกค้า</th><th>PR Number</th><th>สินค้า / Valve</th><th>จำนวน</th></tr></thead><tbody>${rows}</tbody></table>
   </div>`;
 })()}
