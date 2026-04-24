@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Order Dashboard — Wisco</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700;800;900&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  /* backgrounds — deep dark navy */
+  --bg:#08090e;--s1:#0e1018;--s2:#13161f;--s3:#181c28;--s4:#1e2330;
+  /* borders — steel blue tint */
+  --bd:#1e2438;--bd2:#141826;
+  /* text */
+  --tx:#e8eaf2;--mu:#7080a0;
+  /* red accent (primary brand) */
+  --red:#d42030;--red2:#e84050;--red3:#ff6070;
+  /* silver accent */
+  --silver:#9aaac0;--silver2:#c0ccd8;
+  /* blue accent */
+  --blue:#3a5a8a;--blue2:#4a72b0;
+  /* status colors */
+  --done:#22c55e;--late:#ef4444;--prog:#3a7bd5;--pend:#eab308;--warn:#f97316;--spec:#a78bfa;
+  /* dims */
+  --done-dim:rgba(34,197,94,.1);--late-dim:rgba(239,68,68,.1);--prog-dim:rgba(58,123,213,.12);--pend-dim:rgba(234,179,8,.1);--warn-dim:rgba(249,115,22,.1);--spec-dim:rgba(167,139,250,.1);
+  /* borders colored */
+  --done-bd:rgba(34,197,94,.3);--late-bd:rgba(239,68,68,.3);--prog-bd:rgba(58,123,213,.35);--spec-bd:rgba(167,139,250,.3);
+}
+html,body{height:100%;background:var(--bg);color:var(--tx);font-family:'Sarabun','Inter',sans-serif;overflow:hidden}
+#app{display:grid;grid-template-rows:60px 1fr;height:100vh}
+header{background:linear-gradient(90deg,#08090e 0%,#0e1018 50%,#08090e 100%);border-bottom:1px solid #1e2438;display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:relative}
+header::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,#d42030,#e84050,#9aaac0,#3a5a8a,transparent)}
+.logo{display:flex;align-items:center;gap:12px}
+.logo-box{width:36px;height:36px;background:linear-gradient(135deg,#c9a84c,#e8c96a);border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:'Inter',sans-serif;font-size:14px;font-weight:900;color:#0a0900;box-shadow:0 0 16px rgba(201,168,76,.4)}
+.logo-name{font-size:18px;font-weight:800;font-family:'Inter',sans-serif}
+.logo-name span{color:var(--red2)}
+.live-pill{display:flex;align-items:center;gap:6px;background:rgba(212,32,48,.1);border:1px solid rgba(212,32,48,.3);border-radius:99px;padding:4px 12px;font-size:11px;font-weight:600;color:var(--red2);text-transform:uppercase;letter-spacing:.5px}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--done);animation:blink 1.5s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+main{display:grid;grid-template-columns:320px 1fr;overflow:hidden}
+/* LEFT */
+.left{background:var(--s1);border-right:1px solid var(--bd);display:flex;flex-direction:column;overflow:hidden}
+.kpi-strip{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--bd);flex-shrink:0}
+.kpi{background:var(--s2);padding:16px 14px;position:relative;overflow:hidden}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.kpi.k-total::before{background:linear-gradient(90deg,var(--red),var(--silver))}
+.kpi.k-done::before{background:var(--done)}
+.kpi.k-late::before{background:var(--late)}
+.kpi.k-spec::before{background:var(--spec)}
+.kpi-n{font-size:36px;font-weight:800;font-family:'Inter',sans-serif;line-height:1;letter-spacing:-1px}
+.kpi-l{font-size:11px;color:var(--mu);margin-top:4px;text-transform:uppercase;letter-spacing:.8px;font-weight:600}
+.kpi-glow{position:absolute;right:-10px;bottom:-10px;width:60px;height:60px;border-radius:50%;opacity:.2}
+.kpi.k-total .kpi-glow{background:var(--red);box-shadow:0 0 20px var(--red)}
+.kpi.k-done .kpi-glow{background:var(--done);box-shadow:0 0 30px var(--done)}
+.kpi.k-late .kpi-glow{background:var(--late);box-shadow:0 0 30px var(--late)}
+.kpi.k-spec .kpi-glow{background:var(--spec);box-shadow:0 0 30px var(--spec)}
+.stat-bar{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--bd);border-bottom:1px solid var(--bd);flex-shrink:0}
+.sc{background:var(--s2);padding:8px 14px;display:flex;align-items:center;gap:8px}
+.sc-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.sc-lbl{font-size:12px;color:var(--mu);flex:1}
+.sc-val{font-size:14px;font-weight:700;font-family:'Inter',sans-serif}
+/* ALERT PANEL */
+.ap-head{padding:10px 16px 6px;font-size:10px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:1.2px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--bd)}
+.ac-badge{font-size:10px;font-weight:700;padding:1px 8px;border-radius:99px;background:var(--late-dim);color:var(--late);border:1px solid var(--late-bd)}
+.alert-list{flex:1;overflow-y:auto}
+.alert-item{padding:10px 16px;border-bottom:1px solid var(--bd2);cursor:pointer;transition:background .12s;border-left:3px solid transparent}
+.alert-item:hover{background:var(--s3)}
+.alert-item.a-late{border-left-color:var(--late)}
+.alert-item.a-spec{border-left-color:var(--spec)}
+.ai-top{display:flex;align-items:center;gap:6px;margin-bottom:3px}
+.ai-id{font-size:12px;font-weight:700;font-family:'Inter',sans-serif}
+.ai-badge{font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;text-transform:uppercase}
+.ab-late{background:var(--late-dim);color:var(--late);border:1px solid var(--late-bd)}
+.ab-spec{background:var(--spec-dim);color:var(--spec);border:1px solid var(--spec-bd)}
+.ai-step{font-size:13px;color:var(--tx);font-weight:500}
+.ai-meta{font-size:11px;color:var(--mu);margin-top:2px}
+/* RIGHT */
+.right{display:flex;flex-direction:column;overflow:hidden;background:var(--bg)}
+.filter-bar{background:var(--s1);border-bottom:1px solid var(--bd);padding:12px 20px;display:flex;align-items:center;gap:8px;flex-shrink:0;flex-wrap:wrap}
+.fchip{font-size:12px;padding:6px 16px;border-radius:99px;border:1px solid var(--bd);background:transparent;color:var(--mu);cursor:pointer;font-family:'Sarabun',sans-serif;transition:all .15s;font-weight:500}
+.fchip:hover{border-color:var(--tx);color:var(--tx)}
+.fchip.active{color:#fff;border-color:transparent}
+.fchip:hover{border-color:var(--red2);color:var(--red2)}
+.fchip.active.f-all{background:linear-gradient(90deg,var(--red),var(--blue2));color:#fff !important;box-shadow:0 0 12px rgba(212,32,48,.3)}
+.fchip.active.f-late{background:var(--late);box-shadow:0 0 12px rgba(239,68,68,.3)}
+.fchip.active.f-spec{background:var(--spec);box-shadow:0 0 12px rgba(167,139,250,.3)}
+.fchip.active.f-prog{background:var(--prog);color:#fff !important;box-shadow:0 0 12px rgba(58,123,213,.3)}
+.fchip.active.f-done{background:var(--done);box-shadow:0 0 12px rgba(34,197,94,.3)}
+.fchip.active.f-pend{background:var(--pend);box-shadow:0 0 8px rgba(234,179,8,.3)}
+.chip-n{font-size:10px;background:rgba(255,255,255,.15);border-radius:99px;padding:1px 7px;margin-left:4px;font-weight:700}
+/* CARDS */
+.cards{flex:1;overflow-y:auto;padding:16px 20px;display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:14px;align-content:start}
+.empty{grid-column:1/-1;display:flex;flex-direction:column;align-items:center;justify-content:center;height:300px;color:var(--mu)}
+.empty-icon{font-size:48px;opacity:.3;margin-bottom:10px}
+/* ORDER CARD */
+.ocard{background:var(--s1);border:1px solid var(--bd);border-radius:12px;overflow:hidden;cursor:pointer;transition:all .2s;position:relative}
+.ocard:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(0,0,0,.4)}
+.ocard::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.ocard.st-done::before{background:var(--done)}
+.ocard.st-late::before{background:linear-gradient(90deg,var(--late),#ff6b6b)}
+.ocard.st-progress::before{background:linear-gradient(90deg,var(--red),var(--blue2))}
+.ocard.st-spec::before{background:linear-gradient(90deg,var(--spec),#3b82f6)}
+.ocard.st-pending::before{background:var(--pend)}
+.ocard.st-late{box-shadow:0 0 0 1px rgba(239,68,68,.2)}
+.ocard.st-spec{box-shadow:0 0 0 1px rgba(167,139,250,.2)}
+.ct{padding:14px 16px 12px;display:flex;align-items:flex-start;gap:10px;border-bottom:1px solid var(--bd2)}
+.ct-main{flex:1;min-width:0}
+.ct-id{font-size:15px;font-weight:800;font-family:'Inter',sans-serif;letter-spacing:.3px}
+.ct-fac{font-size:12px;color:var(--mu);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sbadge{font-size:10px;font-weight:700;padding:4px 10px;border-radius:6px;white-space:nowrap;flex-shrink:0}
+.sb-done{background:var(--done-dim);color:var(--done);border:1px solid var(--done-bd)}
+.sb-late{background:var(--late-dim);color:var(--late);border:1px solid var(--late-bd)}
+.sb-prog{background:var(--prog-dim);color:var(--blue2);border:1px solid var(--prog-bd)}
+.sb-pend{background:var(--pend-dim);color:var(--pend);border:1px solid rgba(234,179,8,.3)}
+.sb-spec{background:var(--spec-dim);color:var(--spec);border:1px solid var(--spec-bd)}
+.cp{padding:12px 16px 10px;border-bottom:1px solid var(--bd2)}
+.cp-hdr{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+.cp-pct{font-size:22px;font-weight:800;font-family:'Inter',sans-serif;line-height:1}
+.cp-frac{font-size:12px;color:var(--mu);margin-left:4px}
+.cp-step{font-size:12px;color:var(--mu);text-align:right}
+.cp-name{font-size:12px;color:var(--tx);font-weight:500}
+.bar{height:10px;background:var(--s3);border-radius:99px;overflow:hidden;margin-bottom:8px}
+.bar-fill{height:100%;border-radius:99px;transition:width .6s cubic-bezier(.4,0,.2,1)}
+.bf-done{background:linear-gradient(90deg,#16a34a,var(--done))}
+.bf-late{background:linear-gradient(90deg,#dc2626,var(--late))}
+.bf-prog{background:linear-gradient(90deg,#1e4a8a,var(--blue2))}
+.bf-pend{background:var(--pend)}
+.bf-spec{background:linear-gradient(90deg,#6d28d9,var(--spec))}
+.sdots{display:flex;gap:3px}
+.sd{flex:1;height:6px;border-radius:2px}
+.sd-done{background:var(--done)}.sd-late{background:var(--late)}.sd-prog{background:var(--blue2);animation:dp 1.5s infinite}.sd-wait{background:var(--s3);border:1px solid var(--bd)}.sd-spec{background:var(--spec)}
+@keyframes dp{0%,100%{opacity:1}50%{opacity:.4}}
+.cb{padding:10px 16px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+.cbi .cbl{font-size:10px;color:var(--mu);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px}
+.cbi .cbv{font-size:12px;font-weight:600;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cbv.v-late{color:var(--late)}.cbv.v-spec{color:var(--spec)}.cbv.v-done{color:var(--done)}
+.pp-flag{display:inline-flex;align-items:center;gap:4px;font-size:10px;background:var(--spec-dim);color:var(--spec);border:1px solid var(--spec-bd);padding:1px 6px;border-radius:4px;margin-left:6px}
+/* MODAL */
+.ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:100;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.ov.open{display:flex}
+.modal{background:var(--s2);border:1px solid var(--bd);border-radius:14px;width:680px;max-width:96vw;max-height:88vh;display:flex;flex-direction:column;box-shadow:0 32px 80px rgba(0,0,0,.7)}
+.mh{display:flex;align-items:flex-start;justify-content:space-between;padding:20px 24px;border-bottom:1px solid var(--bd);background:linear-gradient(135deg,#0e1018,#131926);border-radius:14px 14px 0 0;gap:12px;border-top:2px solid var(--red)}
+.mid{font-size:20px;font-weight:800;font-family:'Inter',sans-serif}
+.mc{background:var(--s3);border:1px solid var(--bd);color:var(--mu);font-size:16px;cursor:pointer;padding:4px 10px;border-radius:6px;flex-shrink:0}.mc:hover{color:var(--tx)}
+.mb{overflow-y:auto;padding:20px 24px}
+.mmeta{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px}
+.mmi{background:var(--s1);border:1px solid var(--bd);border-radius:8px;padding:10px 12px}
+.mmil{font-size:10px;color:var(--mu);text-transform:uppercase;letter-spacing:.6px;margin-bottom:3px}
+.mmiv{font-size:13px;font-weight:600;color:var(--tx)}
+.mp-bar{background:var(--s1);border:1px solid var(--bd);border-radius:10px;padding:16px 18px;margin-bottom:16px}
+.mp-hdr{display:flex;align-items:baseline;gap:8px;margin-bottom:10px}
+.mp-pct{font-size:32px;font-weight:800;font-family:'Inter',sans-serif;line-height:1}
+.mp-lbl{font-size:13px;color:var(--mu)}
+.mbar{height:12px;background:var(--s3);border-radius:99px;overflow:hidden}
+.mbar-fill{height:100%;border-radius:99px}
+/* TL */
+.tl-title{font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px}
+.tli{display:grid;grid-template-columns:32px 1fr auto;gap:12px;align-items:start;padding:9px 0;border-bottom:1px solid var(--bd2)}
+.tli:last-child{border-bottom:none}
+.tli.tl-act{background:rgba(58,123,213,.06);margin:0 -6px;padding:9px 6px;border-radius:8px}
+.tli.tl-late{background:rgba(239,68,68,.06);margin:0 -6px;padding:9px 6px;border-radius:8px}
+.tli.tl-spec{background:rgba(167,139,250,.06);margin:0 -6px;padding:9px 6px;border-radius:8px}
+.tln{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;font-family:'Inter',sans-serif}
+.tn-done{background:rgba(34,197,94,.15);color:var(--done);border:1px solid rgba(34,197,94,.3)}
+.tn-act{background:rgba(58,123,213,.15);color:var(--blue2);border:1px solid rgba(58,123,213,.3)}
+.tn-late{background:rgba(239,68,68,.15);color:var(--late);border:1px solid rgba(239,68,68,.3)}
+.tn-spec{background:rgba(167,139,250,.15);color:var(--spec);border:1px solid rgba(167,139,250,.3)}
+.tn-wait{background:var(--s3);color:var(--mu);border:1px solid var(--bd)}
+.tl-name{font-size:14px;font-weight:600;color:var(--tx);padding-top:6px}
+.tl-person{font-size:12px;color:var(--mu);margin-top:3px}
+.tl-spec-info{font-size:11px;color:var(--spec);margin-top:3px;font-weight:500}
+.tl-late-info{font-size:11px;color:var(--late);margin-top:3px;font-weight:600}
+.spec-reasons{margin-top:6px;display:flex;flex-direction:column;gap:4px}
+.spec-reason-tag{display:inline-flex;align-items:center;gap:6px;background:rgba(167,139,250,.12);border:1px solid rgba(167,139,250,.3);border-radius:6px;padding:4px 10px;font-size:11px;color:var(--spec);font-weight:500}
+.spec-reason-tag .step-ref{font-size:10px;color:rgba(167,139,250,.6);font-family:'Inter',sans-serif}
+.card-spec-reasons{margin-top:6px;display:flex;flex-direction:column;gap:3px}
+.card-spec-tag{font-size:10px;color:var(--spec);background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.25);border-radius:4px;padding:2px 8px;display:flex;align-items:center;gap:4px}
+.card-spec-tag .sr-step{color:rgba(167,139,250,.6);font-size:9px}
+.tl-right{text-align:right;padding-top:6px}
+.mfg-mini{margin-top:8px;display:flex;flex-direction:column;gap:4px}
+.mfg-mini-title{font-size:10px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px}
+.mfg-mini-row{display:flex;align-items:center;gap:6px;font-size:11px}
+.mfg-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.mfg-dot-done{background:var(--done)}.mfg-dot-wait{background:var(--s3);border:1px solid var(--bd)}
+.mfg-name-done{color:var(--done);text-decoration:line-through;opacity:.7}
+.mfg-name-wait{color:var(--mu)}
+.mfg-bar-row{display:flex;align-items:center;gap:6px;margin-top:4px}
+.mfg-bar-out{flex:1;height:3px;background:var(--s3);border-radius:99px;overflow:hidden}
+.mfg-bar-in{height:100%;background:var(--done);border-radius:99px}
+.tl-pd{font-size:11px;color:var(--mu)}
+.tl-dd{font-size:11px;color:var(--done);margin-top:2px}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:var(--bd);border-radius:99px}
+</style>
+</head>
+<body>
+<div id="app">
+<header>
+  <div class="logo">
+    <img src="logo.png" style="height:36px;width:auto;object-fit:contain" alt="Wisco">
+    <div class="logo-name" style="margin-left:4px;color:var(--silver2)">Order <span style="color:var(--red2)">Tracker</span></div>
+    <div class="live-dot" style="margin-left:6px;width:7px;height:7px;border-radius:50%;background:var(--done);animation:blink 1.5s infinite"></div>
+  </div>
+  <div style="display:flex;align-items:center;gap:14px">
+    <div><div id="clk-date" style="font-size:12px;color:var(--mu)"></div><div id="clk-time" style="font-size:20px;font-weight:700;font-family:'Inter',sans-serif;letter-spacing:1px"></div></div>
+    <div class="live-pill"><div class="live-dot"></div>Live</div>
+  </div>
+</header>
+<main>
+<div class="left">
+  <div class="kpi-strip" id="kpi"></div>
+  <div class="stat-bar" id="stat"></div>
+  <div class="ap-head"><span>⚠ ต้องติดตาม</span><span id="atotal" class="ac-badge">0</span></div>
+  <div class="alert-list" id="alist"></div>
+</div>
+<div class="right">
+  <div class="filter-bar">
+    <button class="fchip active f-all" onclick="setF('all',this)">ทั้งหมด</button>
+    <button class="fchip f-late" onclick="setF('late',this)">🔴 เลยกำหนด</button>
+    <button class="fchip f-spec" onclick="setF('spec',this)">⚡ Special Case</button>
+    <button class="fchip f-prog" onclick="setF('progress',this)">🔵 กำลังดำเนินการ</button>
+    <button class="fchip f-done" onclick="setF('done',this)">🟢 เสร็จแล้ว</button>
+    <button class="fchip f-pend" onclick="setF('pending',this)">⚪ ยังไม่เริ่ม</button>
+  </div>
+  <div class="cards" id="cards"></div>
+</div>
+</main>
+</div>
+<!-- MODAL -->
+<div class="ov" id="modal" onclick="if(event.target===this)closeM()">
+  <div class="modal">
+    <div class="mh"><div><div class="mid" id="m-id"></div><div id="m-badges" style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap"></div></div><button class="mc" onclick="closeM()">✕ ปิด</button></div>
+    <div class="mb" id="m-body"></div>
+  </div>
+</div>
+<script>
+const API='';
+const MFG_STEPS=['Design','Die-casting','Mechanical processing','Assembly','Testing','Quality','Packing'];
+function getMfgStepIndex(o){ return o.prepayment ? 11 : 10; }
+let _flt='all',_orders=[],_steps=[];
+
+async function loadAll(){
+  const [orders,cfg]=await Promise.all([fetch(API+'/api/orders').then(r=>r.json()),fetch(API+'/api/config').then(r=>r.json())]);
+  _steps=cfg.steps||[];
+  _orders=orders.map(o=>({
+    ...o,
+    items: Array.isArray(o.items)&&o.items.length ? o.items : [{customer:o.customer||'',product:o.product||'',quantity:o.quantity||''}],
+    mfgSteps: Array.isArray(o.mfgSteps)
+      ? o.mfgSteps.map(s=>Array.isArray(s)?s:Array(MFG_STEPS.length).fill(false))
+      : Array(o.totalSteps||17).fill(null).map(()=>Array(MFG_STEPS.length).fill(false))
+  }));
+}
+function getStepName(o,i){
+  if(!o.prepayment)return _steps[i]?.name||'Step '+(i+1);
+  if(i<10)return _steps[i]?.name||'Step '+(i+1);
+  if(i===10)return '💳 จ่ายเงินล่วงหน้า';
+  return _steps[i-1]?.name||'Step '+i;
+}
+function getDefDays(o,i){
+  if(!o.prepayment)return _steps[i]?.defaultDays||1;
+  if(i<10)return _steps[i]?.defaultDays||1;
+  if(i===10)return 3;
+  return _steps[i-1]?.defaultDays||1;
+}
+function calcDeadline(o,i){
+  if(!o.startDate)return null;
+  let d=new Date(o.startDate);
+  for(let j=0;j<=i;j++){const days=(o.plannedDays[j]&&o.plannedDays[j]>0)?o.plannedDays[j]:getDefDays(o,j);d=new Date(d.getTime()+days*86400000);}
+  return d;
+}
+function isStepSpecial(o,i){return !!(o.isSpecial&&o.isSpecial[i]);}
+function orderHasSpecial(o){for(let i=0;i<o.totalSteps;i++){if(isStepSpecial(o,i))return true;}return false;}
+function stepSt(o,i){
+  if(i<o.completedSteps)return'done';
+  const dl=calcDeadline(o,i);
+  if(dl&&new Date()>dl)return'late';
+  if(isStepSpecial(o,i))return'spec';
+  if(i===o.completedSteps)return'progress';
+  return'pending';
+}
+function orderSt(o){
+  if(o.completedSteps>=o.totalSteps)return'done';
+  for(let i=o.completedSteps;i<o.totalSteps;i++){if(stepSt(o,i)==='late')return'late';}
+  if(orderHasSpecial(o))return'spec';
+  if(o.completedSteps===0)return'pending';
+  return'progress';
+}
+function fcol(s){return{done:'var(--done)',late:'var(--late)',progress:'var(--prog)',pending:'var(--pend)',spec:'var(--spec)'}[s]||'var(--pend)'}
+function bfcls(s){return{done:'bf-done',late:'bf-late',progress:'bf-prog',pending:'bf-pend',spec:'bf-spec'}[s]||'bf-pend'}
+function sbadge(s){const m={done:['sb-done','✅ เสร็จแล้ว'],late:['sb-late','🔴 เลยกำหนด'],progress:['sb-prog','🔵 กำลังดำเนินการ'],pending:['sb-pend','⚪ ยังไม่เริ่ม'],spec:['sb-spec','⚡ Special Case']};const[c,l]=m[s]||m.pending;return`<span class="sbadge ${c}">${l}</span>`}
+
+function render(){
+  const cnt={done:0,late:0,progress:0,pending:0,spec:0};
+  _orders.forEach(o=>{ const s=orderSt(o); cnt[s]=(cnt[s]||0)+1; });
+  const total=_orders.length;
+
+  document.getElementById('kpi').innerHTML=`
+    <div class="kpi k-total"><div class="kpi-n" style="color:var(--tx)">${total}</div><div class="kpi-l">Order ทั้งหมด</div><div class="kpi-glow"></div></div>
+    <div class="kpi k-done"><div class="kpi-n" style="color:var(--done)">${cnt.done}</div><div class="kpi-l">เสร็จแล้ว</div><div class="kpi-glow"></div></div>
+    <div class="kpi k-late"><div class="kpi-n" style="color:var(--late)">${cnt.late}</div><div class="kpi-l">เลยกำหนด</div><div class="kpi-glow"></div></div>
+    <div class="kpi k-spec"><div class="kpi-n" style="color:var(--spec)">${cnt.spec}</div><div class="kpi-l">Special Case</div><div class="kpi-glow"></div></div>`;
+
+  const doneTasks=_orders.reduce((a,o)=>a+o.completedSteps,0);
+  const totalTasks=_orders.reduce((a,o)=>a+o.totalSteps,0);
+  document.getElementById('stat').innerHTML=`
+    <div class="sc"><div class="sc-dot" style="background:var(--prog)"></div><span class="sc-lbl">กำลังดำเนินการ</span><span class="sc-val" style="color:var(--prog)">${cnt.progress}</span></div>
+    <div class="sc"><div class="sc-dot" style="background:var(--pend)"></div><span class="sc-lbl">ยังไม่เริ่ม</span><span class="sc-val" style="color:var(--pend)">${cnt.pending}</span></div>
+    <div class="sc"><div class="sc-dot" style="background:var(--done)"></div><span class="sc-lbl">Task เสร็จ</span><span class="sc-val" style="color:var(--done)">${doneTasks}</span></div>
+    <div class="sc"><div class="sc-dot" style="background:var(--mu)"></div><span class="sc-lbl">Task ทั้งหมด</span><span class="sc-val">${totalTasks}</span></div>`;
+
+  // Alerts — collect late orders and ALL special reasons per order
+  const lateItems=[], specOrders=[];
+  _orders.forEach(o=>{
+    const si=o.completedSteps; if(si>=o.totalSteps)return;
+    const s=stepSt(o,si); const person=(o.responsible||[])[si]||'—'; const name=getStepName(o,si);
+    if(s==='late') lateItems.push({o,si,name,person});
+    // collect all special steps (not just current) for sidebar display
+    if(orderHasSpecial(o)&&s!=='late'){
+      const specSteps=[];
+      for(let i=0;i<o.totalSteps;i++){
+        if(isStepSpecial(o,i)){
+          const def=getDefDays(o,i); const pd=o.plannedDays[i]||def;
+          const reason=o.specialReason[i]||'';
+          specSteps.push({i,name:getStepName(o,i),defDays:def,pDays:pd,reason,done:i<o.completedSteps});
+        }
+      }
+      if(specSteps.length) specOrders.push({o,specSteps,person});
+    }
+  });
+  document.getElementById('atotal').textContent=lateItems.length+specOrders.length;
+  let ah='';
+  if(lateItems.length) ah+=lateItems.map(({o,si,name,person})=>`<div class="alert-item a-late" onclick="openM('${o.id}')">
+    <div class="ai-top"><span class="ai-id" style="color:var(--late)">${o.id}</span><span class="ai-badge ab-late">🔴 เลยกำหนด</span>${o.prepayment&&!o.prepaymentDone&&si===10?'<span class="ai-badge ab-spec">รอ prepay</span>':''}</div>
+    <div class="ai-step">${name}</div>
+    <div class="ai-meta">👤 ${person} · 📅 ${o.dueDate||'—'}</div>
+  </div>`).join('');
+  if(specOrders.length) ah+=specOrders.map(({o,specSteps,person})=>{
+    const tags=specSteps.map(s=>`<div class="spec-reason-tag"><span class="step-ref">${s.name}:</span> ${s.reason||('⚡ '+s.pDays+'วัน (ปกติ '+s.defDays+'วัน)')}${s.done?' ✓':''}</div>`).join('');
+    return`<div class="alert-item a-spec" onclick="openM('${o.id}')">
+      <div class="ai-top"><span class="ai-id" style="color:var(--spec)">${o.id}</span><span class="ai-badge ab-spec">⚡ Special · ${specSteps.length} ขั้นตอน</span></div>
+      <div class="ai-step">${o.factory||'—'} ${o.product?'· '+o.product:''}</div>
+      <div class="spec-reasons">${tags}</div>
+    </div>`;
+  }).join('');
+  if(!ah) ah='<div style="padding:24px 16px;text-align:center;font-size:13px;color:#4a5978">✅ ไม่มีงานเลยกำหนดหรือ Special</div>';
+  document.getElementById('alist').innerHTML=ah;
+
+  // Filter chips
+  const fkeys=['all','late','spec','progress','done','pending'];
+  const flbls=['ทั้งหมด','🔴 เลยกำหนด','⚡ Special Case','🔵 กำลังดำเนินการ','🟢 เสร็จแล้ว','⚪ ยังไม่เริ่ม'];
+  document.querySelectorAll('.fchip').forEach((c,i)=>{
+    const k=fkeys[i];const n=k==='all'?total:(cnt[k]||0);
+    c.innerHTML=`${flbls[i]}<span class="chip-n">${n}</span>`;
+  });
+
+  // Cards
+  const filtered=_flt==='all'?_orders:_orders.filter(o=>orderSt(o)===_flt);
+  const ca=document.getElementById('cards');
+  if(!filtered.length){ca.innerHTML='<div class="empty"><div class="empty-icon">📭</div><div style="font-size:14px">ไม่มีข้อมูลที่ตรงกับตัวกรอง</div></div>';return}
+  ca.innerHTML=filtered.map(o=>{
+    const s=orderSt(o);const si=Math.min(o.completedSteps,o.totalSteps-1);
+    const pct=Math.round((o.completedSteps/o.totalSteps)*100);
+    const curStep=o.completedSteps>=o.totalSteps?'เสร็จสมบูรณ์':getStepName(o,si);
+    const person=(o.responsible||[])[si]||'—';
+    const isMfgActive=si===getMfgStepIndex(o)&&o.completedSteps<o.totalSteps;
+    const mfgCardArr=isMfgActive&&o.mfgSteps&&o.mfgSteps[si]?o.mfgSteps[si]:[];
+    const mfgCardDone=mfgCardArr.filter(Boolean).length;
+    const mfgCardPct=Math.round(mfgCardDone/MFG_STEPS.length*100);
+    const isSpec=o.isSpecial&&o.isSpecial[si];const defDays=getDefDays(o,si);const pDays=(o.plannedDays||[])[si]||0;
+    const dots=Array.from({length:o.totalSteps},(_,i)=>{
+      let c='sd-wait';if(i<o.completedSteps)c='sd-done';else if(i===si){c=s==='late'?'sd-late':s==='spec'?'sd-spec':'sd-prog';}
+      return`<div class="sd ${c}"></div>`;
+    }).join('');
+    const ppFlag=o.prepayment?`<span class="pp-flag">${o.prepaymentDone?'✅':'💳'} prepay</span>`:'';
+    const dueColor=s==='late'?'v-late':s==='spec'?'v-spec':s==='done'?'v-done':'';
+    // Collect all special reasons across all steps
+    const allSpecReasons=[];
+    for(let j=0;j<o.totalSteps;j++){
+      if(isStepSpecial(o,j)){
+        const def=getDefDays(o,j); const pd=(o.plannedDays[j]&&o.plannedDays[j]>0)?o.plannedDays[j]:def;
+        const r=o.specialReason[j]||'';
+        allSpecReasons.push({name:getStepName(o,j),pDays:pd,defDays:def,reason:r,done:j<o.completedSteps});
+      }
+    }
+    const specReasonHTML=allSpecReasons.length?`<div class="card-spec-reasons">${allSpecReasons.map(r=>`<div class="card-spec-tag"><span class="sr-step">${r.name}:</span> ${r.reason||('⚡ '+r.pDays+'วัน / ปกติ '+r.defDays+'วัน')}${r.done?' <span style="color:var(--done)">✓</span>':''}</div>`).join('')}</div>`:'';
+    return`<div class="ocard st-${s}" onclick="openM('${o.id}')">
+      <div class="ct">
+        <div class="ct-main">
+          <div class="ct-id">${o.id}${ppFlag}</div>
+          <div class="ct-fac">🏭 ${o.factory||'—'}</div>
+          <div style="font-size:11px;color:var(--mu);margin-top:2px">${(o.items&&o.items.length?o.items:[{customer:o.customer,product:o.product}]).slice(0,2).map(it=>[it.customer,it.product].filter(Boolean).join(' · ')).join(' / ')}${o.items&&o.items.length>2?` +${o.items.length-2} more`:''}</div>
+        </div>
+        ${sbadge(s)}
+      </div>
+      <div class="cp">
+        <div class="cp-hdr">
+          <div><span class="cp-pct" style="color:${fcol(s)}">${pct}%</span><span class="cp-frac">${o.completedSteps}/${o.totalSteps} ขั้นตอน</span></div>
+          <div class="cp-step">${o.completedSteps>=o.totalSteps?'':getStepName(o,si)}</div>
+        </div>
+        <div class="bar"><div class="bar-fill ${bfcls(s)}" style="width:${pct}%"></div></div>
+        <div class="sdots">${dots}</div>
+        ${isMfgActive?`<div style="margin-top:8px;padding:8px 10px;background:rgba(255,255,255,.03);border:1px solid var(--bd2);border-radius:6px">
+          <div style="font-size:10px;color:var(--mu);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">🔧 Manufacturing ${mfgCardDone}/${MFG_STEPS.length}</div>
+          <div style="display:flex;flex-wrap:wrap;gap:4px">${MFG_STEPS.map((s,mi)=>`<span style="font-size:10px;padding:2px 7px;border-radius:99px;${mfgCardArr[mi]?'background:rgba(76,175,125,.15);color:var(--done);text-decoration:line-through':'background:var(--s3);color:var(--mu)'}">${s}</span>`).join('')}</div>
+          <div style="display:flex;align-items:center;gap:6px;margin-top:6px"><div style="flex:1;height:3px;background:var(--s3);border-radius:99px;overflow:hidden"><div style="height:100%;width:${mfgCardPct}%;background:var(--done);border-radius:99px"></div></div><span style="font-size:10px;color:var(--mu)">${mfgCardPct}%</span></div>
+        </div>`:''}
+        ${specReasonHTML}
+      </div>
+      <div class="cb">
+        <div class="cbi"><div class="cbl">ผู้รับผิดชอบ</div><div class="cbv">${o.completedSteps>=o.totalSteps?'—':person.split('-')[0]||person}</div></div>
+        <div class="cbi"><div class="cbl">วันส่งมอบ</div><div class="cbv ${dueColor}">${o.dueDate||'—'}</div></div>
+        <div class="cbi"><div class="cbl">Special Cases</div><div class="cbv v-spec">${allSpecReasons.length?allSpecReasons.length+' ขั้นตอน':'—'}</div></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function setF(f,el){_flt=f;document.querySelectorAll('.fchip').forEach(c=>c.classList.remove('active'));el.classList.add('active');render()}
+
+function openM(id){
+  const o=_orders.find(x=>x.id===id);if(!o)return;
+  const s=orderSt(o);const pct=Math.round((o.completedSteps/o.totalSteps)*100);
+  document.getElementById('m-id').textContent=o.id;
+  document.getElementById('m-badges').innerHTML=sbadge(s)+(o.prepayment?`<span style="font-size:12px;background:var(--spec-dim);color:var(--spec);border:1px solid var(--spec-bd);padding:2px 10px;border-radius:4px">${o.prepaymentDone?'✅ จ่ายล่วงหน้าแล้ว':'💳 ต้องจ่ายล่วงหน้า'}</span>`:'');
+  const tl=Array.from({length:o.totalSteps},(_,i)=>{
+    const ss=stepSt(o,i);const done=i<o.completedSteps;const active=i===o.completedSteps;
+    const isPP=o.prepayment&&i===10;
+    let nc,rc='',lbl=isPP?'💳':i+1;
+    if(done){nc='tn-done';lbl='✓';}
+    else if(ss==='late'){nc='tn-late';rc='tl-late';}
+    else if(ss==='spec'){nc='tn-spec';rc='tl-spec';}
+    else if(active){nc='tn-act';rc='tl-act';}
+    else nc='tn-wait';
+    const name=getStepName(o,i);const defDays=getDefDays(o,i);
+    const pDays=o.plannedDays[i]||0;const isSpec=o.isSpecial[i];const reason=o.specialReason[i]||'';
+    const person=(o.responsible||[])[i]||'—';
+    const pd=o.plannedDates[i]||'';const dd=o.doneDates[i]||'';
+    const isMfg=i===getMfgStepIndex(o);
+    const mfgArr=isMfg&&o.mfgSteps&&o.mfgSteps[i]?o.mfgSteps[i]:[];
+    const mfgDone=mfgArr.filter(Boolean).length;
+    const mfgHtml=isMfg?`<div class="mfg-mini">
+      <div class="mfg-mini-title">🔧 Manufacturing (${mfgDone}/${MFG_STEPS.length})</div>
+      ${MFG_STEPS.map((s,mi)=>`<div class="mfg-mini-row"><div class="mfg-dot ${mfgArr[mi]?'mfg-dot-done':'mfg-dot-wait'}"></div><span class="${mfgArr[mi]?'mfg-name-done':'mfg-name-wait'}">${s}</span></div>`).join('')}
+      <div class="mfg-bar-row"><div class="mfg-bar-out"><div class="mfg-bar-in" style="width:${Math.round(mfgDone/MFG_STEPS.length*100)}%"></div></div><span style="font-size:10px;color:var(--mu)">${Math.round(mfgDone/MFG_STEPS.length*100)}%</span></div>
+    </div>`:'';
+    return`<div class="tli ${rc}">
+      <div class="tln ${nc}">${lbl}</div>
+      <div>
+        <div class="tl-name">${name}</div>
+        <div class="tl-person">👤 ${person}</div>
+        ${mfgHtml}
+        ${isSpec?`<div class="tl-spec-info" style="display:flex;flex-direction:column;gap:3px;margin-top:4px">
+          <div style="display:flex;align-items:center;gap:6px">
+            <span style="background:rgba(167,139,250,.15);border:1px solid rgba(167,139,250,.3);border-radius:4px;padding:1px 8px;font-size:10px;font-weight:700;color:var(--spec)">⚡ SPECIAL</span>
+            <span style="font-size:11px;color:var(--spec)">${pDays}วัน (ปกติ ${defDays}วัน)</span>
+          </div>
+          ${reason?`<div style="font-size:12px;color:rgba(167,139,250,.9);background:rgba(167,139,250,.08);border-left:2px solid var(--spec);padding:4px 8px;border-radius:0 4px 4px 0">"${reason}"</div>`:''}
+        </div>`:''}
+        ${ss==='late'&&!done?`<div class="tl-late-info">🔴 เลยกำหนด</div>`:''}
+      </div>
+      <div class="tl-right">
+        ${pd?`<div class="tl-pd">📅 นัด: ${pd}</div>`:''}
+        ${dd?`<div class="tl-dd">✅ เสร็จ: ${dd}</div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('m-body').innerHTML=`
+    <div class="mmeta" style="grid-template-columns:1fr 1fr 1fr;margin-bottom:12px">
+      <div class="mmi"><div class="mmil">โรงงาน / Supplier</div><div class="mmiv">${o.factory||'—'}</div></div>
+      <div class="mmi"><div class="mmil">Customer PO No.</div><div class="mmiv">${o.customerPO||'—'}</div></div>
+      <div class="mmi"><div class="mmil">วันส่งมอบ</div><div class="mmiv" style="color:${s==='late'?'var(--late)':'var(--tx)'}">${o.dueDate||'—'}</div></div>
+    </div>
+    ${(()=>{
+      const items=o.items&&o.items.length?o.items:[{customer:o.customer||'',product:o.product||'',quantity:o.quantity||''}];
+      const rows=items.map((it,i)=>`<tr><td style="font-size:13px;font-weight:500;padding:7px 10px;border-bottom:1px solid var(--bd2)">${it.customer||'—'}</td><td style="font-size:12px;color:var(--mu);padding:7px 10px;border-bottom:1px solid var(--bd2)">${it.product||'—'}</td><td style="font-size:12px;color:var(--mu);padding:7px 10px;border-bottom:1px solid var(--bd2)">${it.quantity||'—'}</td></tr>`).join('');
+      return`<div style="background:var(--s1);border:1px solid var(--bd);border-radius:8px;margin-bottom:14px;overflow:hidden">
+        <div style="padding:8px 12px;background:var(--s2);border-bottom:1px solid var(--bd);font-size:10px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.6px">📦 รายการสินค้า (${items.length} รายการ)</div>
+        <table style="width:100%;border-collapse:collapse">
+          <thead><tr>
+            <th style="font-size:10px;font-weight:700;color:var(--mu);text-transform:uppercase;padding:6px 10px;text-align:left;border-bottom:1px solid var(--bd2)">ลูกค้า</th>
+            <th style="font-size:10px;font-weight:700;color:var(--mu);text-transform:uppercase;padding:6px 10px;text-align:left;border-bottom:1px solid var(--bd2)">สินค้า / Valve</th>
+            <th style="font-size:10px;font-weight:700;color:var(--mu);text-transform:uppercase;padding:6px 10px;text-align:left;border-bottom:1px solid var(--bd2)">จำนวน</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>`;
+    })()}
+    <div class="mp-bar">
+      <div class="mp-hdr"><span class="mp-pct" style="color:${fcol(s)}">${pct}%</span><span class="mp-lbl">เสร็จสิ้น · ${o.completedSteps} จาก ${o.totalSteps} ขั้นตอน</span></div>
+      <div class="mbar"><div class="mbar-fill ${bfcls(s)}" style="width:${pct}%"></div></div>
+    </div>
+    ${(()=>{
+      const sr=[];
+      for(let i=0;i<o.totalSteps;i++){if(isStepSpecial(o,i)){const def=getDefDays(o,i);const pd=(o.plannedDays[i]&&o.plannedDays[i]>0)?o.plannedDays[i]:def;const r=o.specialReason[i]||'';sr.push({name:getStepName(o,i),pDays:pd,defDays:def,reason:r,done:i<o.completedSteps});}}
+      if(!sr.length)return'';
+      return`<div style="background:rgba(167,139,250,.06);border:1px solid rgba(167,139,250,.2);border-radius:10px;padding:14px 16px;margin-bottom:16px">
+        <div style="font-size:11px;font-weight:700;color:var(--spec);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">⚡ Special Cases (${sr.length} ขั้นตอน)</div>
+        <div style="display:flex;flex-direction:column;gap:8px">${sr.map(r=>`
+          <div style="display:flex;align-items:flex-start;gap:10px">
+            <div style="flex-shrink:0;background:rgba(167,139,250,.15);border:1px solid rgba(167,139,250,.3);border-radius:4px;padding:2px 8px;font-size:10px;font-weight:700;color:var(--spec);white-space:nowrap">${r.done?'✓ '+r.name:r.name}</div>
+            <div>
+              <div style="font-size:11px;color:var(--spec)">${r.pDays}วัน <span style="color:rgba(167,139,250,.5)">/ ปกติ ${r.defDays}วัน</span></div>
+              ${r.reason?`<div style="font-size:12px;color:var(--tx);margin-top:2px">"${r.reason}"</div>`:''}
+            </div>
+          </div>`).join('')}
+        </div>
+      </div>`;
+    })()}
+    <div class="tl-title">ขั้นตอนทั้งหมด</div>
+    <div>${tl}</div>`;
+  document.getElementById('modal').classList.add('open');
+}
+function closeM(){document.getElementById('modal').classList.remove('open')}
+
+function tick(){
+  const n=new Date();
+  document.getElementById('clk-date').textContent=n.toLocaleDateString('th-TH',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  document.getElementById('clk-time').textContent=n.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+async function refresh(){await loadAll();render()}
+tick();refresh();
+setInterval(refresh,10000);setInterval(tick,1000);
+</script>
+</body>
+</html>
