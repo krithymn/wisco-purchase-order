@@ -331,10 +331,9 @@ function calcDeadline(o,i){
   if(!o.startDate) return null;
   let d=new Date(o.startDate);
   for(let j=0;j<=i;j++){
-    // skip steps that are marked as skipped OR have 0 planned days
-    if(o.skippedSteps&&o.skippedSteps[j]) continue;
-    const days=o.plannedDays[j]>=0?o.plannedDays[j]:defDays(o,j);
-    if(days===0) continue; // 0 days = instant, no time added
+    if(o.skippedSteps&&o.skippedSteps[j]) continue; // skip skipped steps
+    // use planned days only if explicitly set (>0), otherwise use default
+    const days=(o.plannedDays[j]&&o.plannedDays[j]>0)?o.plannedDays[j]:defDays(o,j);
     d=new Date(d.getTime()+days*86400000);
   }
   return d;

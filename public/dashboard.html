@@ -340,7 +340,7 @@ function calcDeadline(o,i){
   let d=new Date(o.startDate);
   for(let j=0;j<=i;j++){
     if(o.skippedSteps&&o.skippedSteps[j])continue;
-    const days=o.plannedDays[j]>=0?o.plannedDays[j]:getDefDays(o,j);
+    const days=(o.plannedDays[j]&&o.plannedDays[j]>0)?o.plannedDays[j]:getDefDays(o,j);
     d=new Date(d.getTime()+days*86400000);
   }
   return d;
