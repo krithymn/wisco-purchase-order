@@ -325,13 +325,13 @@ function openDetail(id){
   const pct=Math.round((o.completedSteps/o.totalSteps)*100);
   const items=o.items||[{customer:o.customer||'',prNumber:'',subItems:[{product:o.product||'',quantity:o.quantity||''}]}];
 
-  const itemRows=items.map(it=>{
+  const itemRows=items.flatMap(it=>{
     const subs=it.subItems&&it.subItems.length?it.subItems:[{product:it.product||'',quantity:it.quantity||''}];
     return subs.map((s2,si)=>`<tr>
       ${si===0?`<td rowspan="${subs.length}" style="font-weight:600;vertical-align:top">${it.customer||'—'}</td>
        <td rowspan="${subs.length}" style="color:var(--spec);vertical-align:top">${it.prNumber||'—'}</td>`:''}
       <td>${s2.product||'—'}</td><td style="color:var(--mu)">${s2.quantity||'—'}</td>
-    </tr>`).join('');
+    </tr>`);
   }).join('');
 
   const tl=Array.from({length:o.totalSteps},(_,i)=>{

@@ -560,7 +560,7 @@ function openM(id){
       const items=o.items&&o.items.length?o.items:[{customer:o.customer||'',product:o.product||'',quantity:o.quantity||''}];
       const rows=items.map((it,i)=>`<tr><td style="font-size:13px;font-weight:500;padding:7px 10px;border-bottom:1px solid var(--bd2)">${it.customer||'—'}</td><td style="font-size:12px;color:var(--mu);padding:7px 10px;border-bottom:1px solid var(--bd2)">${it.product||'—'}</td><td style="font-size:12px;color:var(--mu);padding:7px 10px;border-bottom:1px solid var(--bd2)">${it.quantity||'—'}</td></tr>`).join('');
       return`<div style="background:var(--s1);border:1px solid var(--bd);border-radius:8px;margin-bottom:14px;overflow:hidden">
-        <div style="padding:8px 12px;background:var(--s2);border-bottom:1px solid var(--bd);font-size:10px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.6px">📦 รายการสินค้า (${items.length} รายการ)</div>
+        <div style="padding:8px 12px;background:var(--s2);border-bottom:1px solid var(--bd);font-size:10px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.6px">📦 รายการสินค้า (${items.length} ลูกค้า · ${items.reduce((a,it)=>a+((it.subItems&&it.subItems.length)||1),0)} รายการ)</div>
         <table style="width:100%;border-collapse:collapse">
           <thead><tr>
             <th style="font-size:10px;font-weight:700;color:var(--mu);text-transform:uppercase;padding:6px 10px;text-align:left;border-bottom:1px solid var(--bd2)">ลูกค้า</th>
