@@ -445,7 +445,7 @@ function rDetail(id){
 
   let prepBanner='';
   if(o.prepayment){
-    if(o.prepaymentDone) prepBanner=`<div class="prepay-banner pb-done">💳 <strong>จ่ายเงินล่วงหน้าแล้ว</strong></div>`;
+    if(o.prepaymentDone) prepBanner=`<div class="prepay-banner pb-done">💳 <strong>จ่ายเงินล่วงหน้าแล้ว</strong> <button class="btn btn-sm btn-danger" style="margin-left:auto;font-size:11px" onclick="undoPrepaid('${o.id}')">↩ ยกเลิก</button></div>`;
     else prepBanner=`<div class="prepay-banner pb-on">💳 <strong>ต้องจ่ายเงินล่วงหน้า</strong> — รอการชำระก่อนเริ่มผลิต <button class="btn btn-sm btn-success" style="margin-left:auto" onclick="markPrepaid('${o.id}')">✓ บันทึกว่าจ่ายแล้ว</button></div>`;
   }
 
@@ -673,7 +673,12 @@ async function togSpec(id,i){
   rSide();rDetail(id);
 }
 async function markPrepaid(id){
-  await fetch(API+`/api/orders/${id}/prepayment`,{method:'PATCH'});
+  await fetch(API+`/api/orders/${id}/prepayment`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({})});
+  await loadAll();rSide();rDetail(id);
+}
+async function undoPrepaid(id){
+  if(!confirm('ยกเลิกการบันทึกจ่ายเงินล่วงหน้า?'))return;
+  await fetch(API+`/api/orders/${id}/prepayment`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({undo:true})});
   await loadAll();rSide();rDetail(id);
 }
 
