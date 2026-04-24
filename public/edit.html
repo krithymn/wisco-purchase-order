@@ -577,9 +577,15 @@ async function togSkip(id,i){
   const o=_orders.find(x=>x.id===id);if(!o)return;
   if(!o.skippedSteps)o.skippedSteps=Array(o.totalSteps).fill(false);
   const newVal=!o.skippedSteps[i];
-  await patch(`/api/orders/${id}/steps/${i}`,{isSkipped:newVal});
-  o.skippedSteps[i]=newVal;
-  rSide();rDetail(id);
+  if(newVal){
+    // marking as skipped → also auto-complete this step so progress advances
+    const today=new Date().toISOString().split('T')[0];
+    await patch(`/api/orders/${id}/steps/${i}`,{isSkipped:true,doneDate:today});
+  } else {
+    // un-skip → remove done date so it becomes active again
+    await patch(`/api/orders/${id}/steps/${i}`,{isSkipped:false,doneDate:''});
+  }
+  await loadAll();rSide();rDetail(id);
 }
 async function togSpec(id,i){
   const o=_orders.find(x=>x.id===id);if(!o)return;
