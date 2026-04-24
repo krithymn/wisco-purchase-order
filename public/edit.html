@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Order Tracker — จัดการข้อมูล</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#f0f2f5;--sur:#fff;--sur2:#f6f8fa;--bd:#d0d7de;--bd2:#e8ebee;--tx:#1f2328;--mu:#636c76;--ac:#d42030;--done:#1a7f37;--late:#cf222e;--prog:#0550ae;--warn:#d97706;--spec:#7c3aed;--done-bg:#dafbe1;--late-bg:#ffebe9;--prog-bg:#ddf4ff;--warn-bg:#fff7ed;--spec-bg:#f5f3ff;--done-bd:#82cfad;--late-bd:#f5a1a0;--prog-bd:#79c0ff;--warn-bd:#f59e0b;--spec-bd:#c4b5fd;--r:6px;--rl:12px}
+html,body{background:var(--bg);color:var(--tx);font-family:'Sarabun','Inter',sans-serif;min-height:100vh}
+header{background:linear-gradient(90deg,#08090e,#0e1018);border-bottom:1px solid #1e2438;padding:0 24px;height:54px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;box-shadow:0 2px 8px rgba(0,0,0,.4)}
+.logo{font-size:16px;font-weight:700;display:flex;align-items:center;gap:8px}
+.logo-icon{width:28px;height:28px;background:linear-gradient(135deg,#7c3aed,#0969da);border-radius:6px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:700}
+.btn{font-size:13px;padding:6px 14px;border-radius:var(--r);font-family:'Sarabun',sans-serif;cursor:pointer;font-weight:500;border:1px solid var(--bd);transition:all .15s}
+.btn-primary{background:var(--ac);color:#fff;border-color:var(--ac)}.btn-primary:hover{background:#0550ae}
+.btn-secondary{background:var(--sur);color:var(--tx)}.btn-secondary:hover{background:var(--sur2)}
+.btn-danger{background:#fff;color:var(--late);border-color:var(--late-bd)}.btn-danger:hover{background:var(--late-bg)}
+.btn-success{background:var(--done-bg);color:var(--done);border-color:var(--done-bd);font-weight:600}
+.btn-sm{font-size:12px;padding:4px 10px}
+.nav-tabs{display:flex;gap:2px;padding:0 24px;background:#0e1018;border-bottom:1px solid #1e2438}
+.nav-tab{font-size:13px;font-weight:500;padding:10px 16px;cursor:pointer;border:none;background:transparent;color:#7080a0;border-bottom:2px solid transparent;font-family:'Sarabun',sans-serif;transition:all .15s}
+.nav-tab:hover{color:#e8eaf2}.nav-tab.active{color:#e84050;border-bottom-color:#e84050}
+.layout{display:grid;grid-template-columns:280px 1fr;min-height:calc(100vh - 90px)}
+.sidebar{background:var(--sur);border-right:1px solid var(--bd);display:flex;flex-direction:column}
+.sidebar-top{padding:12px 14px;border-bottom:1px solid var(--bd2)}
+.s-search{width:100%;font-size:13px;padding:7px 10px;border:1px solid var(--bd);border-radius:var(--r);background:var(--sur2);font-family:'Sarabun',sans-serif}
+.s-search:focus{outline:none;border-color:var(--ac)}
+.side-lbl{font-size:10px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.8px;padding:10px 14px 4px}
+.order-list{flex:1;overflow-y:auto}
+.order-item{display:flex;align-items:center;gap:8px;padding:9px 14px;cursor:pointer;transition:background .1s;border-left:3px solid transparent}
+.order-item:hover{background:var(--sur2)}.order-item.active{background:#ebf5ff;border-left-color:var(--ac)}
+.oi-main{flex:1;min-width:0}
+.oi-id{font-size:13px;font-weight:700;font-family:'Inter',sans-serif}
+.oi-sub{font-size:11px;color:var(--mu);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.oi-pct{font-size:11px;color:var(--mu);flex-shrink:0}
+.sdot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.d-done{background:var(--done)}.d-late{background:var(--late)}.d-prog{background:var(--prog)}.d-pend{background:#eab308}.d-spec{background:var(--spec)}
+.add-btn{margin:10px 14px;display:flex;align-items:center;justify-content:center;gap:6px;padding:9px;border-radius:var(--r);border:1px dashed var(--bd);background:transparent;color:var(--mu);font-size:13px;cursor:pointer;font-family:'Sarabun',sans-serif;flex-shrink:0}
+.add-btn:hover{border-color:var(--ac);color:var(--ac);background:#ebf5ff}
+.content{padding:20px 24px;overflow-y:auto}
+.page-hdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;gap:12px}
+.page-title{font-size:18px;font-weight:700}
+.page-sub{font-size:13px;color:var(--mu);margin-top:3px}
+.card{background:var(--sur);border:1px solid var(--bd);border-radius:var(--rl);margin-bottom:14px;overflow:hidden}
+.card-hdr{padding:12px 16px;border-bottom:1px solid var(--bd2);display:flex;align-items:center;justify-content:space-between;background:var(--sur2)}
+.card-title{font-size:13px;font-weight:600}
+.prepay-banner{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:var(--r);margin-bottom:12px;font-size:13px}
+.pb-on{background:var(--spec-bg);border:1px solid var(--spec-bd);color:var(--spec)}
+.pb-done{background:var(--done-bg);border:1px solid var(--done-bd);color:var(--done)}
+.sum-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+.sum-card{background:var(--sur);border:1px solid var(--bd);border-radius:var(--rl);padding:12px 14px;display:flex;align-items:center;gap:10px}
+.sum-icon{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.sum-num{font-size:20px;font-weight:700;font-family:'Inter',sans-serif;line-height:1}
+.sum-lbl{font-size:11px;color:var(--mu);margin-top:2px}
+.pb-outer{height:8px;background:var(--bd2);border-radius:99px;overflow:hidden}
+.pb-inner{height:100%;border-radius:99px;transition:width .4s}
+.ph{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+/* STEPS TABLE */
+.steps-table{width:100%;border-collapse:collapse;font-size:12px}
+.steps-table th{font-size:10px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.5px;padding:8px 10px;text-align:left;border-bottom:1px solid var(--bd2);background:var(--sur2);white-space:nowrap}
+.steps-table td{padding:8px 10px;border-bottom:1px solid var(--bd2);vertical-align:middle}
+.steps-table tr:last-child td{border-bottom:none}
+.steps-table tr.row-active{background:#f0f7ff}
+.steps-table tr.row-late{background:#fff5f5}
+.steps-table tr.row-spec{background:#faf5ff}
+.steps-table tr.row-done{opacity:.7}
+.snum{width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;font-family:'Inter',sans-serif}
+.pill{font-size:10px;font-weight:600;padding:2px 8px;border-radius:99px;white-space:nowrap;display:inline-block}
+.p-done{background:var(--done-bg);color:var(--done);border:1px solid var(--done-bd)}
+.p-late{background:var(--late-bg);color:var(--late);border:1px solid var(--late-bd)}
+.p-active{background:var(--prog-bg);color:var(--prog);border:1px solid var(--prog-bd)}
+.p-wait{background:var(--sur2);color:var(--mu);border:1px solid var(--bd)}
+.p-spec{background:var(--spec-bg);color:var(--spec);border:1px solid var(--spec-bd)}
+.spec-tag{font-size:10px;color:var(--spec);background:var(--spec-bg);border:1px solid var(--spec-bd);padding:1px 6px;border-radius:4px;margin-left:4px}
+.late-tag{font-size:10px;color:var(--late);background:var(--late-bg);border:1px solid var(--late-bd);padding:1px 6px;border-radius:4px;margin-left:4px}
+.sel-sm{font-size:12px;padding:4px 6px;min-width:160px;border:1px solid var(--bd);border-radius:var(--r);background:var(--sur);font-family:'Sarabun',sans-serif}
+.num-in{font-size:12px;padding:4px 6px;width:56px;border:1px solid var(--bd);border-radius:var(--r);background:var(--sur);font-family:'Sarabun',sans-serif;text-align:center}
+.mfg-checklist{margin-top:8px;padding:10px 12px;background:var(--sur2);border:1px solid var(--bd2);border-radius:var(--r);display:flex;flex-direction:column;gap:6px}
+.mfg-title{font-size:10px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px}
+.mfg-item{display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer;padding:2px 0}
+.mfg-item input[type=checkbox]{width:14px;height:14px;cursor:pointer;accent-color:var(--done)}
+.mfg-item.checked{color:var(--done);text-decoration:line-through;opacity:.7}
+.mfg-progress{display:flex;align-items:center;gap:6px;margin-top:6px}
+.mfg-bar-outer{flex:1;height:4px;background:var(--bd2);border-radius:99px;overflow:hidden}
+.mfg-bar-inner{height:100%;background:var(--done);border-radius:99px;transition:width .3s}
+.mfg-pct{font-size:10px;color:var(--mu)}
+.spec-toggle{display:inline-flex;align-items:center;gap:4px;font-size:11px;cursor:pointer;color:var(--spec);padding:2px 8px;border-radius:4px;background:var(--spec-bg);border:1px solid var(--spec-bd);white-space:nowrap;font-family:'Sarabun',sans-serif}
+.spec-toggle.on{background:var(--spec);color:#fff;border-color:var(--spec)}
+.deadline-info{font-size:11px;color:var(--mu);margin-top:2px}
+.deadline-late{color:var(--late);font-weight:600}
+/* ITEMS LIST */
+.items-list{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+.item-row{display:grid;grid-template-columns:1fr 1fr 1fr 80px 28px;gap:6px;align-items:center;background:var(--sur2);border:1px solid var(--bd2);border-radius:var(--r);padding:6px 8px}
+.item-row input{font-size:12px;padding:4px 7px;border:1px solid var(--bd);border-radius:4px;background:var(--sur);font-family:'Sarabun',sans-serif;width:100%}
+.item-row input:focus{outline:none;border-color:var(--ac)}
+.item-del{background:none;border:none;color:var(--mu);cursor:pointer;font-size:16px;padding:0;line-height:1;flex-shrink:0}.item-del:hover{color:var(--late)}
+.add-item-btn{display:flex;align-items:center;gap:5px;font-size:12px;padding:5px 10px;border:1px dashed var(--bd);border-radius:var(--r);background:transparent;color:var(--mu);cursor:pointer;font-family:'Sarabun',sans-serif;margin-top:4px;transition:all .15s}
+.add-item-btn:hover{border-color:var(--ac);color:var(--ac);background:var(--prog-bg)}
+.items-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px}
+.items-table th{font-size:10px;font-weight:700;color:var(--mu);text-transform:uppercase;padding:5px 8px;border-bottom:1px solid var(--bd2);background:var(--sur2);text-align:left}
+.items-table td{padding:6px 8px;border-bottom:1px solid var(--bd2);font-size:13px}
+.items-table tr:last-child td{border-bottom:none}
+/* SUPPLIER SEARCH DROPDOWN */
+.sup-wrap{position:relative}
+.sup-input{width:100%;font-size:13px;padding:7px 10px;border:1px solid var(--bd);border-radius:var(--r);background:var(--sur);color:var(--tx);font-family:'Sarabun',sans-serif}
+.sup-input:focus{outline:none;border-color:var(--ac);box-shadow:0 0 0 3px rgba(9,105,218,.1)}
+.sup-dropdown{position:absolute;top:100%;left:0;right:0;background:var(--sur);border:1px solid var(--bd);border-radius:var(--r);box-shadow:0 4px 16px rgba(0,0,0,.1);z-index:100;max-height:200px;overflow-y:auto;display:none}
+.sup-dropdown.show{display:block}
+.sup-option{padding:8px 12px;font-size:13px;cursor:pointer;transition:background .1s}
+.sup-option:hover{background:var(--prog-bg);color:var(--prog)}
+.sup-option.sup-add{color:var(--ac);font-weight:500;border-top:1px solid var(--bd2)}
+/* MODAL */
+.ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:center;justify-content:center}
+.ov.open{display:flex}
+.modal{background:var(--sur);border:1px solid var(--bd);border-radius:var(--rl);width:580px;max-width:97vw;max-height:92vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.18)}
+.modal-hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--bd2);background:var(--sur2)}
+.modal-title{font-size:15px;font-weight:600}
+.modal-close{background:none;border:none;color:var(--mu);font-size:22px;cursor:pointer;padding:0}.modal-close:hover{color:var(--tx)}
+.modal-body{overflow-y:auto;padding:20px}
+.modal-ftr{padding:12px 20px;border-top:1px solid var(--bd2);display:flex;justify-content:flex-end;gap:8px;background:var(--sur2)}
+.fg{display:flex;flex-direction:column;gap:5px}
+.fg label{font-size:12px;font-weight:500}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+input,select,textarea{font-size:13px;padding:7px 10px;border:1px solid var(--bd);border-radius:var(--r);background:var(--sur);color:var(--tx);font-family:'Sarabun',sans-serif}
+input:focus,select:focus{outline:none;border-color:var(--ac);box-shadow:0 0 0 3px rgba(9,105,218,.1)}
+.req{color:var(--late);margin-left:2px}
+.alert{padding:10px 14px;border-radius:var(--r);font-size:13px;margin-bottom:10px}
+.alert-success{background:var(--done-bg);color:var(--done);border:1px solid var(--done-bd)}
+.alert-error{background:var(--late-bg);color:var(--late);border:1px solid var(--late-bd)}
+.welcome{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:400px;text-align:center}
+.welcome-icon{font-size:48px;margin-bottom:14px}
+/* CONFIG */
+.cfg-title{font-size:14px;font-weight:600;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--bd2)}
+.cfg-row{display:flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid var(--bd2);border-radius:var(--r);background:var(--sur2);margin-bottom:6px}
+.cfg-row-main{flex:1;font-size:13px;font-weight:500}
+.cfg-del{background:none;border:none;color:var(--mu);cursor:pointer;font-size:16px;padding:0}.cfg-del:hover{color:var(--late)}
+.step-cfg-row{display:flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid var(--bd2);border-radius:var(--r);background:var(--sur);margin-bottom:6px;font-size:12px}
+/* PW GATE */
+#pw-gate{display:none;position:fixed;inset:0;background:rgba(8,12,18,.85);backdrop-filter:blur(6px);z-index:9999;align-items:center;justify-content:center}
+#pw-gate.show{display:flex}
+.pw-box{background:#161b22;border:1px solid #1e2d45;border-radius:16px;padding:36px 32px;width:340px;text-align:center;box-shadow:0 24px 64px rgba(0,0,0,.7)}
+.pw-logo{font-size:32px;margin-bottom:14px}
+.pw-title{font-size:17px;font-weight:700;color:#e8eef8;margin-bottom:4px}
+.pw-sub{font-size:13px;color:#6b7fa0;margin-bottom:24px}
+.pw-wrap{position:relative;margin-bottom:12px}
+#pw-inp{width:100%;font-size:18px;padding:12px 44px 12px 16px;border:1px solid #1e2d45;border-radius:10px;background:#0e1420;color:#e8eef8;font-family:'Sarabun',sans-serif;letter-spacing:4px;text-align:center}
+#pw-inp:focus{outline:none;border-color:#0969da}
+#pw-inp.error{border-color:#ef4444;animation:shake .3s}
+#pw-eye{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:#6b7fa0;cursor:pointer;font-size:16px}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.pw-btn{width:100%;padding:12px;border-radius:10px;font-size:14px;font-weight:600;font-family:'Sarabun',sans-serif;cursor:pointer;background:#0969da;color:#fff;border:none;margin-bottom:10px}
+.pw-cancel{background:none;border:none;color:#6b7fa0;font-size:13px;cursor:pointer;font-family:'Sarabun',sans-serif}
+.pw-err{font-size:12px;color:#ef4444;margin-top:6px;min-height:18px}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:var(--bd);border-radius:99px}
+.tabs-content>div{display:none}.tabs-content>div.show{display:block}
+</style>
+</head>
+<body>
+<div id="pw-gate">
+  <div class="pw-box">
+    <div class="pw-logo">⚙️</div>
+    <div class="pw-title">ตั้งค่าระบบ</div>
+    <div class="pw-sub">กรุณาใส่รหัสผ่านผู้ดูแล</div>
+    <div class="pw-wrap"><input id="pw-inp" type="password" placeholder="••••••••" maxlength="20" autocomplete="off" onkeydown="if(event.key==='Enter')chkPW()"><button id="pw-eye" onclick="togPW()">👁</button></div>
+    <button class="pw-btn" onclick="chkPW()">ยืนยัน</button>
+    <div class="pw-err" id="pw-err"></div>
+    <button class="pw-cancel" onclick="canPW()">← ยกเลิก</button>
+  </div>
+</div>
+
+<header>
+  <div class="logo"><img src="logo.png" style="height:32px;width:auto;object-fit:contain" alt="Wisco"><span style="color:#e84050;font-size:15px;font-weight:600;margin-left:4px">Order Tracker</span></div>
+  <div style="display:flex;gap:8px">
+    <a href="dashboard.html" target="_blank"><button class="btn btn-secondary">📊 Dashboard</button></a>
+    <button class="btn btn-primary" onclick="openNew()">+ เพิ่ม Order ใหม่</button>
+  </div>
+</header>
+<div class="nav-tabs">
+  <button class="nav-tab active" onclick="swTab('orders',this)">📦 รายการ Order</button>
+  <button class="nav-tab" onclick="swTab('config',this)">⚙️ ตั้งค่า</button>
+</div>
+
+<div class="tabs-content">
+<div id="tab-orders" class="show">
+<div class="layout">
+  <div class="sidebar">
+    <div class="sidebar-top"><input class="s-search" placeholder="🔍 ค้นหา Order..." oninput="filtSide(this.value)"></div>
+    <div class="side-lbl">Order ทั้งหมด</div>
+    <div class="order-list" id="sidebar"></div>
+    <button class="add-btn" onclick="openNew()">＋ เพิ่ม Order ใหม่</button>
+  </div>
+  <div class="content" id="content">
+    <div class="welcome"><div class="welcome-icon">📦</div><h2>เลือก Order จากรายการ</h2><p style="color:var(--mu);font-size:14px;margin:8px 0 20px">หรือสร้าง Order ใหม่</p><button class="btn btn-primary" onclick="openNew()">+ เพิ่ม Order ใหม่</button></div>
+  </div>
+</div>
+</div>
+<div id="tab-config">
+  <div style="padding:24px;max-width:760px">
+    <!-- TEAM -->
+    <div style="margin-bottom:28px">
+      <div class="cfg-title">👤 จัดการทีมงาน</div>
+      <div id="team-grid"></div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <input id="new-member" placeholder="ชื่อ-ตำแหน่ง เช่น สมชาย-Engineer" style="flex:1;font-size:13px;padding:7px 10px;border:1px solid var(--bd);border-radius:var(--r);font-family:'Sarabun',sans-serif">
+        <button class="btn btn-primary" onclick="addMember()">+ เพิ่ม</button>
+      </div>
+    </div>
+    <!-- SUPPLIERS -->
+    <div style="margin-bottom:28px">
+      <div class="cfg-title">🏭 จัดการ Supplier</div>
+      <div id="sup-grid"></div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <input id="new-sup" placeholder="ชื่อ Supplier / โรงงาน" style="flex:1;font-size:13px;padding:7px 10px;border:1px solid var(--bd);border-radius:var(--r);font-family:'Sarabun',sans-serif">
+        <button class="btn btn-primary" onclick="addSupplier()">+ เพิ่ม</button>
+      </div>
+    </div>
+    <!-- STEPS -->
+    <div>
+      <div class="cfg-title">⏱ กำหนดเวลามาตรฐานต่อขั้นตอน (วัน)</div>
+      <p style="font-size:12px;color:var(--mu);margin-bottom:12px">เวลาปกติของแต่ละขั้นตอน — ถ้า Order มีการกำหนดเวลาที่ต่างออกไปจะแสดงเป็น ⚡ Special Case</p>
+      <div id="steps-cfg" style="display:grid;grid-template-columns:1fr 1fr;gap:6px"></div>
+      <button class="btn btn-primary" style="margin-top:12px" onclick="saveCfgSteps()">บันทึกการตั้งค่า</button>
+      <span id="cfg-saved" style="font-size:12px;color:var(--done);margin-left:10px;display:none">✓ บันทึกแล้ว</span>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ADD/EDIT ORDER MODAL -->
+<div class="ov" id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-hdr"><span class="modal-title" id="modal-t">เพิ่ม Order ใหม่</span><button class="modal-close" onclick="closeModal()">×</button></div>
+    <div class="modal-body">
+      <div id="modal-alert"></div>
+      <div class="form-grid">
+        <div class="fg"><label>เลขที่ PO <span class="req">*</span></label><input id="f-id" placeholder="เช่น POI6901-0001"></div>
+        <div class="fg">
+          <label>Supplier / โรงงาน <span class="req">*</span></label>
+          <div class="sup-wrap">
+            <input id="f-fac" class="sup-input" placeholder="พิมพ์เพื่อค้นหา..." autocomplete="off" oninput="showSupDrop(this.value)" onfocus="showSupDrop(this.value)" onblur="setTimeout(hideSupDrop,200)">
+            <div class="sup-dropdown" id="sup-drop"></div>
+          </div>
+        </div>
+        <div class="fg"><label>วันที่เปิด PO</label><input id="f-start" type="date"></div>
+        <div class="fg"><label>วันที่ผลิตเสร็จ</label><input id="f-prod-finish" type="date"></div>
+        <div class="fg" style="grid-column:span 2"><label>วันที่ส่งมอบ</label><input id="f-due" type="date" style="width:100%"></div>
+      </div>
+      <!-- ITEMS -->
+      <div style="margin-bottom:10px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+          <label style="font-size:12px;font-weight:500">รายการสินค้า <span class="req">*</span> <span style="color:var(--mu);font-weight:400">(ลูกค้า / สินค้า / จำนวน)</span></label>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 80px 28px;gap:6px;padding:4px 8px;background:var(--sur2);border-radius:4px;margin-bottom:4px">
+          <span style="font-size:10px;font-weight:700;color:var(--mu);text-transform:uppercase">ลูกค้า</span>
+          <span style="font-size:10px;font-weight:700;color:var(--mu);text-transform:uppercase">PR Number</span>
+          <span style="font-size:10px;font-weight:700;color:var(--mu);text-transform:uppercase">สินค้า / Valve</span>
+          <span style="font-size:10px;font-weight:700;color:var(--mu);text-transform:uppercase">จำนวน</span>
+          <span></span>
+        </div>
+        <div id="items-list" class="items-list"></div>
+        <button type="button" class="add-item-btn" onclick="addItemRow()">＋ เพิ่มรายการ</button>
+      </div>
+      <div style="padding:12px;background:var(--spec-bg);border:1px solid var(--spec-bd);border-radius:var(--r);display:flex;align-items:center;gap:10px">
+        <input type="checkbox" id="f-prepay" style="width:16px;height:16px;cursor:pointer">
+        <label for="f-prepay" style="font-size:13px;cursor:pointer;color:var(--spec);font-weight:500">💳 Order นี้ต้องจ่ายเงินล่วงหน้าก่อนผลิต</label>
+      </div>
+    </div>
+    <div class="modal-ftr">
+      <button class="btn btn-secondary" onclick="closeModal()">ยกเลิก</button>
+      <button class="btn btn-primary" onclick="saveOrder()">บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API='', PW='08122005';
+const MFG_STEPS=['Design','Die-casting','Mechanical processing','Assembly','Testing','Quality','Packing'];
+// Manufacturing step is index 10 (เริ่มผลิต) without prepayment, 11 with prepayment
+function getMfgStepIndex(o){ return o.prepayment ? 11 : 10; }
+let _orders=[],_team=[],_steps=[],_suppliers=[],_active=null,_editId=null,_sfilt='',_pwUnlocked=false,_pwShow=false;
+
+async function get(p){const r=await fetch(API+p);return r.json()}
+async function post(p,b){const r=await fetch(API+p,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)});return r.json()}
+async function put(p,b){const r=await fetch(API+p,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)});return r.json()}
+async function patch(p,b){const r=await fetch(API+p,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)});return r.json()}
+async function del(p){const r=await fetch(API+p,{method:'DELETE'});return r.json()}
+
+async function loadAll(){
+  const [orders,cfg]=await Promise.all([get('/api/orders'),get('/api/config')]);
+  // ensure mfgSteps is always a proper array on every order
+  _orders=orders.map(o=>({
+    ...o,
+    items: Array.isArray(o.items)&&o.items.length ? o.items : [{customer:o.customer||'',product:o.product||'',quantity:o.quantity||''}],
+    mfgSteps: Array.isArray(o.mfgSteps)
+      ? o.mfgSteps.map(s=>Array.isArray(s)?s:Array(MFG_STEPS.length).fill(false))
+      : Array(o.totalSteps||17).fill(null).map(()=>Array(MFG_STEPS.length).fill(false))
+  })).sort((a,b)=>{
+    const parseId=id=>{const m=id.match(/POI(\d{4})-(\d+)/i);return m?parseInt(m[1])*10000+parseInt(m[2]):0;};
+    return parseId(b.id)-parseId(a.id);
+  });
+  _team=cfg.team||[]; _steps=cfg.steps||[]; _suppliers=cfg.suppliers||[];
+}
+
+// ── Step name + default days ─────────────────────────────────
+function stepName(o,i){
+  if(!o.prepayment) return _steps[i]?.name||('Step '+(i+1));
+  if(i<10) return _steps[i]?.name||('Step '+(i+1));
+  if(i===10) return '💳 จ่ายเงินล่วงหน้า';
+  return _steps[i-1]?.name||('Step '+i);
+}
+function defDays(o,i){
+  if(!o.prepayment) return _steps[i]?.defaultDays||1;
+  if(i<10) return _steps[i]?.defaultDays||1;
+  if(i===10) return 3;
+  return _steps[i-1]?.defaultDays||1;
+}
+function isPP(o,i){ return o.prepayment && i===10; }
+
+// ── Deadline calculation ─────────────────────────────────────
+// Calculate expected finish date for step i based on start date + cumulative days
+function calcDeadline(o,i){
+  if(!o.startDate) return null;
+  let d=new Date(o.startDate);
+  for(let j=0;j<=i;j++){
+    const days=(o.plannedDays[j]&&o.plannedDays[j]>0)?o.plannedDays[j]:defDays(o,j);
+    d=new Date(d.getTime()+days*86400000);
+  }
+  return d;
+}
+function fmtDate(d){ return d?d.toISOString().split('T')[0]:''; }
+
+// ── Status logic ─────────────────────────────────────────────
+// Special case: step has custom days different from default
+function isStepSpecial(o,i){
+  return !!(o.isSpecial&&o.isSpecial[i]);
+}
+// Order-level: special if ANY step (done or future) was flagged or has custom days
+function orderHasSpecial(o){
+  for(let i=0;i<o.totalSteps;i++){
+    if(isStepSpecial(o,i)) return true;
+  }
+  return false;
+}
+function stepSt(o,i){
+  const done=i<o.completedSteps; if(done) return'done';
+  const active=i===o.completedSteps;
+  const dl=calcDeadline(o,i);
+  if(dl&&new Date()>dl) return'late';
+  if(isStepSpecial(o,i)) return'spec';
+  if(active) return'progress';
+  return'pending';
+}
+function orderSt(o){
+  if(o.completedSteps>=o.totalSteps) return'done';
+  // late overrides everything
+  for(let i=o.completedSteps;i<o.totalSteps;i++){
+    if(stepSt(o,i)==='late') return'late';
+  }
+  // if ANY step (past or future) is special → order is special
+  if(orderHasSpecial(o)) return'spec';
+  if(o.completedSteps===0) return'pending';
+  return'progress';
+}
+function osDot(s){return{done:'d-done',late:'d-late',progress:'d-prog',pending:'d-pend',spec:'d-spec'}[s]||'d-pend'}
+function pillCls(s){return{done:'p-done',late:'p-late',progress:'p-active',pending:'p-wait',spec:'p-spec'}[s]||'p-wait'}
+function pillLbl(s){return{done:'เสร็จแล้ว',late:'เลยกำหนด',progress:'กำลังดำเนินการ',pending:'รอ',spec:'⚡ Special'}[s]||s}
+function fcol(s){return{done:'#1a7f37',late:'#cf222e',progress:'#0969da',pending:'#9a6700',spec:'#7c3aed'}[s]||'#9ca3af'}
+
+// ── Sidebar ──────────────────────────────────────────────────
+function filtSide(v){_sfilt=v.toLowerCase();rSide()}
+function rSide(){
+  const list=_orders.filter(o=>!_sfilt||o.id.toLowerCase().includes(_sfilt)||(o.customer||'').toLowerCase().includes(_sfilt)||(o.factory||'').toLowerCase().includes(_sfilt));
+  document.getElementById('sidebar').innerHTML=list.map(o=>{
+    const s=orderSt(o);const pct=Math.round((o.completedSteps/o.totalSteps)*100);
+    return`<div class="order-item ${_active===o.id?'active':''}" onclick="openOrder('${o.id}')">
+      <div class="sdot ${osDot(s)}"></div>
+      <div class="oi-main"><div class="oi-id">${o.id}</div><div class="oi-sub">${o.factory||''} ${o.customer?'· '+o.customer:''}</div></div>
+      <div class="oi-pct">${pct}%</div>
+    </div>`;
+  }).join('')||'<div style="padding:16px;font-size:12px;color:var(--mu);text-align:center">ไม่พบผลลัพธ์</div>';
+}
+
+function openOrder(id){_active=id;rSide();rDetail(id)}
+
+// ── Detail ───────────────────────────────────────────────────
+function rDetail(id){
+  const o=_orders.find(x=>x.id===id);if(!o)return;
+  const s=orderSt(o);const pct=Math.round((o.completedSteps/o.totalSteps)*100);
+  let delayCount=0,specCount=0;
+  for(let i=0;i<o.totalSteps;i++){
+    const ss=stepSt(o,i);
+    if(ss==='late') delayCount++;
+    if(isStepSpecial(o,i)) specCount++;
+  }
+
+  let prepBanner='';
+  if(o.prepayment){
+    if(o.prepaymentDone) prepBanner=`<div class="prepay-banner pb-done">💳 <strong>จ่ายเงินล่วงหน้าแล้ว</strong></div>`;
+    else prepBanner=`<div class="prepay-banner pb-on">💳 <strong>ต้องจ่ายเงินล่วงหน้า</strong> — รอการชำระก่อนเริ่มผลิต <button class="btn btn-sm btn-success" style="margin-left:auto" onclick="markPrepaid('${o.id}')">✓ บันทึกว่าจ่ายแล้ว</button></div>`;
+  }
+
+  const rows=Array.from({length:o.totalSteps},(_,i)=>{
+    const ss=stepSt(o,i);const done=i<o.completedSteps;const active=i===o.completedSteps;
+    const name=stepName(o,i);const def=defDays(o,i);
+    const curDays=(o.plannedDays[i]&&o.plannedDays[i]>0)?o.plannedDays[i]:def;
+    const isSpec=isStepSpecial(o,i);const reason=o.specialReason[i]||'';
+    const resp=o.responsible[i]||'—';const dd=o.doneDates[i]||'';
+    const dl=calcDeadline(o,i);const dlStr=dl?fmtDate(dl):'';
+    const dlPast=dl&&new Date()>dl&&!done;
+    let rowCls=done?'row-done':ss==='late'?'row-late':ss==='spec'?'row-spec':active?'row-active':'';
+    let nc=done?'p-done':ss==='late'?'p-late':ss==='spec'?'p-spec':active?'p-active':'p-wait';
+    let stxt=done?'เสร็จแล้ว':ss==='late'?'เลยกำหนด':ss==='spec'?'⚡ Special':active?'กำลังทำ':'รอ';
+    const opts=['—',..._team].map(t=>`<option ${resp===t?'selected':''}>${t}</option>`).join('');
+    const specTag=isSpec&&!done?`<span class="spec-tag">⚡ ${curDays}วัน (ปกติ ${def}วัน)</span>`:'';
+    const lateTag=ss==='late'&&!done?`<span class="late-tag">เลยกำหนด</span>`:'';
+    const ppBadge=isPP(o,i)?`<span style="font-size:10px;background:var(--spec-bg);color:var(--spec);border:1px solid var(--spec-bd);padding:1px 6px;border-radius:4px;margin-left:4px">💳</span>`:'';
+    const deadlineInfo=dlStr&&!done?`<div class="deadline-info ${dlPast?'deadline-late':''}">📅 กำหนด: ${dlStr}${dlPast?' (เลย!)':''}</div>`:'';
+
+    return`<tr class="${rowCls}">
+      <td><span class="snum ${nc}">${done?'✓':isPP(o,i)?'💳':i+1}</span></td>
+      <td style="font-weight:500;font-size:12px">${name}${ppBadge}${specTag}${lateTag}</td>
+      <td><span class="pill ${nc}">${stxt}</span></td>
+      <td><select class="sel-sm" ${done?'disabled':''} onchange="updStep('${id}',${i},'responsible',this.value)">${opts}</select></td>
+      <td>
+        <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
+          <input class="num-in" type="number" min="1" value="${curDays}" ${done?'disabled':''} onchange="updStepDays('${id}',${i},+this.value)" title="จำนวนวันที่วางแผน">
+          <span style="font-size:10px;color:var(--mu)">วัน</span>
+          ${!done?`<button class="spec-toggle ${isSpec?'on':''}" onclick="togSpec('${id}',${i})">${isSpec?'⚡ Special':'+ Special'}</button>`:''}
+        </div>
+        ${isSpec&&!done?`<input style="margin-top:4px;font-size:11px;padding:3px 6px;border:1px solid var(--spec-bd);border-radius:4px;width:100%;font-family:'Sarabun',sans-serif;background:var(--spec-bg)" placeholder="เหตุผล special case..." value="${reason}" onchange="updStep('${id}',${i},'specialReason',this.value)">`:''}
+        ${deadlineInfo}
+        ${(()=>{
+          const msi=getMfgStepIndex(o);
+          if(i!==msi) return '';
+          const mfgArr=(o.mfgSteps&&Array.isArray(o.mfgSteps[i]))?o.mfgSteps[i]:Array(MFG_STEPS.length).fill(false);
+          return`<div class="mfg-checklist" id="mfg-${id}-${i}">${renderMfgChecklist(id,i,mfgArr)}</div>`;
+        })()}
+      </td>
+      <td><input style="font-size:12px;padding:4px 6px;width:130px;border:1px solid var(--bd);border-radius:4px;background:var(--sur);font-family:'Sarabun',sans-serif" type="date" value="${dd}" ${done?'disabled':''} onchange="updStep('${id}',${i},'doneDate',this.value)" title="วันที่เสร็จจริง"></td>
+      <td style="white-space:nowrap">${done?`<button class="btn btn-sm btn-danger" onclick="undoStep('${id}',${i})" title="ย้อนกลับมาที่ขั้นตอนนี้ และยกเลิกทุกขั้นตอนหลังจากนี้">↩ ย้อนกลับมาที่นี่</button>`:active?`<button class="btn btn-sm btn-success" onclick="doneStep('${id}',${i})">✓ เสร็จ</button>`:''}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('content').innerHTML=`
+<div id="sa"></div>
+<div class="page-hdr">
+  <div>
+    <div class="page-title">${o.id} <span class="pill ${pillCls(s)}">${pillLbl(s)}</span></div>
+    <div class="page-sub">🏭 ${o.factory||'—'}</div><div style="display:flex;gap:16px;font-size:12px;color:var(--mu);margin-top:4px">${o.startDate?`<span>📋 เปิด PO: <strong style="color:var(--tx)">${o.startDate}</strong></span>`:''} ${o.productionFinishDate?`<span>🏭 ผลิตเสร็จ: <strong style="color:var(--tx)">${o.productionFinishDate}</strong></span>`:''} ${o.dueDate?`<span>📦 ส่งมอบ: <strong style="color:var(--tx)">${o.dueDate}</strong></span>`:''}</div>
+  </div>
+  <div style="display:flex;gap:6px">
+    <button class="btn btn-sm btn-secondary" onclick="editOrder('${id}')">✏️ แก้ไข</button>
+    <button class="btn btn-sm btn-danger" onclick="delOrder('${id}')">🗑 ลบ</button>
+  </div>
+</div>
+${prepBanner}
+${(()=>{
+  const items=o.items&&o.items.length?o.items:[{customer:o.customer||'',product:o.product||'',quantity:o.quantity||''}];
+  if(items.length===1&&!items[0].customer&&!items[0].product)return'';
+  const rows=items.map((it,idx)=>`<tr><td style="font-weight:500">${it.customer||'—'}</td><td style="color:var(--mu)">${it.prNumber||'—'}</td><td>${it.product||'—'}</td><td style="color:var(--mu)">${it.quantity||'—'}</td></tr>`).join('');
+  return`<div class="card" style="margin-bottom:14px">
+    <div class="card-hdr"><span class="card-title">📦 รายการสินค้าใน Order (${items.length} รายการ)</span></div>
+    <table class="items-table"><thead><tr><th>ลูกค้า</th><th>PR Number</th><th>สินค้า / Valve</th><th>จำนวน</th></tr></thead><tbody>${rows}</tbody></table>
+  </div>`;
+})()}
+<div class="sum-row">
+  <div class="sum-card"><div class="sum-icon" style="background:#ddf4ff">📋</div><div><div class="sum-num">${o.totalSteps}</div><div class="sum-lbl">ขั้นตอนทั้งหมด</div></div></div>
+  <div class="sum-card"><div class="sum-icon" style="background:var(--done-bg)">✅</div><div><div class="sum-num" style="color:var(--done)">${o.completedSteps}</div><div class="sum-lbl">เสร็จแล้ว</div></div></div>
+  <div class="sum-card"><div class="sum-icon" style="background:var(--late-bg)">🔴</div><div><div class="sum-num" style="color:var(--late)">${delayCount}</div><div class="sum-lbl">เลยกำหนด</div></div></div>
+  <div class="sum-card"><div class="sum-icon" style="background:var(--spec-bg)">⚡</div><div><div class="sum-num" style="color:var(--spec)">${specCount}</div><div class="sum-lbl">Special Case</div></div></div>
+</div>
+<div class="card" style="margin-bottom:14px"><div style="padding:14px 16px">
+  <div class="ph"><span style="font-size:13px;font-weight:600">ความคืบหน้า</span><span style="font-size:13px;color:var(--mu)">${pct}% · ${o.completedSteps}/${o.totalSteps}</span></div>
+  <div class="pb-outer"><div class="pb-inner" style="width:${pct}%;background:${fcol(s)}"></div></div>
+</div></div>
+<div class="card">
+  <div class="card-hdr">
+    <span class="card-title">📋 ขั้นตอนทั้งหมด</span>
+    <span style="font-size:11px;color:var(--mu)">⚡ Special = วันที่ต่างจากมาตรฐาน &nbsp; 🔴 เลยกำหนด &nbsp; 📅 = วันกำหนดจากวันเริ่ม+วันสะสม</span>
+  </div>
+  <div style="overflow-x:auto">
+    <table class="steps-table">
+      <thead><tr><th>#</th><th>ขั้นตอน</th><th>สถานะ</th><th>ผู้รับผิดชอบ</th><th>วัน / Special Case</th><th>วันที่เสร็จจริง</th><th>Action</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </div>
+</div>`;
+}
+
+// ── Step actions ─────────────────────────────────────────────
+async function doneStep(id,i){
+  const today=new Date().toISOString().split('T')[0];
+  await patch(`/api/orders/${id}/steps/${i}`,{doneDate:today});
+  await loadAll();rSide();rDetail(id);shAlert('✅ บันทึกสำเร็จ','success');
+}
+async function undoStep(id,i){
+  const o=_orders.find(x=>x.id===id);if(!o)return;
+  const stepsAfter=o.completedSteps-i; // how many steps will be cleared
+  if(!confirm(`ย้อนกลับไปที่ขั้นตอน ${i+1}?\n(จะยกเลิก ${stepsAfter} ขั้นตอนที่ทำไปแล้ว)`))return;
+  // Clear all done dates from step i onwards
+  const clears=[];
+  for(let j=i;j<o.completedSteps;j++){
+    clears.push(patch(`/api/orders/${id}/steps/${j}`,{doneDate:''}));
+  }
+  await Promise.all(clears);
+  await loadAll();rSide();rDetail(id);
+}
+async function updStep(id,i,field,val){
+  const body={};body[field]=val;
+  await patch(`/api/orders/${id}/steps/${i}`,body);
+  const o=_orders.find(x=>x.id===id);if(!o)return;
+  if(field==='responsible')o.responsible[i]=val;
+  else if(field==='isSpecial')o.isSpecial[i]=val;
+  else if(field==='specialReason')o.specialReason[i]=val;
+  else if(field==='doneDate')o.doneDates[i]=val;
+  else if(field==='mfgSteps')o.mfgSteps[i]=val;
+}
+async function saveMfg(id,stepIdx,mfgArr){
+  await patch(`/api/orders/${id}/steps/${stepIdx}`,{mfgSteps:mfgArr});
+  // update local cache immediately
+  const o=_orders.find(x=>x.id===id);
+  if(o){
+    if(!o.mfgSteps) o.mfgSteps=Array(o.totalSteps).fill([]);
+    o.mfgSteps[stepIdx]=[...mfgArr];
+  }
+  // re-render just the checklist without full page reload
+  const el=document.getElementById(`mfg-${id}-${stepIdx}`);
+  if(el) el.innerHTML=renderMfgChecklist(id,stepIdx,mfgArr);
+}
+function renderMfgChecklist(id,stepIdx,checked){
+  const done=MFG_STEPS.filter((_,i)=>(checked||[])[i]).length;
+  const items=MFG_STEPS.map((s,i)=>{
+    const chk=(checked||[])[i]?true:false;
+    return`<label class="mfg-item ${chk?'checked':''}" onclick="togMfg('${id}',${stepIdx},${i},${!chk})">
+      <input type="checkbox" ${chk?'checked':''} onclick="event.stopPropagation();togMfg('${id}',${stepIdx},${i},this.checked)"> ${s}
+    </label>`;
+  }).join('');
+  const pct=Math.round((done/MFG_STEPS.length)*100);
+  return`<div class="mfg-title">🔧 ขั้นตอนการผลิต (${done}/${MFG_STEPS.length})</div>
+    ${items}
+    <div class="mfg-progress">
+      <div class="mfg-bar-outer"><div class="mfg-bar-inner" style="width:${pct}%"></div></div>
+      <span class="mfg-pct">${pct}%</span>
+    </div>`;
+}
+async function togMfg(id,stepIdx,mfgIdx,val){
+  const o=_orders.find(x=>x.id===id);if(!o)return;
+  // ensure mfgSteps exists and is initialized
+  if(!o.mfgSteps||!Array.isArray(o.mfgSteps)) o.mfgSteps=Array(o.totalSteps||20).fill(null).map(()=>Array(MFG_STEPS.length).fill(false));
+  if(!Array.isArray(o.mfgSteps[stepIdx])) o.mfgSteps[stepIdx]=Array(MFG_STEPS.length).fill(false);
+  const arr=[...o.mfgSteps[stepIdx]];
+  arr[mfgIdx]=!!val;
+  await saveMfg(id,stepIdx,arr);
+}
+async function updStepDays(id,i,val){
+  // just save the days — do NOT auto-flag special, user must click + Special manually
+  const o=_orders.find(x=>x.id===id);if(!o)return;
+  await patch(`/api/orders/${id}/steps/${i}`,{plannedDays:val});
+  o.plannedDays[i]=val;
+  rSide();rDetail(id);
+}
+async function togSpec(id,i){
+  const o=_orders.find(x=>x.id===id);if(!o)return;
+  const newVal=!o.isSpecial[i];
+  await patch(`/api/orders/${id}/steps/${i}`,{isSpecial:newVal});
+  o.isSpecial[i]=newVal;
+  rSide();rDetail(id);
+}
+async function markPrepaid(id){
+  await fetch(API+`/api/orders/${id}/prepayment`,{method:'PATCH'});
+  await loadAll();rSide();rDetail(id);
+}
+
+// ── Supplier search dropdown ──────────────────────────────────
+function showSupDrop(q){
+  const inp=document.getElementById('f-fac');
+  const drop=document.getElementById('sup-drop');
+  const filtered=_suppliers.filter(s=>s.toLowerCase().includes((q||'').toLowerCase()));
+  const items=filtered.map(s=>`<div class="sup-option" onmousedown="pickSup('${s}')">${s}</div>`).join('');
+  const addOpt=q&&!_suppliers.includes(q)?`<div class="sup-option sup-add" onmousedown="addSupFromDrop('${q}')">+ เพิ่ม "${q}" ลงรายการ Supplier</div>`:'';
+  drop.innerHTML=items||addOpt?items+addOpt:'<div style="padding:8px 12px;font-size:12px;color:var(--mu)">ไม่พบ Supplier</div>';
+  drop.classList.add('show');
+}
+function hideSupDrop(){document.getElementById('sup-drop').classList.remove('show')}
+function pickSup(name){document.getElementById('f-fac').value=name;hideSupDrop()}
+async function addSupFromDrop(name){
+  if(!_suppliers.includes(name)){
+    _suppliers.push(name);
+    await put('/api/config/suppliers',{suppliers:_suppliers});
+  }
+  document.getElementById('f-fac').value=name;hideSupDrop();
+}
+
+// ── Order modal ───────────────────────────────────────────────
+function openNew(){
+  document.getElementById('modal-t').textContent='เพิ่ม Order ใหม่';
+  ['f-id','f-fac','f-start','f-prod-finish','f-due'].forEach(x=>document.getElementById(x).value='');
+  document.getElementById('f-id').disabled=false;
+  document.getElementById('f-prepay').checked=false;
+  document.getElementById('modal-alert').innerHTML='';
+  _editId=null;
+  renderItemsList([{customer:'',prNumber:'',product:'',quantity:''}]);
+  document.getElementById('modal').classList.add('open');
+}
+function editOrder(id){
+  const o=_orders.find(x=>x.id===id);if(!o)return;
+  document.getElementById('modal-t').textContent='แก้ไข Order';
+  document.getElementById('f-id').value=o.id;document.getElementById('f-id').disabled=true;
+  document.getElementById('f-fac').value=o.factory||'';
+  document.getElementById('f-start').value=o.startDate||'';
+  document.getElementById('f-prod-finish').value=o.productionFinishDate||'';
+  document.getElementById('f-due').value=o.dueDate||'';
+  document.getElementById('f-prepay').checked=o.prepayment;
+  document.getElementById('modal-alert').innerHTML='';
+  const items=(o.items&&o.items.length)?o.items:[{customer:o.customer||'',prNumber:'',product:o.product||'',quantity:o.quantity||''}];
+  renderItemsList(items);
+  _editId=id;document.getElementById('modal').classList.add('open');
+}
+function renderItemsList(items){
+  document.getElementById('items-list').innerHTML=items.map((it,i)=>`
+    <div class="item-row" id="item-row-${i}">
+      <input placeholder="ชื่อลูกค้า" value="${it.customer||''}" onchange="updateItemField(${i},'customer',this.value)">
+      <input placeholder="PR Number" value="${it.prNumber||''}" onchange="updateItemField(${i},'prNumber',this.value)">
+      <input placeholder="สินค้า / Valve" value="${it.product||''}" onchange="updateItemField(${i},'product',this.value)">
+      <input placeholder="จำนวน" value="${it.quantity||''}" onchange="updateItemField(${i},'quantity',this.value)">
+      <button class="item-del" onclick="removeItemRow(${i})">×</button>
+    </div>`).join('');
+  _modalItems=[...items];
+}
+let _modalItems=[];
+function updateItemField(i,field,val){if(_modalItems[i])_modalItems[i][field]=val;}
+function addItemRow(){_modalItems.push({customer:'',prNumber:'',product:'',quantity:''});renderItemsList(_modalItems);}
+function removeItemRow(i){if(_modalItems.length<=1)return;_modalItems.splice(i,1);renderItemsList(_modalItems);}
+function getItems(){return _modalItems.filter(it=>it.customer||it.product||it.quantity);}
+
+function closeModal(){document.getElementById('modal').classList.remove('open');document.getElementById('f-id').disabled=false}
+async function saveOrder(){
+  const id=document.getElementById('f-id').value.trim();
+  const fac=document.getElementById('f-fac').value.trim();
+  if(!id){document.getElementById('modal-alert').innerHTML='<div class="alert alert-error">กรุณากรอกเลขที่ Order</div>';return}
+  if(!fac){document.getElementById('modal-alert').innerHTML='<div class="alert alert-error">กรุณากรอกชื่อโรงงาน / Supplier</div>';return}
+  // auto-save supplier to list if new
+  if(!_suppliers.includes(fac)){_suppliers.push(fac);await put('/api/config/suppliers',{suppliers:_suppliers});}
+  const items=getItems();
+  if(!items.length){document.getElementById('modal-alert').innerHTML='<div class="alert alert-error">กรุณาเพิ่มรายการสินค้าอย่างน้อย 1 รายการ</div>';return;}
+  const firstItem=items[0];
+  const body={id,customer:firstItem.customer||'',factory:fac,product:firstItem.product||'',quantity:firstItem.quantity||'',customerPO:'',startDate:document.getElementById('f-start').value,productionFinishDate:document.getElementById('f-prod-finish').value,dueDate:document.getElementById('f-due').value,prepayment:document.getElementById('f-prepay').checked,items};
+  if(_editId){await put(`/api/orders/${_editId}`,body);}
+  else{const r=await post('/api/orders',body);if(r.error){document.getElementById('modal-alert').innerHTML=`<div class="alert alert-error">${r.error==='Order ID already exists'?'เลขที่ Order นี้มีอยู่แล้ว':r.error}</div>`;return;}}
+  try{
+    await loadAll();
+    closeModal();
+    rSide();
+    openOrder(_editId||id);
+  } catch(err){
+    console.error('Error after save:',err);
+    await loadAll();
+    closeModal();
+    rSide();
+  }
+}
+async function delOrder(id){
+  if(!confirm('ลบ Order '+id+'?'))return;
+  await del(`/api/orders/${id}`);await loadAll();_active=null;rSide();
+  document.getElementById('content').innerHTML='<div class="welcome"><div class="welcome-icon">🗑</div><h2>Order ถูกลบแล้ว</h2><button class="btn btn-primary" onclick="openNew()">+ เพิ่มใหม่</button></div>';
+}
+function shAlert(msg,type){const el=document.getElementById('sa');if(!el)return;el.innerHTML=`<div class="alert alert-${type}" style="margin-bottom:12px">${msg}</div>`;setTimeout(()=>{if(el)el.innerHTML=''},3000)}
+
+// ── Config: Team ──────────────────────────────────────────────
+function rTeam(){
+  document.getElementById('team-grid').innerHTML=_team.map((n,i)=>`
+    <div class="cfg-row">
+      <div class="cfg-row-main">${n}</div>
+      <button class="cfg-del" onclick="delMember(${i})">×</button>
+    </div>`).join('');
+}
+async function addMember(){
+  const v=document.getElementById('new-member').value.trim();if(!v)return;
+  if(_team.includes(v)){alert('มีชื่อนี้อยู่แล้ว');return}
+  _team.push(v);await put('/api/config/team',{team:_team});
+  document.getElementById('new-member').value='';rTeam();
+}
+async function delMember(i){
+  if(!confirm('ลบสมาชิกคนนี้?'))return;
+  _team.splice(i,1);await put('/api/config/team',{team:_team});rTeam();
+}
+
+// ── Config: Suppliers ─────────────────────────────────────────
+function rSupGrid(){
+  document.getElementById('sup-grid').innerHTML=_suppliers.map((s,i)=>`
+    <div class="cfg-row">
+      <div class="cfg-row-main">🏭 ${s}</div>
+      <button class="cfg-del" onclick="delSupplier(${i})">×</button>
+    </div>`).join('');
+}
+async function addSupplier(){
+  const v=document.getElementById('new-sup').value.trim();if(!v)return;
+  if(_suppliers.includes(v)){alert('มี Supplier นี้อยู่แล้ว');return}
+  _suppliers.push(v);await put('/api/config/suppliers',{suppliers:_suppliers});
+  document.getElementById('new-sup').value='';rSupGrid();
+}
+async function delSupplier(i){
+  if(!confirm('ลบ Supplier นี้?'))return;
+  _suppliers.splice(i,1);await put('/api/config/suppliers',{suppliers:_suppliers});rSupGrid();
+}
+
+// ── Config: Steps ─────────────────────────────────────────────
+function rStepsCfg(){
+  document.getElementById('steps-cfg').innerHTML=_steps.map((s,i)=>`
+    <div class="step-cfg-row">
+      <span style="flex:1">${i+1}. ${s.name}</span>
+      <input type="number" min="1" max="365" value="${s.defaultDays}" id="scd-${i}" style="width:56px;font-size:12px;padding:4px 6px;border:1px solid var(--bd);border-radius:4px;font-family:'Sarabun',sans-serif">
+      <span style="color:var(--mu);font-size:11px">วัน</span>
+    </div>`).join('');
+}
+async function saveCfgSteps(){
+  _steps=_steps.map((s,i)=>({...s,defaultDays:parseInt(document.getElementById('scd-'+i).value)||1}));
+  await put('/api/config/steps',{steps:_steps});
+  const el=document.getElementById('cfg-saved');el.style.display='inline';setTimeout(()=>el.style.display='none',2000);
+}
+
+// ── Tab switching ─────────────────────────────────────────────
+function chkPW(){
+  if(document.getElementById('pw-inp').value===PW){
+    _pwUnlocked=true;document.getElementById('pw-gate').classList.remove('show');
+    document.getElementById('pw-inp').value='';document.getElementById('pw-err').textContent='';
+    _doSwTab('config',document.querySelectorAll('.nav-tab')[1]);
+  } else {
+    const inp=document.getElementById('pw-inp');inp.classList.add('error');
+    document.getElementById('pw-err').textContent='รหัสผ่านไม่ถูกต้อง';inp.value='';
+    setTimeout(()=>inp.classList.remove('error'),400);
+  }
+}
+function togPW(){_pwShow=!_pwShow;document.getElementById('pw-inp').type=_pwShow?'text':'password';document.getElementById('pw-eye').textContent=_pwShow?'🙈':'👁'}
+function canPW(){document.getElementById('pw-gate').classList.remove('show');document.getElementById('pw-inp').value='';document.getElementById('pw-err').textContent='';_doSwTab('orders',document.querySelectorAll('.nav-tab')[0]);}
+function _doSwTab(tab,el){
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');
+  document.getElementById('tab-orders').style.display=tab==='orders'?'block':'none';
+  document.getElementById('tab-config').style.display=tab==='config'?'block':'none';
+  if(tab==='config'){rTeam();rSupGrid();rStepsCfg();}
+}
+function swTab(tab,el){
+  if(tab==='config'&&!_pwUnlocked){document.getElementById('pw-gate').classList.add('show');setTimeout(()=>document.getElementById('pw-inp').focus(),50);return}
+  _doSwTab(tab,el);
+}
+
+async function init(){await loadAll();rSide();rTeam();rSupGrid();rStepsCfg()}
+init();
+</script>
+</body>
+</html>
