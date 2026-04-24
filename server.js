@@ -56,6 +56,7 @@ async function initDB() {
       due_date        TEXT DEFAULT '',
       notes           TEXT DEFAULT '',
       items           TEXT DEFAULT '[]',
+      is_partial      INTEGER DEFAULT 0,
       po_open_date         TEXT DEFAULT '',
       production_finish_date TEXT DEFAULT '',
       created_at      TEXT DEFAULT (datetime('now','localtime'))
@@ -104,6 +105,7 @@ async function initDB() {
   try { db.run("ALTER TABLE orders ADD COLUMN po_open_date TEXT DEFAULT ''"); } catch(e) { /* already exists */ }
   try { db.run("ALTER TABLE order_steps ADD COLUMN is_skipped INTEGER DEFAULT 0"); } catch(e) { /* already exists */ }
   try { db.run("ALTER TABLE orders ADD COLUMN production_finish_date TEXT DEFAULT ''"); } catch(e) { /* already exists */ }
+  try { db.run("ALTER TABLE orders ADD COLUMN is_partial INTEGER DEFAULT 0"); } catch(e) { /* already exists */ }
 
   saveDB();
   console.log('  ✅ Database ready.');
@@ -160,6 +162,7 @@ function buildOrder(row) {
     id: row.id, customer: row.customer||'', factory: row.factory||'',
     product: row.product||'', quantity: row.quantity||'',
     customerPO: row.customer_po||'', notes: row.notes||'',
+    isPartial: !!row.is_partial,
     poOpenDate: row.po_open_date||'',
     productionFinishDate: row.production_finish_date||'',
     items: (() => { try { return JSON.parse(row.items||'[]'); } catch(e) { return []; } })(),
@@ -186,8 +189,9 @@ app.post('/api/orders', (req, res) => {
       return res.status(409).json({error:'Order ID already exists'});
     const itemsJson = JSON.stringify(req.body.items||[]);
     const poOpenDate=req.body.poOpenDate||''; const prodFinish=req.body.productionFinishDate||'';
-    run("INSERT INTO orders(id,customer,factory,product,quantity,customer_po,prepayment,start_date,due_date,notes,items,po_open_date,production_finish_date) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)",
-      [id,customer||'',factory||'',product||'',quantity||'',customerPO||'',prepayment?1:0,startDate||'',dueDate||'',notes||'',itemsJson,poOpenDate,prodFinish]);
+    const isPartial=req.body.isPartial?1:0;
+    run("INSERT INTO orders(id,customer,factory,product,quantity,customer_po,prepayment,start_date,due_date,notes,items,po_open_date,production_finish_date,is_partial) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+      [id,customer||'',factory||'',product||'',quantity||'',customerPO||'',prepayment?1:0,startDate||'',dueDate||'',notes||'',itemsJson,poOpenDate,prodFinish,isPartial]);
     const steps = getSteps();
     const total = steps.length + (prepayment?1:0);
     for (let i=0;i<total;i++) run("INSERT OR IGNORE INTO order_steps(order_id,step_index,planned_days) VALUES(?,?,?)",[id,i,0]);
@@ -198,8 +202,8 @@ app.post('/api/orders', (req, res) => {
 app.put('/api/orders/:id', (req, res) => {
   try {
     const {customer,factory,product,quantity,customerPO,prepayment,startDate,dueDate,notes} = req.body;
-    run("UPDATE orders SET customer=?,factory=?,product=?,quantity=?,customer_po=?,prepayment=?,start_date=?,due_date=?,notes=?,items=?,po_open_date=?,production_finish_date=? WHERE id=?",
-      [customer||'',factory||'',product||'',quantity||'',customerPO||'',prepayment?1:0,startDate||'',dueDate||'',notes||'',JSON.stringify(req.body.items||[]),req.body.poOpenDate||'',req.body.productionFinishDate||'',req.params.id]);
+    run("UPDATE orders SET customer=?,factory=?,product=?,quantity=?,customer_po=?,prepayment=?,start_date=?,due_date=?,notes=?,items=?,po_open_date=?,production_finish_date=?,is_partial=? WHERE id=?",
+      [customer||'',factory||'',product||'',quantity||'',customerPO||'',prepayment?1:0,startDate||'',dueDate||'',notes||'',JSON.stringify(req.body.items||[]),req.body.poOpenDate||'',req.body.productionFinishDate||'',req.body.isPartial?1:0,req.params.id]);
     res.json(buildOrder(query("SELECT * FROM orders WHERE id=?",[req.params.id])[0]));
   } catch(e) { res.status(500).json({error:e.message}); }
 });
