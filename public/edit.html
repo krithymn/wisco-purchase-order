@@ -443,13 +443,6 @@ function rDetail(id){
     if(isStepSpecial(o,i)) specCount++;
   }
 
-  // Per-item shipment tracking
-  function getItemShipStatus(o,idx){
-    const items=o.items||[];
-    const it=items[idx]||{};
-    return it.shipStatus||{received:false,note:''};
-  }
-
   let prepBanner='';
   if(o.prepayment){
     if(o.prepaymentDone) prepBanner=`<div class="prepay-banner pb-done">💳 <strong>จ่ายเงินล่วงหน้าแล้ว</strong></div>`;
@@ -524,16 +517,28 @@ ${(()=>{
   const items=o.items&&o.items.length?o.items:[{customer:o.customer||'',prNumber:'',subItems:[{product:o.product||'',quantity:o.quantity||''}]}];
   if(items.length===1&&!items[0].customer&&!(items[0].subItems&&items[0].subItems[0]&&items[0].subItems[0].product))return'';
   const totalSubs=items.reduce((a,it)=>a+((it.subItems&&it.subItems.length)||1),0);
-  const rows=items.flatMap((it)=>{
+  const receivedCount=items.reduce((a,it)=>{const ss=it.shipStatus||{};const n=(it.subItems&&it.subItems.length)||1;return a+Array.from({length:n},(_,i)=>ss[i]?1:0).reduce((x,y)=>x+y,0);},0);
+  const rows=items.flatMap((it,idx)=>{
     const subs=(it.subItems&&it.subItems.length)?it.subItems:[{product:it.product||'',quantity:it.quantity||''}];
-    return subs.map((s,si)=>`<tr>
+    const ss=it.shipStatus||{};
+    return subs.map((s,si)=>`<tr style="${ss[si]?'opacity:.7':''}">
       ${si===0?`<td rowspan="${subs.length}" style="font-weight:600;vertical-align:top;border-right:1px solid var(--bd2)">${it.customer||'—'}</td>
        <td rowspan="${subs.length}" style="color:var(--spec);vertical-align:top;border-right:1px solid var(--bd2)">${it.prNumber||'—'}</td>`:''}
-      <td>${s.product||'—'}</td><td style="color:var(--mu)">${s.quantity||'—'}</td>
+      <td>${s.product||'—'}</td>
+      <td style="color:var(--mu)">${s.quantity||'—'}</td>
+      ${o.isPartial?`<td>
+        <div style="display:flex;flex-direction:column;gap:4px">
+          <span class="ship-tag ${ss[si]?'received':'pending'}" onclick="togShipItem('${id}',${idx},${si},${!ss[si]})">${ss[si]?'✅ รับแล้ว':'⏳ รอรับ'}</span>
+          <input class="ship-note-input" placeholder="Note เช่น ส่งรอบ 1" value="${ss['note_'+si]||''}" onchange="updShipNote('${id}',${idx},${si},this.value)">
+        </div>
+      </td>`:''}
     </tr>`);
   }).join('');
   return`<div class="card" style="margin-bottom:14px">
-    <div class="card-hdr"><span class="card-title">📦 รายการสินค้าใน Order (${items.length} ลูกค้า · ${totalSubs} รายการ)</span>${o.isPartial?`<span style="font-size:12px;color:${receivedCount===totalSubs?'var(--done)':'var(--warn)'}">📦 รับแล้ว ${receivedCount}/${totalSubs}</span>`:''}</div>
+    <div class="card-hdr">
+      <span class="card-title">📦 รายการสินค้าใน Order (${items.length} ลูกค้า · ${totalSubs} รายการ)</span>
+      ${o.isPartial?`<span style="font-size:12px;color:${receivedCount===totalSubs?'var(--done)':'var(--warn)'}">📦 รับแล้ว ${receivedCount}/${totalSubs}</span>`:''}
+    </div>
     <table class="items-table"><thead><tr><th>ลูกค้า</th><th>PR Number</th><th>สินค้า / Valve</th><th>จำนวน</th>${o.isPartial?'<th>สถานะรับสินค้า</th>':''}</tr></thead><tbody>${rows}</tbody></table>
   </div>`;
 })()}
