@@ -100,6 +100,9 @@ td{padding:10px 14px;font-size:13px;vertical-align:middle}
 
 ::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:var(--bd);border-radius:99px}
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body>
 <header>
@@ -153,16 +156,20 @@ td{padding:10px 14px;font-size:13px;vertical-align:middle}
 <div class="results-section">
   <div class="results-header">
     <div class="results-count" id="results-count">กำลังโหลด...</div>
-    <div class="sort-wrap">
-      เรียงโดย:
-      <select class="filter-select" id="sort-by" onchange="doSearch()" style="min-width:130px">
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <button class="btn" onclick="exportExcel()" style="background:#1d6f42;color:#fff;border-color:#1d6f42;font-weight:600">📊 Export Excel</button>
+      <button class="btn" onclick="exportPDF()" style="background:#cc0000;color:#fff;border-color:#cc0000;font-weight:600">📄 Export PDF</button>
+      <div class="sort-wrap">
+        เรียงโดย:
+        <select class="filter-select" id="sort-by" onchange="doSearch()" style="min-width:130px">
         <option value="id-desc">POI ล่าสุดก่อน</option>
         <option value="id-asc">POI เก่าสุดก่อน</option>
         <option value="date-desc">วันที่ส่งมอบ (ใหม่)</option>
         <option value="date-asc">วันที่ส่งมอบ (เก่า)</option>
         <option value="pct-desc">ความคืบหน้า (มากสุด)</option>
         <option value="pct-asc">ความคืบหน้า (น้อยสุด)</option>
-      </select>
+          </select>
+      </div>
     </div>
   </div>
   <div class="table-wrap">
@@ -377,6 +384,174 @@ function openDetail(id){
   document.getElementById('modal').classList.add('open');
 }
 function closeM(){document.getElementById('modal').classList.remove('open')}
+
+// ── DEFAULT STEPS ────────────────────────────────────────────
+const MFG_STEPS_EXPORT=['Design','Die-casting','Mechanical processing','Assembly','Testing','Quality','Packing'];
+
+function getStepNameExport(o,i){
+  const steps=_steps;
+  if(!o.prepayment)return steps[i]?.name||'Step '+(i+1);
+  if(i<10)return steps[i]?.name||'Step '+(i+1);
+  if(i===10)return 'จ่ายเงินล่วงหน้า';
+  return steps[i-1]?.name||'Step '+i;
+}
+
+// ── EXCEL EXPORT ──────────────────────────────────────────────
+function exportExcel(){
+  if(!_all.length){alert('ไม่มีข้อมูล');return;}
+  const wb=XLSX.utils.book_new();
+
+  // ── Sheet 1: Summary ──
+  const sumHeader=['POI Number','Supplier','วันที่เปิด PO','วันที่ผลิตเสร็จ','วันส่งมอบ','สถานะ','ความคืบหน้า %','ขั้นตอนที่เสร็จ','ขั้นตอนทั้งหมด','Partial Shipment','Customer PO'];
+  const sumRows=_all.map(o=>{
+    const s=calcStatus(o);
+    const pct=Math.round((o.completedSteps/o.totalSteps)*100);
+    return[o.id,o.factory||'',o.startDate||o.poOpenDate||'',o.productionFinishDate||'',o.dueDate||'',
+      {done:'เสร็จแล้ว',late:'เลยกำหนด',progress:'กำลังดำเนินการ',pending:'ยังไม่เริ่ม',spec:'Special Case'}[s]||s,
+      pct,o.completedSteps,o.totalSteps,o.isPartial?'ใช่':'ไม่',o.customerPO||''];
+  });
+  const ws1=XLSX.utils.aoa_to_sheet([sumHeader,...sumRows]);
+  ws1['!cols']=[{wch:18},{wch:18},{wch:14},{wch:14},{wch:14},{wch:16},{wch:12},{wch:12},{wch:12},{wch:14},{wch:16}];
+  // Style header row
+  XLSX.utils.book_append_sheet(wb,ws1,'Summary');
+
+  // ── Sheet 2: Items (per order per customer per product) ──
+  const itemHeader=['POI Number','Supplier','ลูกค้า','PR Number','สินค้า / Valve','จำนวน','สถานะรับสินค้า','Note'];
+  const itemRows=_all.flatMap(o=>{
+    const items=o.items&&o.items.length?o.items:[{customer:o.customer||'',prNumber:'',subItems:[{product:o.product||'',quantity:o.quantity||''}]}];
+    return items.flatMap(it=>{
+      const subs=it.subItems&&it.subItems.length?it.subItems:[{product:it.product||'',quantity:it.quantity||''}];
+      const ss=it.shipStatus||{};
+      return subs.map((s,si)=>[o.id,o.factory||'',it.customer||'',it.prNumber||'',s.product||'',s.quantity||'',
+        o.isPartial?(ss[si]?'รับแล้ว':'รอรับ'):'N/A',ss['note_'+si]||'']);
+    });
+  });
+  const ws2=XLSX.utils.aoa_to_sheet([itemHeader,...itemRows]);
+  ws2['!cols']=[{wch:18},{wch:18},{wch:16},{wch:14},{wch:22},{wch:10},{wch:12},{wch:24}];
+  XLSX.utils.book_append_sheet(wb,ws2,'Items');
+
+  // ── Sheet 3: Steps Detail ──
+  const stepHeader=['POI Number','Supplier','#','ขั้นตอน','ผู้รับผิดชอบ','สถานะ','วันที่เสร็จ','Special Case','เหตุผล Special','ข้าม'];
+  const stepRows=_all.flatMap(o=>{
+    return Array.from({length:o.totalSteps},(_,i)=>{
+      const done=i<o.completedSteps;
+      const skipped=o.skippedSteps&&o.skippedSteps[i];
+      const resp=(o.responsible||[])[i]||'—';
+      const dd=(o.doneDates||[])[i]||'';
+      const isSpec=o.isSpecial&&o.isSpecial[i];
+      const reason=(o.specialReason||[])[i]||'';
+      const status=done?'เสร็จแล้ว':skipped?'ข้าม':i===o.completedSteps?'กำลังทำ':'รอ';
+      return[o.id,o.factory||'',i+1,getStepNameExport(o,i),resp,status,dd,isSpec?'ใช่':'ไม่',reason,skipped?'ใช่':'ไม่'];
+    });
+  });
+  const ws3=XLSX.utils.aoa_to_sheet([stepHeader,...stepRows]);
+  ws3['!cols']=[{wch:18},{wch:16},{wch:4},{wch:30},{wch:22},{wch:14},{wch:12},{wch:12},{wch:24},{wch:6}];
+  XLSX.utils.book_append_sheet(wb,ws3,'Steps Detail');
+
+  const date=new Date().toISOString().split('T')[0];
+  XLSX.writeFile(wb,`Wisco_POI_Report_${date}.xlsx`);
+}
+
+// ── PDF EXPORT ────────────────────────────────────────────────
+function exportPDF(){
+  if(!_all.length){alert('ไม่มีข้อมูล');return;}
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+
+  const date=new Date().toLocaleDateString('th-TH');
+  doc.setFontSize(16);doc.setFont('helvetica','bold');
+  doc.text('WISCO POI Order Report',14,15);
+  doc.setFontSize(10);doc.setFont('helvetica','normal');
+  doc.text(`Generated: ${date}  |  Total Orders: ${_all.length}`,14,22);
+
+  // Summary table
+  doc.setFontSize(12);doc.setFont('helvetica','bold');
+  doc.text('Summary',14,32);
+
+  const sumCols=['POI Number','Supplier','PO Date','Due Date','Status','Progress','Partial'];
+  const sumData=_all.map(o=>{
+    const s=calcStatus(o);
+    const pct=Math.round((o.completedSteps/o.totalSteps)*100)+'%';
+    return[o.id,o.factory||'—',o.startDate||o.poOpenDate||'—',o.dueDate||'—',
+      {done:'Done',late:'LATE',progress:'In Progress',pending:'Pending',spec:'Special'}[s]||s,
+      pct,o.isPartial?'Yes':'No'];
+  });
+
+  doc.autoTable({
+    startY:36,head:[sumCols],body:sumData,
+    styles:{fontSize:8,cellPadding:2},
+    headStyles:{fillColor:[212,32,48],textColor:255,fontStyle:'bold'},
+    alternateRowStyles:{fillColor:[245,245,245]},
+    columnStyles:{0:{cellWidth:28},1:{cellWidth:28},2:{cellWidth:22},3:{cellWidth:22},4:{cellWidth:22},5:{cellWidth:16},6:{cellWidth:14}},
+    didParseCell:(d)=>{
+      if(d.section==='body'&&d.column.index===4){
+        if(d.cell.raw==='LATE')d.cell.styles.textColor=[212,32,48];
+        else if(d.cell.raw==='Done')d.cell.styles.textColor=[26,127,55];
+        else if(d.cell.raw==='Special')d.cell.styles.textColor=[124,58,237];
+      }
+    }
+  });
+
+  // Steps detail — one table per order (new page if needed)
+  _all.forEach((o,oi)=>{
+    doc.addPage();
+    doc.setFontSize(13);doc.setFont('helvetica','bold');
+    const s=calcStatus(o);
+    doc.text(`${o.id} — ${o.factory||''}`,14,15);
+    doc.setFontSize(9);doc.setFont('helvetica','normal');
+    doc.text(`Status: ${{done:'Done',late:'LATE',progress:'In Progress',pending:'Pending',spec:'Special Case'}[s]||s}  |  Progress: ${Math.round((o.completedSteps/o.totalSteps)*100)}%  |  Due: ${o.dueDate||'—'}  |  PO Date: ${o.startDate||o.poOpenDate||'—'}`,14,22);
+
+    // Items
+    const items=o.items&&o.items.length?o.items:[{customer:o.customer||'',prNumber:'',subItems:[{product:o.product||'',quantity:o.quantity||''}]}];
+    const itemRows=items.flatMap(it=>{
+      const subs=it.subItems&&it.subItems.length?it.subItems:[{product:it.product||'',quantity:it.quantity||''}];
+      const ss=it.shipStatus||{};
+      return subs.map((s2,si)=>[it.customer||'—',it.prNumber||'—',s2.product||'—',s2.quantity||'—',o.isPartial?(ss[si]?'Received':'Pending'):'-']);
+    });
+
+    doc.autoTable({
+      startY:27,
+      head:[['Customer','PR Number','Product','Qty','Shipment']],
+      body:itemRows,
+      styles:{fontSize:7.5,cellPadding:1.5},
+      headStyles:{fillColor:[30,36,68],textColor:255},
+      margin:{left:14,right:14},
+      tableWidth:'auto'
+    });
+
+    // Steps
+    const stepsData=Array.from({length:o.totalSteps},(_,i)=>{
+      const done=i<o.completedSteps;
+      const skipped=o.skippedSteps&&o.skippedSteps[i];
+      const resp=(o.responsible||[])[i]||'—';
+      const dd=(o.doneDates||[])[i]||'';
+      const status=done?'Done':skipped?'Skip':i===o.completedSteps?'Active':'Wait';
+      return[i+1,getStepNameExport(o,i),resp,status,dd];
+    });
+
+    const prevY=doc.lastAutoTable.finalY||40;
+    doc.autoTable({
+      startY:prevY+6,
+      head:[['#','Step','Responsible','Status','Date Done']],
+      body:stepsData,
+      styles:{fontSize:7.5,cellPadding:1.5},
+      headStyles:{fillColor:[30,36,68],textColor:255},
+      alternateRowStyles:{fillColor:[248,248,248]},
+      columnStyles:{0:{cellWidth:8},1:{cellWidth:70},2:{cellWidth:50},3:{cellWidth:20},4:{cellWidth:25}},
+      margin:{left:14,right:14},
+      didParseCell:(d)=>{
+        if(d.section==='body'&&d.column.index===3){
+          if(d.cell.raw==='Done')d.cell.styles.textColor=[26,127,55];
+          else if(d.cell.raw==='Active')d.cell.styles.textColor=[5,80,174];
+          else if(d.cell.raw==='Skip')d.cell.styles.textColor=[150,150,150];
+        }
+      }
+    });
+  });
+
+  const dateStr=new Date().toISOString().split('T')[0];
+  doc.save(`Wisco_POI_Report_${dateStr}.pdf`);
+}
 
 init();
 </script>
