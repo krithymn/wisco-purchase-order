@@ -236,7 +236,8 @@ app.patch('/api/orders/:id/steps/:si', (req, res) => {
 
 app.patch('/api/orders/:id/prepayment', (req, res) => {
   try {
-    run("UPDATE orders SET prepayment_done=1 WHERE id=?",[req.params.id]);
+    const val = req.body.undo ? 0 : 1;
+    run("UPDATE orders SET prepayment_done=? WHERE id=?",[val, req.params.id]);
     res.json(buildOrder(query("SELECT * FROM orders WHERE id=?",[req.params.id])[0]));
   } catch(e) { res.status(500).json({error:e.message}); }
 });
