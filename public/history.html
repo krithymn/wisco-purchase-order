@@ -101,8 +101,7 @@ td{padding:10px 14px;font-size:13px;vertical-align:middle}
 ::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:var(--bd);border-radius:99px}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+
 </head>
 <body>
 <header>
@@ -452,105 +451,140 @@ function exportExcel(){
   XLSX.writeFile(wb,`Wisco_POI_Report_${date}.xlsx`);
 }
 
-// ── PDF EXPORT ────────────────────────────────────────────────
+// ── PDF EXPORT (browser print — supports Thai) ───────────────
 function exportPDF(){
   if(!_all.length){alert('ไม่มีข้อมูล');return;}
-  const {jsPDF}=window.jspdf;
-  const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+  const date=new Date().toLocaleDateString('th-TH',{year:'numeric',month:'long',day:'numeric'});
 
-  const date=new Date().toLocaleDateString('th-TH');
-  doc.setFontSize(16);doc.setFont('helvetica','bold');
-  doc.text('WISCO POI Order Report',14,15);
-  doc.setFontSize(10);doc.setFont('helvetica','normal');
-  doc.text(`Generated: ${date}  |  Total Orders: ${_all.length}`,14,22);
+  const statusLabel=s=>({done:'✅ เสร็จแล้ว',late:'🔴 เลยกำหนด',progress:'🔵 กำลังดำเนินการ',pending:'⚪ ยังไม่เริ่ม',spec:'⚡ Special Case'}[s]||s);
+  const statusColor=s=>({done:'#1a7f37',late:'#cf222e',progress:'#0550ae',pending:'#9a6700',spec:'#7c3aed'}[s]||'#333');
 
-  // Summary table
-  doc.setFontSize(12);doc.setFont('helvetica','bold');
-  doc.text('Summary',14,32);
+  // Build summary table
+  const sumRows=_all.map(o=>{
+    const s=calcStatus(o);const pct=Math.round((o.completedSteps/o.totalSteps)*100);
+    return`<tr>
+      <td style="font-weight:600">${o.id}</td>
+      <td>${o.factory||'—'}</td>
+      <td>${o.startDate||o.poOpenDate||'—'}</td>
+      <td>${o.productionFinishDate||'—'}</td>
+      <td style="color:${s==='late'?'#cf222e':'inherit'};font-weight:${s==='late'?'700':'400'}">${o.dueDate||'—'}</td>
+      <td style="color:${statusColor(s)};font-weight:600">${statusLabel(s)}</td>
+      <td style="text-align:center">${pct}%</td>
+      <td style="text-align:center">${o.isPartial?'✓':''}</td>
+    </tr>`;
+  }).join('');
 
-  const sumCols=['POI Number','Supplier','PO Date','Due Date','Status','Progress','Partial'];
-  const sumData=_all.map(o=>{
+  // Build detail pages per order
+  const detailPages=_all.map(o=>{
     const s=calcStatus(o);
-    const pct=Math.round((o.completedSteps/o.totalSteps)*100)+'%';
-    return[o.id,o.factory||'—',o.startDate||o.poOpenDate||'—',o.dueDate||'—',
-      {done:'Done',late:'LATE',progress:'In Progress',pending:'Pending',spec:'Special'}[s]||s,
-      pct,o.isPartial?'Yes':'No'];
-  });
-
-  doc.autoTable({
-    startY:36,head:[sumCols],body:sumData,
-    styles:{fontSize:8,cellPadding:2},
-    headStyles:{fillColor:[212,32,48],textColor:255,fontStyle:'bold'},
-    alternateRowStyles:{fillColor:[245,245,245]},
-    columnStyles:{0:{cellWidth:28},1:{cellWidth:28},2:{cellWidth:22},3:{cellWidth:22},4:{cellWidth:22},5:{cellWidth:16},6:{cellWidth:14}},
-    didParseCell:(d)=>{
-      if(d.section==='body'&&d.column.index===4){
-        if(d.cell.raw==='LATE')d.cell.styles.textColor=[212,32,48];
-        else if(d.cell.raw==='Done')d.cell.styles.textColor=[26,127,55];
-        else if(d.cell.raw==='Special')d.cell.styles.textColor=[124,58,237];
-      }
-    }
-  });
-
-  // Steps detail — one table per order (new page if needed)
-  _all.forEach((o,oi)=>{
-    doc.addPage();
-    doc.setFontSize(13);doc.setFont('helvetica','bold');
-    const s=calcStatus(o);
-    doc.text(`${o.id} — ${o.factory||''}`,14,15);
-    doc.setFontSize(9);doc.setFont('helvetica','normal');
-    doc.text(`Status: ${{done:'Done',late:'LATE',progress:'In Progress',pending:'Pending',spec:'Special Case'}[s]||s}  |  Progress: ${Math.round((o.completedSteps/o.totalSteps)*100)}%  |  Due: ${o.dueDate||'—'}  |  PO Date: ${o.startDate||o.poOpenDate||'—'}`,14,22);
-
-    // Items
+    const pct=Math.round((o.completedSteps/o.totalSteps)*100);
     const items=o.items&&o.items.length?o.items:[{customer:o.customer||'',prNumber:'',subItems:[{product:o.product||'',quantity:o.quantity||''}]}];
+
     const itemRows=items.flatMap(it=>{
       const subs=it.subItems&&it.subItems.length?it.subItems:[{product:it.product||'',quantity:it.quantity||''}];
       const ss=it.shipStatus||{};
-      return subs.map((s2,si)=>[it.customer||'—',it.prNumber||'—',s2.product||'—',s2.quantity||'—',o.isPartial?(ss[si]?'Received':'Pending'):'-']);
-    });
+      return subs.map((s2,si)=>`<tr>
+        ${si===0?`<td rowspan="${subs.length}" style="font-weight:600;vertical-align:top">${it.customer||'—'}</td>
+         <td rowspan="${subs.length}" style="vertical-align:top;color:#7c3aed">${it.prNumber||'—'}</td>`:''}
+        <td>${s2.product||'—'}</td><td>${s2.quantity||'—'}</td>
+        <td style="color:${ss[si]?'#1a7f37':'#9a6700'}">${o.isPartial?(ss[si]?'✅ รับแล้ว':'⏳ รอรับ'):'—'}</td>
+        ${ss['note_'+si]?`<td style="color:#636c76;font-size:10px">${ss['note_'+si]}</td>`:'<td></td>'}
+      </tr>`);
+    }).join('');
 
-    doc.autoTable({
-      startY:27,
-      head:[['Customer','PR Number','Product','Qty','Shipment']],
-      body:itemRows,
-      styles:{fontSize:7.5,cellPadding:1.5},
-      headStyles:{fillColor:[30,36,68],textColor:255},
-      margin:{left:14,right:14},
-      tableWidth:'auto'
-    });
-
-    // Steps
-    const stepsData=Array.from({length:o.totalSteps},(_,i)=>{
+    const stepRows=Array.from({length:o.totalSteps},(_,i)=>{
       const done=i<o.completedSteps;
       const skipped=o.skippedSteps&&o.skippedSteps[i];
       const resp=(o.responsible||[])[i]||'—';
       const dd=(o.doneDates||[])[i]||'';
-      const status=done?'Done':skipped?'Skip':i===o.completedSteps?'Active':'Wait';
-      return[i+1,getStepNameExport(o,i),resp,status,dd];
-    });
+      const isSpec=o.isSpecial&&o.isSpecial[i];
+      const reason=(o.specialReason||[])[i]||'';
+      let stColor='#636c76',stLabel='รอ';
+      if(done){stColor='#1a7f37';stLabel='เสร็จแล้ว';}
+      else if(skipped){stColor='#9ca3af';stLabel='ข้าม';}
+      else if(i===o.completedSteps){stColor='#0550ae';stLabel='กำลังทำ';}
+      return`<tr style="${skipped?'opacity:.5':''}${done?'background:#f8fff8':''}">
+        <td style="text-align:center;color:#636c76">${i+1}</td>
+        <td style="${done?'text-decoration:line-through;color:#636c76':''}">${getStepNameExport(o,i)}</td>
+        <td>${resp}</td>
+        <td style="color:${stColor};font-weight:600">${stLabel}</td>
+        <td>${dd}</td>
+        <td style="color:#7c3aed;font-size:10px">${isSpec?'⚡ '+reason:''}</td>
+      </tr>`;
+    }).join('');
 
-    const prevY=doc.lastAutoTable.finalY||40;
-    doc.autoTable({
-      startY:prevY+6,
-      head:[['#','Step','Responsible','Status','Date Done']],
-      body:stepsData,
-      styles:{fontSize:7.5,cellPadding:1.5},
-      headStyles:{fillColor:[30,36,68],textColor:255},
-      alternateRowStyles:{fillColor:[248,248,248]},
-      columnStyles:{0:{cellWidth:8},1:{cellWidth:70},2:{cellWidth:50},3:{cellWidth:20},4:{cellWidth:25}},
-      margin:{left:14,right:14},
-      didParseCell:(d)=>{
-        if(d.section==='body'&&d.column.index===3){
-          if(d.cell.raw==='Done')d.cell.styles.textColor=[26,127,55];
-          else if(d.cell.raw==='Active')d.cell.styles.textColor=[5,80,174];
-          else if(d.cell.raw==='Skip')d.cell.styles.textColor=[150,150,150];
-        }
-      }
-    });
-  });
+    return`<div class="order-block">
+      <div class="order-header">
+        <div>
+          <span class="order-id">${o.id}</span>
+          ${o.isPartial?'<span class="partial-badge">📦 PARTIAL</span>':''}
+          <span style="color:${statusColor(s)};font-weight:700;margin-left:8px">${statusLabel(s)}</span>
+        </div>
+        <div class="order-meta">${o.factory||'—'} &nbsp;|&nbsp; เปิด PO: ${o.startDate||o.poOpenDate||'—'} &nbsp;|&nbsp; ผลิตเสร็จ: ${o.productionFinishDate||'—'} &nbsp;|&nbsp; ส่งมอบ: ${o.dueDate||'—'} &nbsp;|&nbsp; ความคืบหน้า: ${pct}%</div>
+      </div>
+      <div class="section-title">📦 รายการสินค้า</div>
+      <table class="data-table">
+        <thead><tr><th>ลูกค้า</th><th>PR Number</th><th>สินค้า / Valve</th><th>จำนวน</th><th>สถานะรับ</th><th>Note</th></tr></thead>
+        <tbody>${itemRows}</tbody>
+      </table>
+      <div class="section-title" style="margin-top:10px">📋 ขั้นตอนทั้งหมด</div>
+      <table class="data-table">
+        <thead><tr><th style="width:24px">#</th><th>ขั้นตอน</th><th>ผู้รับผิดชอบ</th><th>สถานะ</th><th>วันที่เสร็จ</th><th>Special Case</th></tr></thead>
+        <tbody>${stepRows}</tbody>
+      </table>
+    </div>`;
+  }).join('');
 
-  const dateStr=new Date().toISOString().split('T')[0];
-  doc.save(`Wisco_POI_Report_${dateStr}.pdf`);
+  const html=`<!DOCTYPE html><html lang="th">
+<head><meta charset="UTF-8">
+<title>WISCO POI Report — ${date}</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Sarabun',sans-serif;font-size:11px;color:#1f2328;background:#fff;padding:20px}
+.report-header{text-align:center;margin-bottom:20px;padding-bottom:12px;border-bottom:2px solid #d42030}
+.report-header h1{font-size:20px;font-weight:700;color:#1f2328}
+.report-header .sub{font-size:11px;color:#636c76;margin-top:4px}
+.section-heading{font-size:14px;font-weight:700;margin:16px 0 8px;padding:6px 10px;background:#f6f8fa;border-left:4px solid #d42030}
+.data-table{width:100%;border-collapse:collapse;font-size:10px;margin-bottom:8px}
+.data-table th{background:#1f2328;color:#fff;padding:5px 8px;text-align:left;font-weight:600}
+.data-table td{padding:4px 8px;border-bottom:1px solid #e8ebee}
+.data-table tr:nth-child(even) td{background:#f9fafb}
+.order-block{margin-bottom:24px;page-break-inside:avoid}
+.order-header{background:#f6f8fa;border:1px solid #d0d7de;border-radius:6px;padding:10px 14px;margin-bottom:8px}
+.order-id{font-size:14px;font-weight:700}
+.partial-badge{font-size:9px;font-weight:700;padding:1px 6px;border-radius:99px;background:#fff7ed;color:#92400e;border:1px solid #f59e0b;margin-left:6px}
+.order-meta{font-size:10px;color:#636c76;margin-top:3px}
+.section-title{font-size:10px;font-weight:700;color:#636c76;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+@media print{
+  body{padding:10mm}
+  .order-block{page-break-before:always}
+  .order-block:first-child{page-break-before:auto}
+  .no-print{display:none}
+}
+</style>
+</head>
+<body>
+<div class="no-print" style="position:fixed;top:10px;right:10px;z-index:999;display:flex;gap:8px">
+  <button onclick="window.print()" style="padding:8px 18px;background:#d42030;color:#fff;border:none;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;font-family:'Sarabun',sans-serif">🖨 พิมพ์ / Save as PDF</button>
+  <button onclick="window.close()" style="padding:8px 14px;background:#636c76;color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer;font-family:'Sarabun',sans-serif">✕ ปิด</button>
+</div>
+<div class="report-header">
+  <h1>🏭 WISCO POI Order Report</h1>
+  <div class="sub">วันที่สร้างรายงาน: ${date} &nbsp;|&nbsp; จำนวน Order ทั้งหมด: ${_all.length} Order</div>
+</div>
+<div class="section-heading">สรุปรายการ Order ทั้งหมด</div>
+<table class="data-table">
+  <thead><tr><th>POI Number</th><th>Supplier</th><th>วันที่เปิด PO</th><th>วันผลิตเสร็จ</th><th>วันส่งมอบ</th><th>สถานะ</th><th>คืบหน้า</th><th>Partial</th></tr></thead>
+  <tbody>${sumRows}</tbody>
+</table>
+<div class="section-heading">รายละเอียดแต่ละ Order</div>
+${detailPages}
+</body></html>`;
+
+  const w=window.open('','_blank','width=1100,height=800');
+  w.document.write(html);
+  w.document.close();
 }
 
 init();
