@@ -418,9 +418,9 @@ function rDetail(id){
     const curDays=(o.plannedDays[i]&&o.plannedDays[i]>0)?o.plannedDays[i]:def;
     const isSpec=isStepSpecial(o,i);const reason=o.specialReason[i]||'';
     const resp=o.responsible[i]||'—';const dd=o.doneDates[i]||'';
-    const dl=calcDeadline(o,i);const dlStr=dl?fmtDate(dl):'';
+    const isSkipped=o.skippedSteps&&!!o.skippedSteps[i];
+    const dl=isSkipped?null:calcDeadline(o,i);const dlStr=dl?fmtDate(dl):'';
     const dlPast=dl&&new Date()>dl&&!done;
-    const isSkipped=o.skippedSteps&&o.skippedSteps[i];
     let rowCls=isSkipped?'row-skipped':done?'row-done':ss==='late'?'row-late':ss==='spec'?'row-spec':active?'row-active':'';
     let nc=isSkipped?'p-wait':done?'p-done':ss==='late'?'p-late':ss==='spec'?'p-spec':active?'p-active':'p-wait';
     let stxt=isSkipped?'⏭ ข้าม':done?'เสร็จแล้ว':ss==='late'?'เลยกำหนด':ss==='spec'?'⚡ Special':active?'กำลังทำ':'รอ';
@@ -443,7 +443,7 @@ function rDetail(id){
           <button class="spec-toggle ${(o.skippedSteps&&o.skippedSteps[i])?'on skip-on':''}" onclick="togSkip('${id}',${i})" style="${(o.skippedSteps&&o.skippedSteps[i])?'background:var(--mu);color:#fff;border-color:var(--mu)':'color:var(--mu);border-color:var(--bd)'}" title="ข้ามขั้นตอนนี้">⏭ ข้าม</button>`:''}
         </div>
         ${isSpec&&!done?`<input style="margin-top:4px;font-size:11px;padding:3px 6px;border:1px solid var(--spec-bd);border-radius:4px;width:100%;font-family:'Sarabun',sans-serif;background:var(--spec-bg)" placeholder="เหตุผล special case..." value="${reason}" onchange="updStep('${id}',${i},'specialReason',this.value)">`:''}
-        ${deadlineInfo}
+        ${isSkipped?'':deadlineInfo}
         ${(()=>{
           const msi=getMfgStepIndex(o);
           if(i!==msi) return '';
