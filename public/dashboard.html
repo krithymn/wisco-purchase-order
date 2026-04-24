@@ -38,7 +38,7 @@ header::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;ba
 .live-pill{display:flex;align-items:center;gap:6px;background:rgba(212,32,48,.1);border:1px solid rgba(212,32,48,.3);border-radius:99px;padding:4px 12px;font-size:11px;font-weight:600;color:var(--red2);text-transform:uppercase;letter-spacing:.5px}
 .live-dot{width:6px;height:6px;border-radius:50%;background:var(--done);animation:blink 1.5s infinite}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
-main{display:grid;grid-template-columns:320px 1fr;overflow:hidden}
+main{display:grid;grid-template-columns:320px 1fr;overflow:hidden}@media(max-width:768px){main{overflow:visible}}
 /* LEFT */
 .left{background:var(--s1);border-right:1px solid var(--bd);display:flex;flex-direction:column;overflow:hidden}
 .kpi-strip{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--bd);flex-shrink:0}
@@ -178,6 +178,7 @@ main{display:grid;grid-template-columns:320px 1fr;overflow:hidden}
 .card-spec-tag{font-size:10px;color:var(--spec);background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.25);border-radius:4px;padding:2px 8px;display:flex;align-items:center;gap:4px}
 .card-spec-tag .sr-step{color:rgba(167,139,250,.6);font-size:9px}
 .tl-right{text-align:right;padding-top:6px}
+.tli.tl-skip{opacity:.4}
 .mfg-mini{margin-top:8px;display:flex;flex-direction:column;gap:4px}
 .mfg-mini-title{font-size:10px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px}
 .mfg-mini-row{display:flex;align-items:center;gap:6px;font-size:11px}
@@ -191,6 +192,65 @@ main{display:grid;grid-template-columns:320px 1fr;overflow:hidden}
 .tl-pd{font-size:11px;color:var(--mu)}
 .tl-dd{font-size:11px;color:var(--done);margin-top:2px}
 ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:var(--bd);border-radius:99px}
+
+/* ── MOBILE RESPONSIVE ── */
+@media(max-width:768px){
+  html,body{overflow:auto}
+  #app{grid-template-rows:52px 1fr;height:auto;min-height:100vh}
+
+  /* header */
+  header{padding:0 14px}
+  .logo-name{font-size:14px}
+  #clk-date{display:none}
+  #clk-time{font-size:15px}
+  .live-pill{padding:3px 8px;font-size:10px}
+
+  /* main — stack vertically */
+  main{grid-template-columns:1fr;overflow:visible}
+
+  /* left panel — horizontal KPI strip on mobile */
+  .left{border-right:none;border-bottom:1px solid var(--bd);overflow:visible}
+  .kpi-strip{grid-template-columns:repeat(4,1fr)}
+  .kpi{padding:10px 8px}
+  .kpi-n{font-size:24px}
+  .kpi-l{font-size:9px}
+  .stat-bar{display:none}
+  .alert-list{max-height:200px;overflow-y:auto}
+  .ap-head{padding:8px 12px 4px}
+
+  /* right panel */
+  .right{overflow:visible}
+  .filter-bar{padding:8px 12px;gap:5px;overflow-x:auto;flex-wrap:nowrap}
+  .fchip{font-size:11px;padding:5px 10px;white-space:nowrap;flex-shrink:0}
+
+  /* cards — single column */
+  .cards{grid-template-columns:1fr;padding:10px 12px;gap:10px}
+  .ocard{border-radius:10px}
+  .ct{padding:12px 14px 10px}
+  .ct-id{font-size:14px}
+  .cp{padding:10px 14px 8px}
+  .cp-pct{font-size:18px}
+  .cb{grid-template-columns:1fr 1fr;gap:4px;padding:8px 14px}
+  .cb:has(.cbi:nth-child(3)){grid-template-columns:1fr 1fr}
+
+  /* modal */
+  .modal{width:100%;max-width:100%;max-height:92vh;border-radius:14px 14px 0 0;position:fixed;bottom:0;left:0;right:0}
+  .ov.open{align-items:flex-end}
+  .mh{padding:16px 18px}
+  .mid{font-size:17px}
+  .mb{padding:14px 16px}
+  .mmeta{grid-template-columns:1fr 1fr}
+  .tl-name{font-size:13px}
+  .tl-person{font-size:11px}
+}
+
+@media(max-width:480px){
+  .kpi-strip{grid-template-columns:repeat(2,1fr)}
+  .kpi-n{font-size:28px}
+  .alert-list{max-height:160px}
+  .cp-hdr{flex-direction:column;align-items:flex-start;gap:2px}
+  .sdots{flex-wrap:wrap}
+}
 </style>
 </head>
 <body>
@@ -248,6 +308,7 @@ async function loadAll(){
       ...it,
       subItems:(it.subItems&&it.subItems.length)?it.subItems:[{product:it.product||'',quantity:it.quantity||''}]
     })) : [{customer:o.customer||'',prNumber:'',subItems:[{product:o.product||'',quantity:o.quantity||''}]}],
+    skippedSteps: Array.isArray(o.skippedSteps)?o.skippedSteps:Array(o.totalSteps||17).fill(false),
     poOpenDate: o.poOpenDate||o.startDate||'',
     productionFinishDate: o.productionFinishDate||'',
     mfgSteps: Array.isArray(o.mfgSteps)
@@ -277,13 +338,18 @@ function getDefDays(o,i){
 function calcDeadline(o,i){
   if(!o.startDate)return null;
   let d=new Date(o.startDate);
-  for(let j=0;j<=i;j++){const days=(o.plannedDays[j]&&o.plannedDays[j]>0)?o.plannedDays[j]:getDefDays(o,j);d=new Date(d.getTime()+days*86400000);}
+  for(let j=0;j<=i;j++){
+    if(o.skippedSteps&&o.skippedSteps[j])continue;
+    const days=o.plannedDays[j]>=0?o.plannedDays[j]:getDefDays(o,j);
+    d=new Date(d.getTime()+days*86400000);
+  }
   return d;
 }
 function isStepSpecial(o,i){return !!(o.isSpecial&&o.isSpecial[i]);}
 function orderHasSpecial(o){for(let i=0;i<o.totalSteps;i++){if(isStepSpecial(o,i))return true;}return false;}
 function stepSt(o,i){
   if(i<o.completedSteps)return'done';
+  if(o.skippedSteps&&o.skippedSteps[i])return'skipped';
   const dl=calcDeadline(o,i);
   if(dl&&new Date()>dl)return'late';
   if(isStepSpecial(o,i))return'spec';
@@ -292,7 +358,12 @@ function stepSt(o,i){
 }
 function orderSt(o){
   if(o.completedSteps>=o.totalSteps)return'done';
-  for(let i=o.completedSteps;i<o.totalSteps;i++){if(stepSt(o,i)==='late')return'late';}
+  for(let i=o.completedSteps;i<o.totalSteps;i++){
+    const ss=stepSt(o,i);
+    if(ss==='skipped')continue;
+    if(ss==='late')return'late';
+    break; // only check first non-skipped step
+  }
   if(orderHasSpecial(o))return'spec';
   if(o.completedSteps===0)return'pending';
   return'progress';

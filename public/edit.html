@@ -87,6 +87,9 @@ header{background:linear-gradient(90deg,#08090e,#0e1018);border-bottom:1px solid
 .mfg-pct{font-size:10px;color:var(--mu)}
 .spec-toggle{display:inline-flex;align-items:center;gap:4px;font-size:11px;cursor:pointer;color:var(--spec);padding:2px 8px;border-radius:4px;background:var(--spec-bg);border:1px solid var(--spec-bd);white-space:nowrap;font-family:'Sarabun',sans-serif}
 .spec-toggle.on{background:var(--spec);color:#fff;border-color:var(--spec)}
+.row-skipped{opacity:.45;background:var(--sur2) !important}
+.row-skipped td{text-decoration:line-through;color:var(--mu) !important}
+.spec-toggle.on{background:var(--spec);color:#fff;border-color:var(--spec)}
 .deadline-info{font-size:11px;color:var(--mu);margin-top:2px}
 .deadline-late{color:var(--late);font-weight:600}
 /* ITEMS LIST */
@@ -349,6 +352,7 @@ function orderHasSpecial(o){
 }
 function stepSt(o,i){
   const done=i<o.completedSteps; if(done) return'done';
+  const skipped=o.skippedSteps&&o.skippedSteps[i]; if(skipped) return'skipped';
   const active=i===o.completedSteps;
   const dl=calcDeadline(o,i);
   if(dl&&new Date()>dl) return'late';
@@ -413,9 +417,10 @@ function rDetail(id){
     const resp=o.responsible[i]||'—';const dd=o.doneDates[i]||'';
     const dl=calcDeadline(o,i);const dlStr=dl?fmtDate(dl):'';
     const dlPast=dl&&new Date()>dl&&!done;
-    let rowCls=done?'row-done':ss==='late'?'row-late':ss==='spec'?'row-spec':active?'row-active':'';
-    let nc=done?'p-done':ss==='late'?'p-late':ss==='spec'?'p-spec':active?'p-active':'p-wait';
-    let stxt=done?'เสร็จแล้ว':ss==='late'?'เลยกำหนด':ss==='spec'?'⚡ Special':active?'กำลังทำ':'รอ';
+    const isSkipped=o.skippedSteps&&o.skippedSteps[i];
+    let rowCls=isSkipped?'row-skipped':done?'row-done':ss==='late'?'row-late':ss==='spec'?'row-spec':active?'row-active':'';
+    let nc=isSkipped?'p-wait':done?'p-done':ss==='late'?'p-late':ss==='spec'?'p-spec':active?'p-active':'p-wait';
+    let stxt=isSkipped?'⏭ ข้าม':done?'เสร็จแล้ว':ss==='late'?'เลยกำหนด':ss==='spec'?'⚡ Special':active?'กำลังทำ':'รอ';
     const opts=['—',..._team].map(t=>`<option ${resp===t?'selected':''}>${t}</option>`).join('');
     const specTag=isSpec&&!done?`<span class="spec-tag">⚡ ${curDays}วัน (ปกติ ${def}วัน)</span>`:'';
     const lateTag=ss==='late'&&!done?`<span class="late-tag">เลยกำหนด</span>`:'';
@@ -429,9 +434,10 @@ function rDetail(id){
       <td><select class="sel-sm" ${done?'disabled':''} onchange="updStep('${id}',${i},'responsible',this.value)">${opts}</select></td>
       <td>
         <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
-          <input class="num-in" type="number" min="1" value="${curDays}" ${done?'disabled':''} onchange="updStepDays('${id}',${i},+this.value)" title="จำนวนวันที่วางแผน">
+          <input class="num-in" type="number" min="0" value="${curDays}" ${done?'disabled':''} onchange="updStepDays('${id}',${i},+this.value)" title="จำนวนวันที่วางแผน (0 = ข้ามขั้นตอนนี้)">
           <span style="font-size:10px;color:var(--mu)">วัน</span>
-          ${!done?`<button class="spec-toggle ${isSpec?'on':''}" onclick="togSpec('${id}',${i})">${isSpec?'⚡ Special':'+ Special'}</button>`:''}
+          ${!done?`<button class="spec-toggle ${isSpec?'on':''}" onclick="togSpec('${id}',${i})">${isSpec?'⚡ Special':'+ Special'}</button>
+          <button class="spec-toggle ${(o.skippedSteps&&o.skippedSteps[i])?'on skip-on':''}" onclick="togSkip('${id}',${i})" style="${(o.skippedSteps&&o.skippedSteps[i])?'background:var(--mu);color:#fff;border-color:var(--mu)':'color:var(--mu);border-color:var(--bd)'}" title="ข้ามขั้นตอนนี้">⏭ ข้าม</button>`:''}
         </div>
         ${isSpec&&!done?`<input style="margin-top:4px;font-size:11px;padding:3px 6px;border:1px solid var(--spec-bd);border-radius:4px;width:100%;font-family:'Sarabun',sans-serif;background:var(--spec-bg)" placeholder="เหตุผล special case..." value="${reason}" onchange="updStep('${id}',${i},'specialReason',this.value)">`:''}
         ${deadlineInfo}
@@ -563,6 +569,14 @@ async function updStepDays(id,i,val){
   const o=_orders.find(x=>x.id===id);if(!o)return;
   await patch(`/api/orders/${id}/steps/${i}`,{plannedDays:val});
   o.plannedDays[i]=val;
+  rSide();rDetail(id);
+}
+async function togSkip(id,i){
+  const o=_orders.find(x=>x.id===id);if(!o)return;
+  if(!o.skippedSteps)o.skippedSteps=Array(o.totalSteps).fill(false);
+  const newVal=!o.skippedSteps[i];
+  await patch(`/api/orders/${id}/steps/${i}`,{isSkipped:newVal});
+  o.skippedSteps[i]=newVal;
   rSide();rDetail(id);
 }
 async function togSpec(id,i){
