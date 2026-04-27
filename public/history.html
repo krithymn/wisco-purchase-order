@@ -389,6 +389,7 @@ function doExport(){
 
 // ── EXCEL ─────────────────────────────────────────────────────
 function doExcel(orders,f){
+  orders=[...orders].sort((a,b)=>{const m=id=>{const x=(id||'').match(/POI(\d{4})-(\d+)/i);return x?parseInt(x[1])*10000+parseInt(x[2]):0;};return m(a.id)-m(b.id);});
   const wb=XLSX.utils.book_new();
   const sLabel2=s=>({done:'เสร็จแล้ว',late:'เลยกำหนด',progress:'กำลังดำเนินการ',pending:'ยังไม่เริ่ม',spec:'Special Case'}[s]||s);
 
@@ -465,6 +466,7 @@ function doExcel(orders,f){
 
 // ── PDF ───────────────────────────────────────────────────────
 function doPDF(orders,f){
+  orders=[...orders].sort((a,b)=>{const m=id=>{const x=(id||'').match(/POI(\d{4})-(\d+)/i);return x?parseInt(x[1])*10000+parseInt(x[2]):0;};return m(a.id)-m(b.id);});
   const date=new Date().toLocaleDateString('th-TH',{year:'numeric',month:'long',day:'numeric'});
   const sLabel2=s=>({done:'✅ เสร็จแล้ว',late:'🔴 เลยกำหนด',progress:'🔵 กำลังดำเนินการ',pending:'⚪ ยังไม่เริ่ม',spec:'⚡ Special Case'}[s]||s);
   const sClr=s=>({done:'#1a7f37',late:'#cf222e',progress:'#0550ae',pending:'#9a6700',spec:'#7c3aed'}[s]||'#333');
