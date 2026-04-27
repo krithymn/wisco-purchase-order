@@ -565,7 +565,7 @@ function openM(id){
         return subs.map((s,si)=>{
           const rec=!!(ss[si]);const note=ss['note_'+si]||'';
           return`<tr style="${rec?'opacity:.65':''}">
-            ${si===0?`<td rowspan="${subs.length}" style="font-size:13px;font-weight:600;padding:7px 10px;border-bottom:1px solid var(--bd2);vertical-align:top;border-right:1px solid var(--bd2)">${it.customer||'—'}</td>
+            ${si===0?`<td rowspan="${subs.length}" style="font-size:13px;font-weight:600;padding:7px 10px;border-bottom:1px solid var(--bd2);vertical-align:top;border-right:1px solid var(--bd2)">${it.customer||'—'}${it.sendDate?`<div style="font-size:10px;color:var(--mu);font-weight:400;margin-top:2px">📅 ${it.sendDate}</div>`:''}</td>
              <td rowspan="${subs.length}" style="font-size:11px;color:var(--spec);padding:7px 10px;border-bottom:1px solid var(--bd2);vertical-align:top;border-right:1px solid var(--bd2)">${it.prNumber||'—'}</td>`:''}
             <td style="font-size:12px;color:var(--tx);padding:7px 10px;border-bottom:1px solid var(--bd2)">${s.product||'—'}</td>
             <td style="font-size:12px;color:var(--mu);padding:7px 10px;border-bottom:1px solid var(--bd2)">${s.quantity||'—'}</td>

@@ -272,7 +272,7 @@ input:focus,select:focus{outline:none;border-color:var(--ac);box-shadow:0 0 0 3p
 </div>
 
 <!-- ADD/EDIT ORDER MODAL -->
-<div class="ov" id="modal" onclick="if(event.target===this)closeModal()">
+<div class="ov" id="modal">
   <div class="modal">
     <div class="modal-hdr"><span class="modal-title" id="modal-t">เพิ่ม Order ใหม่</span><button class="modal-close" onclick="closeModal()">×</button></div>
     <div class="modal-body">
@@ -313,6 +313,7 @@ input:focus,select:focus{outline:none;border-color:var(--ac);box-shadow:0 0 0 3p
       </div>
     </div>
     <div class="modal-ftr">
+      <span style="font-size:11px;color:var(--mu);margin-right:auto">กดนอกกรอบจะไม่ปิด — ข้อมูลไม่หาย</span>
       <button class="btn btn-secondary" onclick="closeModal()">ยกเลิก</button>
       <button class="btn btn-primary" onclick="saveOrder()">บันทึก</button>
     </div>
@@ -522,7 +523,7 @@ ${(()=>{
     const subs=(it.subItems&&it.subItems.length)?it.subItems:[{product:it.product||'',quantity:it.quantity||''}];
     const ss=it.shipStatus||{};
     return subs.map((s,si)=>`<tr style="${ss[si]?'opacity:.7':''}">
-      ${si===0?`<td rowspan="${subs.length}" style="font-weight:600;vertical-align:top;border-right:1px solid var(--bd2)">${it.customer||'—'}</td>
+      ${si===0?`<td rowspan="${subs.length}" style="font-weight:600;vertical-align:top;border-right:1px solid var(--bd2)">${it.customer||'—'}${it.sendDate?`<div style="font-size:10px;color:var(--mu);font-weight:400;margin-top:2px">📅 ${it.sendDate}</div>`:''}</td>
        <td rowspan="${subs.length}" style="color:var(--spec);vertical-align:top;border-right:1px solid var(--bd2)">${it.prNumber||'—'}</td>`:''}
       <td>${s.product||'—'}</td>
       <td style="color:var(--mu)">${s.quantity||'—'}</td>
@@ -711,7 +712,7 @@ function openNew(){
   document.getElementById('f-prepay').checked=false;
   document.getElementById('modal-alert').innerHTML='';
   _editId=null;
-  renderItemsList([{customer:'',prNumber:'',subItems:[{product:'',quantity:''}]}]);
+  renderItemsList([{customer:'',prNumber:'',sendDate:'',subItems:[{product:'',quantity:''}]}]);
   document.getElementById('modal').classList.add('open');
 }
 function editOrder(id){
@@ -727,8 +728,9 @@ function editOrder(id){
   document.getElementById('modal-alert').innerHTML='';
   const items=(o.items&&o.items.length)?o.items.map(it=>({
     ...it,
+    sendDate:it.sendDate||'',
     subItems:(it.subItems&&it.subItems.length)?it.subItems:[{product:it.product||'',quantity:it.quantity||''}]
-  })):[{customer:o.customer||'',prNumber:'',subItems:[{product:o.product||'',quantity:o.quantity||''}]}];
+  })):[{customer:o.customer||'',prNumber:'',sendDate:'',subItems:[{product:o.product||'',quantity:o.quantity||''}]}];
   renderItemsList(items);
   _editId=id;document.getElementById('modal').classList.add('open');
 }
@@ -749,6 +751,10 @@ function renderItemsList(items){
         <input placeholder="ชื่อลูกค้า" value="${it.customer||''}" onchange="updItem(${i},'customer',this.value)" style="font-weight:600">
         <input placeholder="PR Number" value="${it.prNumber||''}" onchange="updItem(${i},'prNumber',this.value)">
         <button class="item-del" onclick="removeItemRow(${i})" title="ลบลูกค้า">×</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;padding-left:2px">
+        <span style="font-size:11px;color:var(--mu);white-space:nowrap">📅 วันที่ส่ง PR:</span>
+        <input type="date" value="${it.sendDate||''}" onchange="updItem(${i},'sendDate',this.value)" style="font-size:12px;padding:3px 8px;border:1px solid var(--bd);border-radius:4px;background:var(--sur);font-family:'Sarabun',sans-serif">
       </div>
       <div class="sub-items">
         ${subRows}
@@ -777,7 +783,7 @@ function removeSub(i,j){
   subs.splice(j,1);_modalItems[i].subItems=subs;
   renderItemsList(_modalItems);
 }
-function addItemRow(){_modalItems.push({customer:'',prNumber:'',subItems:[{product:'',quantity:''}]});renderItemsList(_modalItems);}
+function addItemRow(){_modalItems.push({customer:'',prNumber:'',sendDate:'',subItems:[{product:'',quantity:''}]});renderItemsList(_modalItems);}
 function removeItemRow(i){if(_modalItems.length<=1)return;_modalItems.splice(i,1);renderItemsList(_modalItems);}
 function getItems(){
   return _modalItems.filter(it=>it.customer||it.prNumber||(it.subItems&&it.subItems.some(s=>s.product||s.quantity)))

@@ -335,7 +335,7 @@ function openDetail(id){
   const itemRows=items.flatMap(it=>{
     const subs=it.subItems&&it.subItems.length?it.subItems:[{product:it.product||'',quantity:it.quantity||''}];
     return subs.map((s2,si)=>`<tr>
-      ${si===0?`<td rowspan="${subs.length}" style="font-weight:600;vertical-align:top">${it.customer||'—'}</td>
+      ${si===0?`<td rowspan="${subs.length}" style="font-weight:600;vertical-align:top">${it.customer||'—'}${it.sendDate?`<div style="font-size:10px;color:#636c76;font-weight:400;margin-top:1px">📅 ${it.sendDate}</div>`:''}</td>
        <td rowspan="${subs.length}" style="color:var(--spec);vertical-align:top">${it.prNumber||'—'}</td>`:''}
       <td>${s2.product||'—'}</td><td style="color:var(--mu)">${s2.quantity||'—'}</td>
     </tr>`);
@@ -415,18 +415,18 @@ function exportExcel(){
   XLSX.utils.book_append_sheet(wb,ws1,'Summary');
 
   // ── Sheet 2: Items (per order per customer per product) ──
-  const itemHeader=['POI Number','Supplier','ลูกค้า','PR Number','สินค้า / Valve','จำนวน','สถานะรับสินค้า','Note'];
+  const itemHeader=['POI Number','Supplier','ลูกค้า','PR Number','วันที่ส่ง PR','สินค้า / Valve','จำนวน','สถานะรับสินค้า','Note'];
   const itemRows=_all.flatMap(o=>{
     const items=o.items&&o.items.length?o.items:[{customer:o.customer||'',prNumber:'',subItems:[{product:o.product||'',quantity:o.quantity||''}]}];
     return items.flatMap(it=>{
       const subs=it.subItems&&it.subItems.length?it.subItems:[{product:it.product||'',quantity:it.quantity||''}];
       const ss=it.shipStatus||{};
-      return subs.map((s,si)=>[o.id,o.factory||'',it.customer||'',it.prNumber||'',s.product||'',s.quantity||'',
+      return subs.map((s,si)=>[o.id,o.factory||'',it.customer||'',it.prNumber||'',it.sendDate||'',s.product||'',s.quantity||'',
         o.isPartial?(ss[si]?'รับแล้ว':'รอรับ'):'N/A',ss['note_'+si]||'']);
     });
   });
   const ws2=XLSX.utils.aoa_to_sheet([itemHeader,...itemRows]);
-  ws2['!cols']=[{wch:18},{wch:18},{wch:16},{wch:14},{wch:22},{wch:10},{wch:12},{wch:24}];
+  ws2['!cols']=[{wch:18},{wch:18},{wch:16},{wch:14},{wch:14},{wch:22},{wch:10},{wch:12},{wch:24}];
   XLSX.utils.book_append_sheet(wb,ws2,'Items');
 
   // ── Sheet 3: Steps Detail ──
@@ -484,7 +484,7 @@ function exportPDF(){
       const subs=it.subItems&&it.subItems.length?it.subItems:[{product:it.product||'',quantity:it.quantity||''}];
       const ss=it.shipStatus||{};
       return subs.map((s2,si)=>`<tr>
-        ${si===0?`<td rowspan="${subs.length}" style="font-weight:600;vertical-align:top">${it.customer||'—'}</td>
+        ${si===0?`<td rowspan="${subs.length}" style="font-weight:600;vertical-align:top">${it.customer||'—'}${it.sendDate?`<div style="font-size:9px;color:#636c76;font-weight:400">📅 ${it.sendDate}</div>`:''}</td>
          <td rowspan="${subs.length}" style="vertical-align:top;color:#7c3aed">${it.prNumber||'—'}</td>`:''}
         <td>${s2.product||'—'}</td><td>${s2.quantity||'—'}</td>
         <td style="color:${ss[si]?'#1a7f37':'#9a6700'}">${o.isPartial?(ss[si]?'✅ รับแล้ว':'⏳ รอรับ'):'—'}</td>
