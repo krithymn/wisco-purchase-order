@@ -608,7 +608,7 @@ function renderRightPanel(ps){
     </div>`).join('')
     :'<div style="padding:12px 14px;font-size:12px;color:var(--mu)">ไม่มีข้อมูล</div>';
 
-  // ── Due soon (within 7 days, not done) ──
+  // ── Due soon (within 7 days, not done, not already late) ──
   const now=new Date();
   const in7=new Date(now.getTime()+7*86400000);
   const dueSoon=ps.filter(o=>{
@@ -617,21 +617,18 @@ function renderRightPanel(ps){
     const d=new Date(o.dueDate);
     return d>=now&&d<=in7;
   }).sort((a,b)=>new Date(a.dueDate)-new Date(b.dueDate));
-  const overdue=ps.filter(o=>orderSt(o)==='late');
-  const dueItems=[...overdue,...dueSoon.filter(o=>orderSt(o)!=='late')];
-  document.getElementById('due-badge').textContent=dueItems.length;
-  document.getElementById('due-list').innerHTML=dueItems.length?dueItems.map(o=>{
+  document.getElementById('due-badge').textContent=dueSoon.length;
+  document.getElementById('due-list').innerHTML=dueSoon.length?dueSoon.map(o=>{
     const d=new Date(o.dueDate);const diff=Math.ceil((d-now)/86400000);
-    const isLate=diff<0;const cls=isLate?'urgent':'soon';
-    return`<div class="due-item ${cls}" onclick="openM('${o.id}')">
+    return`<div class="due-item soon" onclick="openM('${o.id}')">
       <div style="display:flex;align-items:center;justify-content:space-between">
         <span class="due-id">${o.id}</span>
-        <span class="due-days ${cls}">${isLate?`เลย ${Math.abs(diff)} วัน`:`อีก ${diff} วัน`}</span>
+        <span class="due-days soon">อีก ${diff} วัน</span>
       </div>
       <div style="font-size:10px;color:var(--mu);margin-top:2px">${o.factory||'—'} · ${o.dueDate}</div>
     </div>`;
   }).join('')
-  :'<div style="padding:12px 14px;font-size:12px;color:var(--mu)">ไม่มี Order ใกล้ครบกำหนด</div>';
+  :'<div style="padding:12px 14px;font-size:12px;color:var(--mu)">ไม่มี Order ที่จะครบใน 7 วัน</div>';
 
   // ── Manufacturing (step เริ่มผลิต = index 10 without prepay, 11 with) ──
   const mfgStep=o=>o.prepayment?11:10;
