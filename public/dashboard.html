@@ -38,7 +38,7 @@ header::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;ba
 .live-pill{display:flex;align-items:center;gap:6px;background:rgba(212,32,48,.1);border:1px solid rgba(212,32,48,.3);border-radius:99px;padding:4px 12px;font-size:11px;font-weight:600;color:var(--red2);text-transform:uppercase;letter-spacing:.5px}
 .live-dot{width:6px;height:6px;border-radius:50%;background:var(--done);animation:blink 1.5s infinite}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
-main{display:grid;grid-template-columns:320px 1fr;overflow:hidden}@media(max-width:768px){main{overflow:visible}}
+main{display:grid;grid-template-columns:280px 1fr 260px;overflow:hidden}@media(max-width:768px){main{grid-template-columns:1fr;overflow:visible}}
 /* LEFT */
 .left{background:var(--s1);border-right:1px solid var(--bd);display:flex;flex-direction:column;overflow:hidden}
 .kpi-strip{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--bd);flex-shrink:0}
@@ -193,10 +193,36 @@ main{display:grid;grid-template-columns:320px 1fr;overflow:hidden}@media(max-wid
 .tl-dd{font-size:11px;color:var(--done);margin-top:2px}
 ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:var(--bd);border-radius:99px}
 
+/* ── NEW SECTIONS ── */
+.section-panel{background:var(--s1);border-right:1px solid var(--bd);overflow-y:auto}
+.section-block{border-bottom:1px solid var(--bd)}
+.section-head{padding:8px 14px 6px;font-size:10px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:1.1px;display:flex;align-items:center;justify-content:space-between}
+.section-badge{font-size:10px;font-weight:700;padding:1px 7px;border-radius:99px}
+.sup-row{padding:8px 14px;border-bottom:1px solid var(--bd2);cursor:pointer;transition:background .1s;display:flex;align-items:center;gap:8px}
+.sup-row:hover{background:var(--s2)}
+.sup-name{font-size:12px;font-weight:600;color:var(--tx);flex:1}
+.sup-count{font-size:11px;color:var(--mu)}
+.sup-bar-wrap{width:50px;height:4px;background:var(--s3);border-radius:99px;overflow:hidden}
+.sup-bar{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--red),var(--blue2))}
+.due-item{padding:9px 14px;border-bottom:1px solid var(--bd2);cursor:pointer;transition:background .1s}
+.due-item:hover{background:var(--s2)}
+.due-item.urgent{border-left:3px solid var(--late)}
+.due-item.soon{border-left:3px solid var(--warn)}
+.due-id{font-size:11px;font-weight:700;font-family:'Inter',sans-serif}
+.due-days{font-size:11px;font-weight:700}
+.due-days.urgent{color:var(--late)}.due-days.soon{color:var(--warn)}
+.status-item{padding:8px 14px;border-bottom:1px solid var(--bd2);display:flex;align-items:center;gap:8px;cursor:pointer;transition:background .1s}
+.status-item:hover{background:var(--s2)}
+.status-dot-lg{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.status-item-id{font-size:11px;font-weight:700;font-family:'Inter',sans-serif;flex:1}
+.status-item-sub{font-size:10px;color:var(--mu)}
+.status-step{font-size:10px;color:var(--mu)}
+
 /* ── MOBILE RESPONSIVE ── */
 @media(max-width:768px){
   html,body{overflow:auto}
   #app{grid-template-rows:52px 1fr;height:auto;min-height:100vh}
+  .section-panel{display:none}
 
   /* header */
   header{padding:0 14px}
@@ -284,6 +310,31 @@ main{display:grid;grid-template-columns:320px 1fr;overflow:hidden}@media(max-wid
   </div>
   <div class="cards" id="cards"></div>
 </div>
+
+<!-- RIGHT PANEL: new sections -->
+<div class="section-panel" id="right-panel">
+  <!-- SUP summary -->
+  <div class="section-block">
+    <div class="section-head">🏭 แยกตาม Supplier<span class="section-badge" id="sup-badge" style="background:var(--prog-dim);color:var(--prog)">0</span></div>
+    <div id="sup-list"></div>
+  </div>
+  <!-- Due soon -->
+  <div class="section-block">
+    <div class="section-head">⏰ ใกล้ครบกำหนด (7 วัน)<span class="section-badge" id="due-badge" style="background:var(--warn-dim);color:var(--warn)">0</span></div>
+    <div id="due-list"></div>
+  </div>
+  <!-- Manufacturing -->
+  <div class="section-block">
+    <div class="section-head">🔧 กำลังผลิต<span class="section-badge" id="mfg-badge" style="background:var(--prog-dim);color:var(--prog)">0</span></div>
+    <div id="mfg-list"></div>
+  </div>
+  <!-- Shipping -->
+  <div class="section-block">
+    <div class="section-head">🚚 กำลังจัดส่ง<span class="section-badge" id="ship-badge" style="background:var(--done-dim);color:var(--done)">0</span></div>
+    <div id="ship-list"></div>
+  </div>
+</div>
+
 </main>
 </div>
 <!-- MODAL -->
@@ -428,6 +479,7 @@ function render(){
   }).join('');
   if(!ah) ah='<div style="padding:24px 16px;text-align:center;font-size:13px;color:#4a5978">✅ ไม่มีงานเลยกำหนดหรือ Special</div>';
   document.getElementById('alist').innerHTML=ah;
+  renderRightPanel(ps);
 
   // Filter chips
   const fkeys=['all','late','spec','progress','done','pending'];
@@ -498,6 +550,99 @@ function render(){
       </div>
     </div>`;
   }).join('');
+}
+
+function renderRightPanel(ps){
+  // ── Supplier summary ──
+  const supMap={};
+  ps.forEach(o=>{
+    if(!o.factory)return;
+    if(!supMap[o.factory])supMap[o.factory]={total:0,active:0,late:0};
+    supMap[o.factory].total++;
+    const s=orderSt(o);
+    if(s==='late')supMap[o.factory].late++;
+    else if(s!=='done')supMap[o.factory].active++;
+  });
+  const sups=Object.entries(supMap).sort((a,b)=>b[1].total-a[1].total);
+  document.getElementById('sup-badge').textContent=sups.length;
+  document.getElementById('sup-list').innerHTML=sups.length?sups.map(([name,d])=>`
+    <div class="sup-row" onclick="document.getElementById('f-supplier-filter')&&(document.getElementById('f-supplier-filter').value=name)">
+      <div>
+        <div class="sup-name">${name}</div>
+        <div class="sup-count">${d.total} order ${d.late?`<span style="color:var(--late)">· ${d.late} เลยกำหนด</span>`:''}</div>
+      </div>
+      <div class="sup-bar-wrap"><div class="sup-bar" style="width:${Math.round((d.active/Math.max(...sups.map(x=>x[1].total)))*100)}%"></div></div>
+    </div>`).join('')
+    :'<div style="padding:12px 14px;font-size:12px;color:var(--mu)">ไม่มีข้อมูล</div>';
+
+  // ── Due soon (within 7 days, not done) ──
+  const now=new Date();
+  const in7=new Date(now.getTime()+7*86400000);
+  const dueSoon=ps.filter(o=>{
+    if(orderSt(o)==='done')return false;
+    if(!o.dueDate)return false;
+    const d=new Date(o.dueDate);
+    return d>=now&&d<=in7;
+  }).sort((a,b)=>new Date(a.dueDate)-new Date(b.dueDate));
+  const overdue=ps.filter(o=>orderSt(o)==='late');
+  const dueItems=[...overdue,...dueSoon.filter(o=>orderSt(o)!=='late')];
+  document.getElementById('due-badge').textContent=dueItems.length;
+  document.getElementById('due-list').innerHTML=dueItems.length?dueItems.map(o=>{
+    const d=new Date(o.dueDate);const diff=Math.ceil((d-now)/86400000);
+    const isLate=diff<0;const cls=isLate?'urgent':'soon';
+    return`<div class="due-item ${cls}" onclick="openM('${o.id}')">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <span class="due-id">${o.id}</span>
+        <span class="due-days ${cls}">${isLate?`เลย ${Math.abs(diff)} วัน`:`อีก ${diff} วัน`}</span>
+      </div>
+      <div style="font-size:10px;color:var(--mu);margin-top:2px">${o.factory||'—'} · ${o.dueDate}</div>
+    </div>`;
+  }).join('')
+  :'<div style="padding:12px 14px;font-size:12px;color:var(--mu)">ไม่มี Order ใกล้ครบกำหนด</div>';
+
+  // ── Manufacturing (step เริ่มผลิต = index 10 without prepay, 11 with) ──
+  const mfgStep=o=>o.prepayment?11:10;
+  const mfgOrders=ps.filter(o=>o.completedSteps===mfgStep(o)&&orderSt(o)!=='done');
+  document.getElementById('mfg-badge').textContent=mfgOrders.length;
+  document.getElementById('mfg-list').innerHTML=mfgOrders.length?mfgOrders.map(o=>{
+    const mfgArr=o.mfgSteps&&o.mfgSteps[mfgStep(o)]?o.mfgSteps[mfgStep(o)]:[];
+    const done=mfgArr.filter(Boolean).length;
+    const pct=Math.round(done/MFG_STEPS.length*100);
+    return`<div class="status-item" onclick="openM('${o.id}')">
+      <div class="status-dot-lg" style="background:var(--prog)"></div>
+      <div style="flex:1;min-width:0">
+        <div class="status-item-id">${o.id}</div>
+        <div class="status-item-sub">${o.factory||'—'}</div>
+        <div style="display:flex;align-items:center;gap:5px;margin-top:3px">
+          <div style="flex:1;height:3px;background:var(--s3);border-radius:99px;overflow:hidden"><div style="height:100%;width:${pct}%;background:var(--done);border-radius:99px"></div></div>
+          <span style="font-size:9px;color:var(--mu)">${done}/${MFG_STEPS.length}</span>
+        </div>
+      </div>
+    </div>`;
+  }).join('')
+  :'<div style="padding:12px 14px;font-size:12px;color:var(--mu)">ไม่มี Order ที่กำลังผลิต</div>';
+
+  // ── Shipping (steps 13-15: เทียบขนส่ง, รีเช็ค, ตรวจสอบสินค้า) ──
+  // shipping = completedSteps between 13-15 (index 12-14 without prepay)
+  const shipOrders=ps.filter(o=>{
+    const base=o.prepayment?1:0;
+    const si=o.completedSteps;
+    return si>=(12+base)&&si<=(14+base)&&orderSt(o)!=='done';
+  });
+  document.getElementById('ship-badge').textContent=shipOrders.length;
+  document.getElementById('ship-list').innerHTML=shipOrders.length?shipOrders.map(o=>{
+    const stepName=getStepName(o,o.completedSteps);
+    return`<div class="status-item" onclick="openM('${o.id}')">
+      <div class="status-dot-lg" style="background:var(--done)"></div>
+      <div style="flex:1;min-width:0">
+        <div class="status-item-id">${o.id}</div>
+        <div class="status-item-sub">${o.factory||'—'}</div>
+        <div class="status-step">${stepName}</div>
+      </div>
+      ${o.dueDate?`<div style="font-size:10px;color:var(--mu)">${o.dueDate}</div>`:''}
+    </div>`;
+  }).join('')
+  :'<div style="padding:12px 14px;font-size:12px;color:var(--mu)">ไม่มี Order ที่กำลังจัดส่ง</div>';
 }
 
 function setF(f,el){_flt=f;document.querySelectorAll('.fchip').forEach(c=>c.classList.remove('active'));el.classList.add('active');render()}
