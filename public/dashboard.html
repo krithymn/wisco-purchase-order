@@ -194,7 +194,7 @@ main{display:grid;grid-template-columns:280px 1fr 260px;overflow:hidden}@media(m
 ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:var(--bd);border-radius:99px}
 
 /* ── NEW SECTIONS ── */
-.section-panel{background:var(--s1);border-right:1px solid var(--bd);overflow-y:auto}
+.section-panel{background:var(--s1);border-left:1px solid var(--bd);overflow-y:auto;display:flex;flex-direction:column}
 .section-block{border-bottom:1px solid var(--bd)}
 .section-head{padding:8px 14px 6px;font-size:10px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:1.1px;display:flex;align-items:center;justify-content:space-between}
 .section-badge{font-size:10px;font-weight:700;padding:1px 7px;border-radius:99px}
@@ -203,7 +203,7 @@ main{display:grid;grid-template-columns:280px 1fr 260px;overflow:hidden}@media(m
 .sup-name{font-size:12px;font-weight:600;color:var(--tx);flex:1}
 .sup-count{font-size:11px;color:var(--mu)}
 .sup-bar-wrap{width:50px;height:4px;background:var(--s3);border-radius:99px;overflow:hidden}
-.sup-bar{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--red),var(--blue2))}
+.sup-bar{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--late),var(--prog))}
 .due-item{padding:9px 14px;border-bottom:1px solid var(--bd2);cursor:pointer;transition:background .1s}
 .due-item:hover{background:var(--s2)}
 .due-item.urgent{border-left:3px solid var(--late)}
@@ -564,6 +564,7 @@ function renderRightPanel(ps){
     else if(s!=='done')supMap[o.factory].active++;
   });
   const sups=Object.entries(supMap).sort((a,b)=>b[1].total-a[1].total);
+  const maxTotal=sups.length?Math.max(...sups.map(x=>x[1].total)):1;
   document.getElementById('sup-badge').textContent=sups.length;
   document.getElementById('sup-list').innerHTML=sups.length?sups.map(([name,d])=>`
     <div class="sup-row" onclick="document.getElementById('f-supplier-filter')&&(document.getElementById('f-supplier-filter').value=name)">
@@ -571,7 +572,7 @@ function renderRightPanel(ps){
         <div class="sup-name">${name}</div>
         <div class="sup-count">${d.total} order ${d.late?`<span style="color:var(--late)">· ${d.late} เลยกำหนด</span>`:''}</div>
       </div>
-      <div class="sup-bar-wrap"><div class="sup-bar" style="width:${Math.round((d.active/Math.max(...sups.map(x=>x[1].total)))*100)}%"></div></div>
+      <div class="sup-bar-wrap"><div class="sup-bar" style="width:${Math.round((d.total/maxTotal)*100)}%"></div></div>
     </div>`).join('')
     :'<div style="padding:12px 14px;font-size:12px;color:var(--mu)">ไม่มีข้อมูล</div>';
 
