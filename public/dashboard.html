@@ -196,6 +196,12 @@ main{display:grid;grid-template-columns:280px 1fr 260px;overflow:hidden;height:c
 /* ── NEW SECTIONS ── */
 .section-panel{background:var(--s1);border-left:1px solid var(--bd);overflow-y:auto;display:flex;flex-direction:column}
 .section-block{border-bottom:1px solid var(--bd)}
+.section-head{cursor:pointer;user-select:none}
+.section-head:hover{background:var(--s2)}
+.section-toggle{font-size:10px;color:var(--mu);transition:transform .2s}
+.section-toggle.open{transform:rotate(180deg)}
+.section-content{display:none;max-height:300px;overflow-y:auto}
+.section-content.open{display:block}
 .section-head{padding:8px 14px 6px;font-size:10px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:1.1px;display:flex;align-items:center;justify-content:space-between}
 .section-badge{font-size:10px;font-weight:700;padding:1px 7px;border-radius:99px}
 .sup-row{padding:8px 14px;border-bottom:1px solid var(--bd2);cursor:pointer;transition:background .1s;display:flex;align-items:center;gap:8px}
@@ -315,23 +321,47 @@ main{display:grid;grid-template-columns:280px 1fr 260px;overflow:hidden;height:c
 <div class="section-panel" id="right-panel">
   <!-- SUP summary -->
   <div class="section-block">
-    <div class="section-head">🏭 แยกตาม Supplier<span class="section-badge" id="sup-badge" style="background:var(--prog-dim);color:var(--prog)">0</span></div>
-    <div id="sup-list"></div>
+    <div class="section-head" onclick="togSection('sup')">
+      <span>🏭 แยกตาม Supplier</span>
+      <div style="display:flex;align-items:center;gap:6px">
+        <span class="section-badge" id="sup-badge" style="background:var(--prog-dim);color:var(--prog)">0</span>
+        <span class="section-toggle" id="sup-toggle">▼</span>
+      </div>
+    </div>
+    <div class="section-content" id="sup-content"><div id="sup-list"></div></div>
   </div>
   <!-- Due soon -->
   <div class="section-block">
-    <div class="section-head">⏰ ใกล้ครบกำหนด (7 วัน)<span class="section-badge" id="due-badge" style="background:var(--warn-dim);color:var(--warn)">0</span></div>
-    <div id="due-list"></div>
+    <div class="section-head" onclick="togSection('due')">
+      <span>⏰ ใกล้ครบกำหนด (7 วัน)</span>
+      <div style="display:flex;align-items:center;gap:6px">
+        <span class="section-badge" id="due-badge" style="background:var(--warn-dim);color:var(--warn)">0</span>
+        <span class="section-toggle" id="due-toggle">▼</span>
+      </div>
+    </div>
+    <div class="section-content" id="due-content"><div id="due-list"></div></div>
   </div>
   <!-- Manufacturing -->
   <div class="section-block">
-    <div class="section-head">🔧 กำลังผลิต<span class="section-badge" id="mfg-badge" style="background:var(--prog-dim);color:var(--prog)">0</span></div>
-    <div id="mfg-list"></div>
+    <div class="section-head" onclick="togSection('mfg')">
+      <span>🔧 กำลังผลิต</span>
+      <div style="display:flex;align-items:center;gap:6px">
+        <span class="section-badge" id="mfg-badge" style="background:var(--prog-dim);color:var(--prog)">0</span>
+        <span class="section-toggle" id="mfg-toggle">▼</span>
+      </div>
+    </div>
+    <div class="section-content" id="mfg-content"><div id="mfg-list"></div></div>
   </div>
   <!-- Shipping -->
   <div class="section-block">
-    <div class="section-head">🚚 กำลังจัดส่ง<span class="section-badge" id="ship-badge" style="background:var(--done-dim);color:var(--done)">0</span></div>
-    <div id="ship-list"></div>
+    <div class="section-head" onclick="togSection('ship')">
+      <span>🚚 กำลังจัดส่ง</span>
+      <div style="display:flex;align-items:center;gap:6px">
+        <span class="section-badge" id="ship-badge" style="background:var(--done-dim);color:var(--done)">0</span>
+        <span class="section-toggle" id="ship-toggle">▼</span>
+      </div>
+    </div>
+    <div class="section-content" id="ship-content"><div id="ship-list"></div></div>
   </div>
 </div>
 
@@ -481,6 +511,7 @@ function render(){
   if(!ah) ah='<div style="padding:24px 16px;text-align:center;font-size:13px;color:#4a5978">✅ ไม่มีงานเลยกำหนดหรือ Special</div>';
   document.getElementById('alist').innerHTML=ah;
   renderRightPanel(ps);
+  autoOpenSections();
 
   // Filter chips
   const fkeys=['all','late','spec','progress','done','pending'];
@@ -647,6 +678,23 @@ function renderRightPanel(ps){
   :'<div style="padding:12px 14px;font-size:12px;color:var(--mu)">ไม่มี Order ที่กำลังจัดส่ง</div>';
 }
 
+function togSection(id){
+  const content=document.getElementById(id+'-content');
+  const toggle=document.getElementById(id+'-toggle');
+  const isOpen=content.classList.contains('open');
+  content.classList.toggle('open',!isOpen);
+  toggle.classList.toggle('open',!isOpen);
+}
+// Auto-open sections that have items after render
+function autoOpenSections(){
+  ['sup','due','mfg','ship'].forEach(id=>{
+    const badge=document.getElementById(id+'-badge');
+    if(badge&&parseInt(badge.textContent)>0){
+      document.getElementById(id+'-content').classList.add('open');
+      document.getElementById(id+'-toggle').classList.add('open');
+    }
+  });
+}
 function setF(f,el){_flt=f;document.querySelectorAll('.fchip').forEach(c=>c.classList.remove('active'));el.classList.add('active');render()}
 
 function openM(id){
