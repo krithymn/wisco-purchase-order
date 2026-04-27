@@ -425,9 +425,10 @@ function bfcls(s){return{done:'bf-done',late:'bf-late',progress:'bf-prog',pendin
 function sbadge(s){const m={done:['sb-done','✅ เสร็จแล้ว'],late:['sb-late','🔴 เลยกำหนด'],progress:['sb-prog','🔵 กำลังดำเนินการ'],pending:['sb-pend','⚪ ยังไม่เริ่ม'],spec:['sb-spec','⚡ Special Case']};const[c,l]=m[s]||m.pending;return`<span class="sbadge ${c}">${l}</span>`}
 
 function render(){
+  const ps=_orders;
   const cnt={done:0,late:0,progress:0,pending:0,spec:0};
-  _orders.forEach(o=>{ const s=orderSt(o); cnt[s]=(cnt[s]||0)+1; });
-  const total=_orders.length;
+  ps.forEach(o=>{ const s=orderSt(o); cnt[s]=(cnt[s]||0)+1; });
+  const total=ps.length;
 
   document.getElementById('kpi').innerHTML=`
     <div class="kpi k-total"><div class="kpi-n" style="color:var(--tx)">${total}</div><div class="kpi-l">Order ทั้งหมด</div><div class="kpi-glow"></div></div>
@@ -435,8 +436,8 @@ function render(){
     <div class="kpi k-late"><div class="kpi-n" style="color:var(--late)">${cnt.late}</div><div class="kpi-l">เลยกำหนด</div><div class="kpi-glow"></div></div>
     <div class="kpi k-spec"><div class="kpi-n" style="color:var(--spec)">${cnt.spec}</div><div class="kpi-l">Special Case</div><div class="kpi-glow"></div></div>`;
 
-  const doneTasks=_orders.reduce((a,o)=>a+o.completedSteps,0);
-  const totalTasks=_orders.reduce((a,o)=>a+o.totalSteps,0);
+  const doneTasks=ps.reduce((a,o)=>a+o.completedSteps,0);
+  const totalTasks=ps.reduce((a,o)=>a+o.totalSteps,0);
   document.getElementById('stat').innerHTML=`
     <div class="sc"><div class="sc-dot" style="background:var(--prog)"></div><span class="sc-lbl">กำลังดำเนินการ</span><span class="sc-val" style="color:var(--prog)">${cnt.progress}</span></div>
     <div class="sc"><div class="sc-dot" style="background:var(--pend)"></div><span class="sc-lbl">ยังไม่เริ่ม</span><span class="sc-val" style="color:var(--pend)">${cnt.pending}</span></div>
@@ -445,7 +446,7 @@ function render(){
 
   // Alerts — collect late orders and ALL special reasons per order
   const lateItems=[], specOrders=[];
-  _orders.forEach(o=>{
+  ps.forEach(o=>{
     const si=o.completedSteps; if(si>=o.totalSteps)return;
     const s=stepSt(o,si); const person=(o.responsible||[])[si]||'—'; const name=getStepName(o,si);
     if(s==='late') lateItems.push({o,si,name,person});
@@ -490,7 +491,7 @@ function render(){
   });
 
   // Cards
-  const filtered=_flt==='all'?_orders:_orders.filter(o=>orderSt(o)===_flt);
+  const filtered=_flt==='all'?ps:ps.filter(o=>orderSt(o)===_flt);
   const ca=document.getElementById('cards');
   if(!filtered.length){ca.innerHTML='<div class="empty"><div class="empty-icon">📭</div><div style="font-size:14px">ไม่มีข้อมูลที่ตรงกับตัวกรอง</div></div>';return}
   ca.innerHTML=filtered.map(o=>{
