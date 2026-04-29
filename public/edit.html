@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="th">
+<html lang="th-TH">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -141,6 +141,10 @@ header{background:linear-gradient(90deg,#08090e,#0e1018);border-bottom:1px solid
 .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
 input,select,textarea{font-size:13px;padding:7px 10px;border:1px solid var(--bd);border-radius:var(--r);background:var(--sur);color:var(--tx);font-family:'Sarabun',sans-serif}
 input:focus,select:focus{outline:none;border-color:var(--ac);box-shadow:0 0 0 3px rgba(9,105,218,.1)}
+input[type=date]::-webkit-datetime-edit-text{color:var(--mu)}
+input[type=date]::-webkit-datetime-edit-day-field,
+input[type=date]::-webkit-datetime-edit-month-field,
+input[type=date]::-webkit-datetime-edit-year-field{color:var(--tx)}
 .req{color:var(--late);margin-left:2px}
 .alert{padding:10px 14px;border-radius:var(--r);font-size:13px;margin-bottom:10px}
 .alert-success{background:var(--done-bg);color:var(--done);border:1px solid var(--done-bd)}
@@ -286,9 +290,9 @@ input:focus,select:focus{outline:none;border-color:var(--ac);box-shadow:0 0 0 3p
             <div class="sup-dropdown" id="sup-drop"></div>
           </div>
         </div>
-        <div class="fg"><label>วันที่เปิด PO</label><input id="f-start" type="date"></div>
-        <div class="fg"><label>วันที่ผลิตเสร็จ</label><input id="f-prod-finish" type="date"></div>
-        <div class="fg" style="grid-column:span 2"><label>วันที่ส่งมอบ</label><input id="f-due" type="date" style="width:100%"></div>
+        <div class="fg"><label>วันที่เปิด PO</label><input id="f-start" type="date" placeholder="วว/ดด/ปปปป"></div>
+        <div class="fg"><label>วันที่ผลิตเสร็จ</label><input id="f-prod-finish" type="date" placeholder="วว/ดด/ปปปป"></div>
+        <div class="fg" style="grid-column:span 2"><label>วันที่ส่งมอบ</label><input id="f-due" type="date" style="width:100%" placeholder="วว/ดด/ปปปป"></div>
       </div>
       <!-- ITEMS -->
       <div style="margin-bottom:10px">
@@ -684,12 +688,10 @@ async function undoPrepaid(id){
 
 // ── Supplier search dropdown ──────────────────────────────────
 function showSupDrop(q){
-  const inp=document.getElementById('f-fac');
   const drop=document.getElementById('sup-drop');
   const filtered=_suppliers.filter(s=>s.toLowerCase().includes((q||'').toLowerCase()));
-  const items=filtered.map(s=>`<div class="sup-option" onmousedown="pickSup('${s}')">${s}</div>`).join('');
-  const addOpt=q&&!_suppliers.includes(q)?`<div class="sup-option sup-add" onmousedown="addSupFromDrop('${q}')">+ เพิ่ม "${q}" ลงรายการ Supplier</div>`:'';
-  drop.innerHTML=items||addOpt?items+addOpt:'<div style="padding:8px 12px;font-size:12px;color:var(--mu)">ไม่พบ Supplier</div>';
+  drop.innerHTML=filtered.length?filtered.map(s=>`<div class="sup-option" onmousedown="pickSup('${s}')">${s}</div>`).join('')
+    :'<div style="padding:8px 12px;font-size:12px;color:var(--mu)">ไม่พบ Supplier — เพิ่มได้ที่ ⚙️ ตั้งค่า</div>';
   drop.classList.add('show');
 }
 function hideSupDrop(){document.getElementById('sup-drop').classList.remove('show')}
@@ -795,8 +797,7 @@ async function saveOrder(){
   const fac=document.getElementById('f-fac').value.trim();
   if(!id){document.getElementById('modal-alert').innerHTML='<div class="alert alert-error">กรุณากรอกเลขที่ Order</div>';return}
   if(!fac){document.getElementById('modal-alert').innerHTML='<div class="alert alert-error">กรุณากรอกชื่อโรงงาน / Supplier</div>';return}
-  // auto-save supplier to list if new
-  if(!_suppliers.includes(fac)){_suppliers.push(fac);await put('/api/config/suppliers',{suppliers:_suppliers});}
+
   const items=getItems();
   if(!items.length){document.getElementById('modal-alert').innerHTML='<div class="alert alert-error">กรุณาเพิ่มรายการสินค้าอย่างน้อย 1 รายการ</div>';return;}
   const firstItem=items[0];
