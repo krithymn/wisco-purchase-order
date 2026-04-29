@@ -310,9 +310,9 @@ input:focus,select:focus{outline:none;border-color:var(--ac);box-shadow:0 0 0 3p
             <div class="sup-dropdown" id="sup-drop"></div>
           </div>
         </div>
-        <div class="fg"><label>วันที่เปิด PO</label><input id="f-start" class="date-display" placeholder="วว/ดด/ปปปป" maxlength="10" oninput="fmtDate(this)" autocomplete="off"></div>
-        <div class="fg"><label>วันที่ผลิตเสร็จ</label><input id="f-prod-finish" class="date-display" placeholder="วว/ดด/ปปปป" maxlength="10" oninput="fmtDate(this)" autocomplete="off"></div>
-        <div class="fg" style="grid-column:span 2"><label>วันที่ส่งมอบ</label><input id="f-due" class="date-display" style="width:100%" placeholder="วว/ดด/ปปปป" maxlength="10" oninput="fmtDate(this)" autocomplete="off"></div>
+        <div class="fg"><label>วันที่เปิด PO</label><input id="f-start" class="date-display" placeholder="วว/ดด/ปปปป" maxlength="10" oninput="fmtDateInput(this)" autocomplete="off"></div>
+        <div class="fg"><label>วันที่ผลิตเสร็จ</label><input id="f-prod-finish" class="date-display" placeholder="วว/ดด/ปปปป" maxlength="10" oninput="fmtDateInput(this)" autocomplete="off"></div>
+        <div class="fg" style="grid-column:span 2"><label>วันที่ส่งมอบ</label><input id="f-due" class="date-display" style="width:100%" placeholder="วว/ดด/ปปปป" maxlength="10" oninput="fmtDateInput(this)" autocomplete="off"></div>
       </div>
       <!-- ITEMS -->
       <div style="margin-bottom:10px">
@@ -400,7 +400,7 @@ function calcDeadline(o,i){
   }
   return d;
 }
-function fmtDate(d){ return d?d.toISOString().split('T')[0]:''; }
+function fmtDateStr(d){ return d?d.toISOString().split('T')[0]:''; }
 
 // ── Status logic ─────────────────────────────────────────────
 // Special case: step has custom days different from default
@@ -480,7 +480,7 @@ function rDetail(id){
     const isSpec=isStepSpecial(o,i);const reason=o.specialReason[i]||'';
     const resp=o.responsible[i]||'—';const dd=o.doneDates[i]||'';
     const isSkipped=o.skippedSteps&&!!o.skippedSteps[i];
-    const dl=isSkipped?null:calcDeadline(o,i);const dlStr=dl?fmtDate(dl):'';
+    const dl=isSkipped?null:calcDeadline(o,i);const dlStr=dl?fmtDateStr(dl):'';
     const dlPast=dl&&new Date()>dl&&!done;
     let rowCls=isSkipped?'row-skipped':done?'row-done':ss==='late'?'row-late':ss==='spec'?'row-spec':active?'row-active':'';
     let nc=isSkipped?'p-wait':done?'p-done':ss==='late'?'p-late':ss==='spec'?'p-spec':active?'p-active':'p-wait';
@@ -776,7 +776,7 @@ function renderItemsList(items){
       </div>
       <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;padding-left:2px">
         <span style="font-size:11px;color:var(--mu);white-space:nowrap">📅 วันที่ส่ง PR:</span>
-        <input class="date-display" value="${it.sendDate||''}" placeholder="วว/ดด/ปปปป" maxlength="10" oninput="fmtDate(this);updItem(${i},'sendDate',toISO(this.value))" style="font-size:12px;padding:3px 8px;width:150px">
+        <input class="date-display" value="${it.sendDate||''}" placeholder="วว/ดด/ปปปป" maxlength="10" oninput="fmtDateInput(this);updItem(${i},'sendDate',toISO(this.value))" style="font-size:12px;padding:3px 8px;width:150px">
       </div>
       <div class="sub-items">
         ${subRows}
@@ -960,6 +960,7 @@ function fmtDate(el){
   if(v.length>5) v=v.slice(0,5)+'/'+v.slice(5);
   el.value=v.slice(0,10);
 }
+// fmtDate(dateObj) — formats a Date object to yyyy-mm-dd string (used internally)
 function toISO(dmy){
   // convert dd/mm/yyyy to yyyy-mm-dd for storage
   if(!dmy||dmy.length<10)return dmy||'';
