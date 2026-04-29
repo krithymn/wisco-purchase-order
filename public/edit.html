@@ -279,18 +279,14 @@ input:focus,select:focus{outline:none;border-color:var(--ac);box-shadow:0 0 0 3p
       <div style="background:#f6f8fa;border:1px solid var(--bd2);border-radius:var(--r);padding:16px;margin-bottom:12px">
         <div style="font-size:13px;font-weight:600;margin-bottom:4px">📥 Backup Database</div>
         <div style="font-size:12px;color:var(--mu);margin-bottom:12px">ดาวน์โหลดไฟล์ฐานข้อมูลทั้งหมด (.db) — ใช้สำหรับย้ายเซิร์ฟเวอร์หรือสำรองข้อมูล</div>
-        <a href="/api/backup" download>
-          <button class="btn btn-primary" style="background:#1d6f42;border-color:#1d6f42">📥 Download Backup (.db)</button>
-        </a>
+        <button class="btn btn-primary" style="background:#1d6f42;border-color:#1d6f42" onclick="doBackup()">📥 Download Backup (.db)</button>
         <div style="font-size:11px;color:var(--mu);margin-top:8px">⚠️ เก็บไฟล์นี้ไว้ในที่ปลอดภัย — ประกอบด้วยข้อมูล Order ทั้งหมด</div>
       </div>
 
       <div style="background:#f6f8fa;border:1px solid var(--bd2);border-radius:var(--r);padding:16px">
         <div style="font-size:13px;font-weight:600;margin-bottom:4px">🔗 Export JSON (API)</div>
         <div style="font-size:12px;color:var(--mu);margin-bottom:12px">Export ข้อมูลทั้งหมดเป็น JSON — ใช้สำหรับเชื่อมต่อกับระบบ ERP หรือ SAP ในอนาคต</div>
-        <a href="/api/export-json" target="_blank">
-          <button class="btn btn-secondary">🔗 Open JSON Export</button>
-        </a>
+        <button class="btn btn-secondary" onclick="doJsonExport()">🔗 Open JSON Export</button>
         <div style="font-size:11px;color:var(--mu);margin-top:8px">ข้อมูล: Orders, Items, Steps, Team, Suppliers, Config</div>
       </div>
     </div>
@@ -855,6 +851,18 @@ function rTeam(){
       <div class="cfg-row-main">${n}</div>
       <button class="cfg-del" onclick="delMember(${i})">×</button>
     </div>`).join('');
+}
+function doBackup(){
+  const token=prompt('กรุณาใส่ Admin Token เพื่อดาวน์โหลด Backup:');
+  if(!token)return;
+  const a=document.createElement('a');
+  a.href=`/api/backup?token=${encodeURIComponent(token)}`;
+  a.download='';a.click();
+}
+function doJsonExport(){
+  const token=prompt('กรุณาใส่ Admin Token เพื่อ Export JSON:');
+  if(!token)return;
+  window.open(`/api/export-json?token=${encodeURIComponent(token)}`,'_blank');
 }
 async function addMember(){
   const v=document.getElementById('new-member').value.trim();if(!v)return;
