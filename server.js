@@ -271,8 +271,19 @@ app.put('/api/config/suppliers', (req, res) => {
   catch(e) { console.error('Supplier save error:',e); res.status(500).json({error:e.message}); }
 });
 
-// ── BACKUP DOWNLOAD ──────────────────────────────────────────
+// ── BACKUP DOWNLOAD (protected by BACKUP_TOKEN env var) ──────
+const BACKUP_TOKEN = process.env.BACKUP_TOKEN || 'wisco-admin-2026';
+function checkToken(req, res) {
+  const token = req.query.token;
+  if (!token || token !== BACKUP_TOKEN) {
+    res.status(401).json({ error: 'Unauthorized — invalid token' });
+    return false;
+  }
+  return true;
+}
+
 app.get('/api/backup', (req, res) => {
+  if (!checkToken(req, res)) return;
   try {
     const data = db.export();
     const buf = Buffer.from(data);
@@ -283,8 +294,9 @@ app.get('/api/backup', (req, res) => {
   } catch(e) { res.status(500).json({error:e.message}); }
 });
 
-// ── EXPORT JSON (for ERP integration) ────────────────────────
+// ── EXPORT JSON (protected) ───────────────────────────────────
 app.get('/api/export-json', (req, res) => {
+  if (!checkToken(req, res)) return;
   try {
     const orders = query("SELECT * FROM orders ORDER BY created_at").map(buildOrder);
     const config = {
