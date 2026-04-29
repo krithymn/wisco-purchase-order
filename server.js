@@ -271,6 +271,31 @@ app.put('/api/config/suppliers', (req, res) => {
   catch(e) { console.error('Supplier save error:',e); res.status(500).json({error:e.message}); }
 });
 
+// ── BACKUP DOWNLOAD ──────────────────────────────────────────
+app.get('/api/backup', (req, res) => {
+  try {
+    const data = db.export();
+    const buf = Buffer.from(data);
+    const date = new Date().toISOString().split('T')[0];
+    res.setHeader('Content-Type', 'application/octet-stream');
+    res.setHeader('Content-Disposition', `attachment; filename="wisco_orders_backup_${date}.db"`);
+    res.send(buf);
+  } catch(e) { res.status(500).json({error:e.message}); }
+});
+
+// ── EXPORT JSON (for ERP integration) ────────────────────────
+app.get('/api/export-json', (req, res) => {
+  try {
+    const orders = query("SELECT * FROM orders ORDER BY created_at").map(buildOrder);
+    const config = {
+      team: JSON.parse(query("SELECT value FROM config WHERE key='team'")[0]?.value||'[]'),
+      suppliers: JSON.parse(query("SELECT value FROM config WHERE key='suppliers'")[0]?.value||'[]'),
+      steps: JSON.parse(query("SELECT value FROM config WHERE key='steps'")[0]?.value||'[]'),
+    };
+    res.json({ exportDate: new Date().toISOString(), totalOrders: orders.length, orders, config });
+  } catch(e) { res.status(500).json({error:e.message}); }
+});
+
 initDB().then(() => {
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`\n  ✅ Wisco Order Tracker running!\n`);
