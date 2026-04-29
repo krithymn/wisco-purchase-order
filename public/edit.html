@@ -141,10 +141,10 @@ header{background:linear-gradient(90deg,#08090e,#0e1018);border-bottom:1px solid
 .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
 input,select,textarea{font-size:13px;padding:7px 10px;border:1px solid var(--bd);border-radius:var(--r);background:var(--sur);color:var(--tx);font-family:'Sarabun',sans-serif}
 input:focus,select:focus{outline:none;border-color:var(--ac);box-shadow:0 0 0 3px rgba(9,105,218,.1)}
-input[type=date]::-webkit-datetime-edit-text{color:var(--mu)}
-input[type=date]::-webkit-datetime-edit-day-field,
-input[type=date]::-webkit-datetime-edit-month-field,
-input[type=date]::-webkit-datetime-edit-year-field{color:var(--tx)}
+.date-wrap{position:relative;display:inline-block;width:100%}
+.date-display{font-size:13px;padding:7px 10px;border:1px solid var(--bd);border-radius:var(--r);background:var(--sur);color:var(--tx);font-family:'Sarabun',sans-serif;width:100%;cursor:text;letter-spacing:.5px}
+.date-display:focus{outline:none;border-color:var(--ac);box-shadow:0 0 0 3px rgba(9,105,218,.1)}
+.date-display.empty{color:var(--mu)}
 .req{color:var(--late);margin-left:2px}
 .alert{padding:10px 14px;border-radius:var(--r);font-size:13px;margin-bottom:10px}
 .alert-success{background:var(--done-bg);color:var(--done);border:1px solid var(--done-bd)}
@@ -290,9 +290,9 @@ input[type=date]::-webkit-datetime-edit-year-field{color:var(--tx)}
             <div class="sup-dropdown" id="sup-drop"></div>
           </div>
         </div>
-        <div class="fg"><label>วันที่เปิด PO</label><input id="f-start" type="date" placeholder="วว/ดด/ปปปป"></div>
-        <div class="fg"><label>วันที่ผลิตเสร็จ</label><input id="f-prod-finish" type="date" placeholder="วว/ดด/ปปปป"></div>
-        <div class="fg" style="grid-column:span 2"><label>วันที่ส่งมอบ</label><input id="f-due" type="date" style="width:100%" placeholder="วว/ดด/ปปปป"></div>
+        <div class="fg"><label>วันที่เปิด PO</label><input id="f-start" class="date-display" placeholder="วว/ดด/ปปปป" maxlength="10" oninput="fmtDate(this)" autocomplete="off"></div>
+        <div class="fg"><label>วันที่ผลิตเสร็จ</label><input id="f-prod-finish" class="date-display" placeholder="วว/ดด/ปปปป" maxlength="10" oninput="fmtDate(this)" autocomplete="off"></div>
+        <div class="fg" style="grid-column:span 2"><label>วันที่ส่งมอบ</label><input id="f-due" class="date-display" style="width:100%" placeholder="วว/ดด/ปปปป" maxlength="10" oninput="fmtDate(this)" autocomplete="off"></div>
       </div>
       <!-- ITEMS -->
       <div style="margin-bottom:10px">
@@ -707,7 +707,8 @@ async function addSupFromDrop(name){
 // ── Order modal ───────────────────────────────────────────────
 function openNew(){
   document.getElementById('modal-t').textContent='เพิ่ม Order ใหม่';
-  ['f-id','f-fac','f-start','f-prod-finish','f-due'].forEach(x=>document.getElementById(x).value='');
+  ['f-id','f-fac'].forEach(x=>document.getElementById(x).value='');
+  ['f-start','f-prod-finish','f-due'].forEach(x=>setDateField(x,''));
   document.getElementById('f-partial').checked=false;
   document.getElementById('f-id').disabled=false;
   document.getElementById('f-prepay').checked=false;
@@ -721,9 +722,9 @@ function editOrder(id){
   document.getElementById('modal-t').textContent='แก้ไข Order';
   document.getElementById('f-id').value=o.id;document.getElementById('f-id').disabled=true;
   document.getElementById('f-fac').value=o.factory||'';
-  document.getElementById('f-start').value=o.startDate||'';
-  document.getElementById('f-prod-finish').value=o.productionFinishDate||'';
-  document.getElementById('f-due').value=o.dueDate||'';
+  setDateField('f-start',o.startDate||o.poOpenDate||'');
+  setDateField('f-prod-finish',o.productionFinishDate||'');
+  setDateField('f-due',o.dueDate||'');
   document.getElementById('f-prepay').checked=o.prepayment;
   document.getElementById('f-partial').checked=o.isPartial||false;
   document.getElementById('modal-alert').innerHTML='';
@@ -755,7 +756,7 @@ function renderItemsList(items){
       </div>
       <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;padding-left:2px">
         <span style="font-size:11px;color:var(--mu);white-space:nowrap">📅 วันที่ส่ง PR:</span>
-        <input type="date" value="${it.sendDate||''}" onchange="updItem(${i},'sendDate',this.value)" style="font-size:12px;padding:3px 8px;border:1px solid var(--bd);border-radius:4px;background:var(--sur);font-family:'Sarabun',sans-serif">
+        <input class="date-display" value="${it.sendDate||''}" placeholder="วว/ดด/ปปปป" maxlength="10" oninput="fmtDate(this);updItem(${i},'sendDate',toISO(this.value))" style="font-size:12px;padding:3px 8px;width:150px">
       </div>
       <div class="sub-items">
         ${subRows}
@@ -801,7 +802,7 @@ async function saveOrder(){
   const items=getItems();
   if(!items.length){document.getElementById('modal-alert').innerHTML='<div class="alert alert-error">กรุณาเพิ่มรายการสินค้าอย่างน้อย 1 รายการ</div>';return;}
   const firstItem=items[0];
-  const body={id,customer:firstItem.customer||'',factory:fac,product:firstItem.product||'',quantity:firstItem.quantity||'',customerPO:'',startDate:document.getElementById('f-start').value,productionFinishDate:document.getElementById('f-prod-finish').value,dueDate:document.getElementById('f-due').value,prepayment:document.getElementById('f-prepay').checked,isPartial:document.getElementById('f-partial').checked,items};
+  const body={id,customer:firstItem.customer||'',factory:fac,product:firstItem.product||'',quantity:firstItem.quantity||'',customerPO:'',startDate:getDateField('f-start'),productionFinishDate:getDateField('f-prod-finish'),dueDate:getDateField('f-due'),prepayment:document.getElementById('f-prepay').checked,isPartial:document.getElementById('f-partial').checked,items};
   if(_editId){await put(`/api/orders/${_editId}`,body);}
   else{const r=await post('/api/orders',body);if(r.error){document.getElementById('modal-alert').innerHTML=`<div class="alert alert-error">${r.error==='Order ID already exists'?'เลขที่ Order นี้มีอยู่แล้ว':r.error}</div>`;return;}}
   try{
@@ -919,6 +920,37 @@ function rArchive(){
       <td style="padding:10px 14px"><button class="btn btn-sm btn-secondary" onclick="activePO='${o.id}';swTab('orders',document.querySelectorAll('.nav-tab')[0]);setTimeout(()=>openOrder('${o.id}'),100)">เปิด</button></td>
     </tr>`;
   }).join('');
+}
+// ── Date formatting helpers (dd/mm/yyyy) ─────────────────────
+function fmtDate(el){
+  let v=el.value.replace(/[^0-9]/g,'');
+  if(v.length>2) v=v.slice(0,2)+'/'+v.slice(2);
+  if(v.length>5) v=v.slice(0,5)+'/'+v.slice(5);
+  el.value=v.slice(0,10);
+}
+function toISO(dmy){
+  // convert dd/mm/yyyy to yyyy-mm-dd for storage
+  if(!dmy||dmy.length<10)return dmy||'';
+  const parts=dmy.split('/');
+  if(parts.length!==3)return dmy;
+  const [d,m,y]=parts;
+  if(d.length!==2||m.length!==2||y.length!==4)return dmy;
+  return `${y}-${m}-${d}`;
+}
+function fromISO(iso){
+  // convert yyyy-mm-dd to dd/mm/yyyy for display
+  if(!iso||iso.length<10)return iso||'';
+  const parts=iso.split('-');
+  if(parts.length!==3)return iso;
+  return `${parts[2]}/${parts[1]}/${parts[0]}`;
+}
+function setDateField(id,isoVal){
+  const el=document.getElementById(id);if(!el)return;
+  el.value=isoVal?fromISO(isoVal):'';
+}
+function getDateField(id){
+  const el=document.getElementById(id);if(!el)return'';
+  return toISO(el.value);
 }
 async function init(){await loadAll();rSide();rTeam();rSupGrid();rStepsCfg()}
 init();
