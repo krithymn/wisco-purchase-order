@@ -327,9 +327,11 @@ input:focus,select:focus{outline:none;border-color:var(--ac);box-shadow:0 0 0 3p
             <div class="sup-dropdown" id="sup-drop"></div>
           </div>
         </div>
-        <div class="fg"><label>วันที่เปิด PO</label><input id="f-start" class="date-display" placeholder="วว/ดด/ปปปป" maxlength="10" oninput="fmtDateInput(this)" autocomplete="off"></div>
-        <div class="fg"><label>วันที่ผลิตเสร็จ</label><input id="f-prod-finish" class="date-display" placeholder="วว/ดด/ปปปป" maxlength="10" oninput="fmtDateInput(this)" autocomplete="off"></div>
-        <div class="fg" style="grid-column:span 2"><label>วันที่ส่งมอบ</label><input id="f-due" class="date-display" style="width:100%" placeholder="วว/ดด/ปปปป" maxlength="10" oninput="fmtDateInput(this)" autocomplete="off"></div>
+        <div class="fg"><label>วันที่เปิด PO</label><input id="f-start" class="date-display" placeholder="วว/ดด/ปปปป" maxlength="10" oninput="fmtDate(this)" autocomplete="off"></div>
+        <div class="fg"><label>วันที่ผลิตเสร็จ</label><input id="f-prod-finish" class="date-display" placeholder="วว/ดด/ปปปป" maxlength="10" oninput="fmtDate(this)" autocomplete="off"></div>
+        <div class="fg"><label>วันที่ส่งมอบจาก SUP</label><input id="f-del-sup" class="date-display" placeholder="วว/ดด/ปปปป" maxlength="10" oninput="fmtDate(this)" autocomplete="off"></div>
+        <div class="fg"><label>วันที่ส่งมอบลูกค้า (เร็วที่สุด)</label><input id="f-del-cust" class="date-display" placeholder="วว/ดด/ปปปป" maxlength="10" oninput="fmtDate(this)" autocomplete="off"></div>
+        <div class="fg" style="grid-column:span 2"><label>วันที่ส่งมอบ (กำหนดหลัก)</label><input id="f-due" class="date-display" style="width:100%" placeholder="วว/ดด/ปปปป" maxlength="10" oninput="fmtDate(this)" autocomplete="off"></div>
       </div>
       <!-- ITEMS -->
       <div style="margin-bottom:10px">
@@ -337,7 +339,7 @@ input:focus,select:focus{outline:none;border-color:var(--ac);box-shadow:0 0 0 3p
           <label style="font-size:12px;font-weight:500">รายการสินค้า <span class="req">*</span> <span style="color:var(--mu);font-weight:400">(ลูกค้า / สินค้า / จำนวน)</span></label>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr 28px;gap:6px;padding:4px 8px;background:var(--sur2);border-radius:4px;margin-bottom:4px">
-          <span style="font-size:10px;font-weight:700;color:var(--mu);text-transform:uppercase">ลูกค้า</span>
+          <span style="font-size:10px;font-weight:700;color:var(--mu);text-transform:uppercase">ลูกค้า (dropdown)</span>
           <span style="font-size:10px;font-weight:700;color:var(--mu);text-transform:uppercase">PR Number</span>
           <span></span>
         </div>
@@ -792,15 +794,25 @@ function renderItemsList(items){
         <input placeholder="จำนวน" value="${s.quantity||''}" onchange="updSub(${i},${j},'quantity',this.value)">
         <button class="sub-item-del" onclick="removeSub(${i},${j})" title="ลบ">×</button>
       </div>`).join('');
+    const custOpts=['—',...(_customers||[])].map(c=>`<option ${(it.customer||'')===(c==='—'?'':c)?'selected':''}>${c==='—'?'':c}</option>`).join('');
     return`<div class="item-row" id="item-row-${i}">
       <div class="item-row-top">
-        <input placeholder="ชื่อลูกค้า" value="${it.customer||''}" onchange="updItem(${i},'customer',this.value)" style="font-weight:600">
+        <select onchange="updItem(${i},'customer',this.value)" style="font-weight:600;font-size:13px;padding:4px 7px;border:1px solid var(--bd);border-radius:4px;background:var(--sur);font-family:'Sarabun',sans-serif;flex:1">
+          <option value="">— เลือกลูกค้า —</option>
+          ${custOpts}
+        </select>
         <input placeholder="PR Number" value="${it.prNumber||''}" onchange="updItem(${i},'prNumber',this.value)">
         <button class="item-del" onclick="removeItemRow(${i})" title="ลบลูกค้า">×</button>
       </div>
-      <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;padding-left:2px">
-        <span style="font-size:11px;color:var(--mu);white-space:nowrap">📅 วันที่ส่ง PR:</span>
-        <input class="date-display" value="${it.sendDate||''}" placeholder="วว/ดด/ปปปป" maxlength="10" oninput="fmtDateInput(this);updItem(${i},'sendDate',toISO(this.value))" style="font-size:12px;padding:3px 8px;width:150px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap">
+        <span style="font-size:11px;color:var(--mu);white-space:nowrap">📅 วันที่ส่งลูกค้า:</span>
+        <input class="date-display" value="${fromISO(it.sendDate||'')}" placeholder="วว/ดด/ปปปป" maxlength="10" oninput="fmtDate(this);updItem(${i},'sendDate',toISO(this.value))" style="font-size:12px;padding:3px 8px;width:140px">
+        <span style="font-size:11px;color:var(--mu);white-space:nowrap">⚠️ Fine:</span>
+        <select onchange="updItem(${i},'fine',this.value)" style="font-size:12px;padding:3px 7px;border:1px solid var(--bd);border-radius:4px;background:${it.fine==='yes'?'#fff0f0':it.fine==='no'?'#f0fff4':'var(--sur)'};font-family:'Sarabun',sans-serif">
+          <option value="" ${!it.fine?'selected':''}>—</option>
+          <option value="yes" ${it.fine==='yes'?'selected':''}>⚠️ มี Fine</option>
+          <option value="no" ${it.fine==='no'?'selected':''}>✅ ไม่มี Fine</option>
+        </select>
       </div>
       <div class="sub-items">
         ${subRows}
