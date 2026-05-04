@@ -285,6 +285,14 @@ input:focus,select:focus{outline:none;border-color:var(--ac);box-shadow:0 0 0 3p
     <div style="margin-top:28px">
       <div class="cfg-title">💾 สำรองข้อมูล & Export</div>
 
+      <!-- MIGRATION -->
+      <div style="background:#fff7ed;border:1px solid #f59e0b;border-radius:var(--r);padding:16px;margin-bottom:12px">
+        <div style="font-size:13px;font-weight:600;margin-bottom:4px">🔄 อัปเกรด Order เก่าเป็น 19 ขั้นตอน</div>
+        <div style="font-size:12px;color:var(--mu);margin-bottom:12px">Order ที่สร้างก่อนการอัปเดตยังมี 17 ขั้นตอน — กดปุ่มนี้เพื่อเพิ่มขั้นตอนใหม่ให้ทุก Order อัตโนมัติ ข้อมูลเดิมจะไม่หาย</div>
+        <button class="btn" style="background:#d97706;color:#fff;border-color:#d97706;font-weight:600" onclick="migrateSteps()">🔄 อัปเกรดขั้นตอนทั้งหมด</button>
+        <span id="migrate-result" style="font-size:12px;margin-left:10px"></span>
+      </div>
+
       <div style="background:#f6f8fa;border:1px solid var(--bd2);border-radius:var(--r);padding:16px;margin-bottom:12px">
         <div style="font-size:13px;font-weight:600;margin-bottom:4px">📥 Backup Database</div>
         <div style="font-size:12px;color:var(--mu);margin-bottom:12px">ดาวน์โหลดไฟล์ฐานข้อมูลทั้งหมด (.db) — ใช้สำหรับย้ายเซิร์ฟเวอร์หรือสำรองข้อมูล</div>
@@ -867,6 +875,23 @@ function rTeam(){
       <div class="cfg-row-main">${n}</div>
       <button class="cfg-del" onclick="delMember(${i})">×</button>
     </div>`).join('');
+}
+async function migrateSteps(){
+  if(!confirm('อัปเกรด Order ทั้งหมดเป็น 19 ขั้นตอน?\nข้อมูลที่กรอกไปแล้วจะไม่หาย เฉพาะขั้นตอนใหม่จะถูกเพิ่ม'))return;
+  const el=document.getElementById('migrate-result');
+  el.style.color='var(--mu)';el.textContent='กำลังอัปเกรด...';
+  try{
+    const r=await fetch('/api/migrate-steps',{method:'POST',headers:{'Content-Type':'application/json'}});
+    const d=await r.json();
+    if(d.ok){
+      el.style.color='var(--done)';
+      el.textContent=`✅ อัปเกรดสำเร็จ ${d.migrated} Order → ${d.newStepCount} ขั้นตอน`;
+      await loadAll();rSide();
+      if(_active)rDetail(_active);
+    } else {
+      el.style.color='var(--late)';el.textContent='❌ เกิดข้อผิดพลาด: '+d.error;
+    }
+  }catch(e){el.style.color='var(--late)';el.textContent='❌ '+e.message;}
 }
 function doBackup(){
   const token=prompt('กรุณาใส่ Admin Token เพื่อดาวน์โหลด Backup:');
