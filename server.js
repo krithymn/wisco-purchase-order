@@ -15,23 +15,25 @@ app.use(express.static(path.join(__dirname, 'public')));
 let db;
 
 const DEFAULT_STEPS = [
-  { name: "รับ PR",                          defaultDays: 1  },
-  { name: "หา SUP",                          defaultDays: 3  },
-  { name: "เทียบ SUP",                       defaultDays: 2  },
-  { name: "รับ Drawing",                     defaultDays: 3  },
-  { name: "ลูกค้า Approve Drawing",          defaultDays: 5  },
-  { name: "ขอ Approve Nameplate",            defaultDays: 3  },
-  { name: "เปิด POI",                        defaultDays: 1  },
-  { name: "Approve POI",                     defaultDays: 1  },
+  { name: "รับ PR",                               defaultDays: 1  },
+  { name: "หา SUP",                               defaultDays: 3  },
+  { name: "เทียบ SUP",                            defaultDays: 2  },
+  { name: "รับ Drawing",                          defaultDays: 3  },
+  { name: "ลูกค้า Approve Drawing",               defaultDays: 5  },
+  { name: "ขอ Approve Nameplate",                 defaultDays: 3  },
+  { name: "เปิด POI",                             defaultDays: 1  },
+  { name: "Approve POI",                          defaultDays: 1  },
   { name: "ส่ง POI / Drawing / Nameplate ให้ SUP", defaultDays: 1 },
-  { name: "รับ PI",                          defaultDays: 3  },
-  { name: "เริ่มผลิต",                       defaultDays: 30 },
-  { name: "ตรวจสอบก่อนแพ็คสินค้า",         defaultDays: 2  },
-  { name: "จ่ายเงิน SUP",                    defaultDays: 2  },
-  { name: "เทียบราคาค่าขนส่ง (AIR/SEA/TRUCK)", defaultDays: 2 },
-  { name: "รีเช็คระหว่างขนส่ง",             defaultDays: 7  },
-  { name: "ตรวจสอบสินค้า",                  defaultDays: 2  },
-  { name: "รับสินค้า",                       defaultDays: 1  }
+  { name: "รับ PI",                               defaultDays: 3  },
+  { name: "แจ้งบัญชี",                            defaultDays: 1  },
+  { name: "เริ่มผลิต",                            defaultDays: 30 },
+  { name: "ตรวจสอบก่อนแพ็คสินค้า",              defaultDays: 2  },
+  { name: "จ่ายเงิน SUP",                         defaultDays: 2  },
+  { name: "ติดตามการขนส่ง",                       defaultDays: 7  },
+  { name: "แจ้งสินค้าเข้า",                       defaultDays: 1  },
+  { name: "ส่งเอกสาร CER/DRAWING",               defaultDays: 1  },
+  { name: "ตรวจสอบสินค้าเข้า",                   defaultDays: 2  },
+  { name: "รับสินค้าเข้าระบบ",                   defaultDays: 1  }
 ];
 
 async function initDB() {
@@ -57,6 +59,8 @@ async function initDB() {
       notes           TEXT DEFAULT '',
       items           TEXT DEFAULT '[]',
       is_partial      INTEGER DEFAULT 0,
+      delivery_date_sup     TEXT DEFAULT '',
+      delivery_date_cust    TEXT DEFAULT '',
       po_open_date         TEXT DEFAULT '',
       production_finish_date TEXT DEFAULT '',
       created_at      TEXT DEFAULT (datetime('now','localtime'))
@@ -89,6 +93,11 @@ async function initDB() {
         "Fast-Proposal Engineer","Fah-Proposal Engineer","วี-SA Director",
         "นิล-SA Manager","เสมียน-Warehouse"])]);
   }
+  const custRow = query("SELECT value FROM config WHERE key='customers'");
+  if (!custRow.length) {
+    db.run("INSERT OR IGNORE INTO config(key,value) VALUES('customers',?)",
+      [JSON.stringify([])]);
+  }
   const supRow = query("SELECT value FROM config WHERE key='suppliers'");
   if (!supRow.length) {
     db.run("INSERT OR IGNORE INTO config(key,value) VALUES('suppliers',?)",
@@ -106,6 +115,8 @@ async function initDB() {
   try { db.run("ALTER TABLE order_steps ADD COLUMN is_skipped INTEGER DEFAULT 0"); } catch(e) { /* already exists */ }
   try { db.run("ALTER TABLE orders ADD COLUMN production_finish_date TEXT DEFAULT ''"); } catch(e) { /* already exists */ }
   try { db.run("ALTER TABLE orders ADD COLUMN is_partial INTEGER DEFAULT 0"); } catch(e) { /* already exists */ }
+  try { db.run("ALTER TABLE orders ADD COLUMN delivery_date_sup TEXT DEFAULT ''"); } catch(e) { /* already exists */ }
+  try { db.run("ALTER TABLE orders ADD COLUMN delivery_date_cust TEXT DEFAULT ''"); } catch(e) { /* already exists */ }
 
   saveDB();
   console.log('  ✅ Database ready.');
@@ -163,6 +174,8 @@ function buildOrder(row) {
     product: row.product||'', quantity: row.quantity||'',
     customerPO: row.customer_po||'', notes: row.notes||'',
     isPartial: !!row.is_partial,
+    deliveryDateSup: row.delivery_date_sup||'',
+    deliveryDateCust: row.delivery_date_cust||'',
     poOpenDate: row.po_open_date||'',
     productionFinishDate: row.production_finish_date||'',
     items: (() => { try { return JSON.parse(row.items||'[]'); } catch(e) { return []; } })(),
@@ -190,8 +203,9 @@ app.post('/api/orders', (req, res) => {
     const itemsJson = JSON.stringify(req.body.items||[]);
     const poOpenDate=req.body.poOpenDate||''; const prodFinish=req.body.productionFinishDate||'';
     const isPartial=req.body.isPartial?1:0;
-    run("INSERT INTO orders(id,customer,factory,product,quantity,customer_po,prepayment,start_date,due_date,notes,items,po_open_date,production_finish_date,is_partial) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-      [id,customer||'',factory||'',product||'',quantity||'',customerPO||'',prepayment?1:0,startDate||'',dueDate||'',notes||'',itemsJson,poOpenDate,prodFinish,isPartial]);
+    const delSup=req.body.deliveryDateSup||''; const delCust=req.body.deliveryDateCust||'';
+    run("INSERT INTO orders(id,customer,factory,product,quantity,customer_po,prepayment,start_date,due_date,notes,items,po_open_date,production_finish_date,is_partial,delivery_date_sup,delivery_date_cust) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+      [id,customer||'',factory||'',product||'',quantity||'',customerPO||'',prepayment?1:0,startDate||'',dueDate||'',notes||'',itemsJson,poOpenDate,prodFinish,isPartial,delSup,delCust]);
     const steps = getSteps();
     const total = steps.length + (prepayment?1:0);
     for (let i=0;i<total;i++) run("INSERT OR IGNORE INTO order_steps(order_id,step_index,planned_days) VALUES(?,?,?)",[id,i,0]);
@@ -202,8 +216,8 @@ app.post('/api/orders', (req, res) => {
 app.put('/api/orders/:id', (req, res) => {
   try {
     const {customer,factory,product,quantity,customerPO,prepayment,startDate,dueDate,notes} = req.body;
-    run("UPDATE orders SET customer=?,factory=?,product=?,quantity=?,customer_po=?,prepayment=?,start_date=?,due_date=?,notes=?,items=?,po_open_date=?,production_finish_date=?,is_partial=? WHERE id=?",
-      [customer||'',factory||'',product||'',quantity||'',customerPO||'',prepayment?1:0,startDate||'',dueDate||'',notes||'',JSON.stringify(req.body.items||[]),req.body.poOpenDate||'',req.body.productionFinishDate||'',req.body.isPartial?1:0,req.params.id]);
+    run("UPDATE orders SET customer=?,factory=?,product=?,quantity=?,customer_po=?,prepayment=?,start_date=?,due_date=?,notes=?,items=?,po_open_date=?,production_finish_date=?,is_partial=?,delivery_date_sup=?,delivery_date_cust=? WHERE id=?",
+      [customer||'',factory||'',product||'',quantity||'',customerPO||'',prepayment?1:0,startDate||'',dueDate||'',notes||'',JSON.stringify(req.body.items||[]),req.body.poOpenDate||'',req.body.productionFinishDate||'',req.body.isPartial?1:0,req.body.deliveryDateSup||'',req.body.deliveryDateCust||'',req.params.id]);
     res.json(buildOrder(query("SELECT * FROM orders WHERE id=?",[req.params.id])[0]));
   } catch(e) { res.status(500).json({error:e.message}); }
 });
