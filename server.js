@@ -103,11 +103,9 @@ async function initDB() {
     db.run("INSERT OR IGNORE INTO config(key,value) VALUES('suppliers',?)",
       [JSON.stringify(["Allto","ANIX","KINETROL","RICK VALVE","HOFMANN","WATTS","XIAO VALVE","EMICO","HERO","TECO","AIV SINGAPORE"])]);
   }
-  const stepsRow = query("SELECT value FROM config WHERE key='steps'");
-  if (!stepsRow.length) {
-    db.run("INSERT OR IGNORE INTO config(key,value) VALUES('steps',?)",
-      [JSON.stringify(DEFAULT_STEPS)]);
-  }
+  // Always update steps to latest version (19 steps)
+  db.run("INSERT OR REPLACE INTO config(key,value) VALUES('steps',?)",
+    [JSON.stringify(DEFAULT_STEPS)]);
   // Migration: add mfg_steps column if it doesn't exist (for existing databases)
   try { db.run("ALTER TABLE order_steps ADD COLUMN mfg_steps TEXT DEFAULT '[]'"); } catch(e) { /* already exists */ }
   try { db.run("ALTER TABLE orders ADD COLUMN items TEXT DEFAULT '[]'"); } catch(e) { /* already exists */ }
@@ -283,6 +281,31 @@ app.put('/api/config/suppliers', (req, res) => {
     res.json({ok:true});
   }
   catch(e) { console.error('Supplier save error:',e); res.status(500).json({error:e.message}); }
+});
+
+// ── MIGRATE ORDERS TO NEW STEPS ─────────────────────────────
+app.post('/api/migrate-steps', (req, res) => {
+  try {
+    const orders = query("SELECT * FROM orders");
+    const steps = DEFAULT_STEPS;
+    let migrated = 0;
+    orders.forEach(o => {
+      const totalSteps = steps.length + (o.prepayment ? 1 : 0);
+      const existing = query("SELECT step_index FROM order_steps WHERE order_id=?", [o.id]);
+      const existingIdx = existing.map(r => r.step_index);
+      // Add missing step rows (new steps that don't exist yet)
+      for (let i = 0; i < totalSteps; i++) {
+        if (!existingIdx.includes(i)) {
+          db.run("INSERT OR IGNORE INTO order_steps(order_id,step_index,responsible,planned_days,done_date) VALUES(?,?,?,?,?)",
+            [o.id, i, '—', 0, '']);
+        }
+      }
+      // Update completedSteps logic - recalculate from done_dates
+      migrated++;
+    });
+    saveDB();
+    res.json({ ok: true, migrated, newStepCount: steps.length });
+  } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
 // ── BACKUP DOWNLOAD (protected by BACKUP_TOKEN env var) ──────
