@@ -254,6 +254,15 @@ input:focus,select:focus{outline:none;border-color:var(--ac);box-shadow:0 0 0 3p
         <button class="btn btn-primary" onclick="addMember()">+ เพิ่ม</button>
       </div>
     </div>
+    <!-- CUSTOMERS -->
+    <div style="margin-bottom:28px">
+      <div class="cfg-title">👥 จัดการลูกค้า (Customer)</div>
+      <div id="cust-grid"></div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <input id="new-cust" placeholder="ชื่อลูกค้า" style="flex:1;font-size:13px;padding:7px 10px;border:1px solid var(--bd);border-radius:var(--r);font-family:'Sarabun',sans-serif">
+        <button class="btn btn-primary" onclick="addCustomer()">+ เพิ่ม</button>
+      </div>
+    </div>
     <!-- SUPPLIERS -->
     <div style="margin-bottom:28px">
       <div class="cfg-title">🏭 จัดการ Supplier</div>
@@ -348,7 +357,7 @@ const API='', PW='08122005';
 const MFG_STEPS=['Design','Die-casting','Mechanical processing','Assembly','Testing','Quality','Packing'];
 // Manufacturing step is index 10 (เริ่มผลิต) without prepayment, 11 with prepayment
 function getMfgStepIndex(o){ return o.prepayment ? 11 : 10; }
-let _orders=[],_team=[],_steps=[],_suppliers=[],_active=null,_editId=null,_sfilt='',_pwUnlocked=false,_pwShow=false;
+let _orders=[],_team=[],_steps=[],_suppliers=[],_customers=[],_active=null,_editId=null,_sfilt='',_pwUnlocked=false,_pwShow=false;
 
 async function get(p){const r=await fetch(API+p);return r.json()}
 async function post(p,b){const r=await fetch(API+p,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)});return r.json()}
@@ -358,6 +367,7 @@ async function del(p){const r=await fetch(API+p,{method:'DELETE'});return r.json
 
 async function loadAll(){
   const [orders,cfg]=await Promise.all([get('/api/orders'),get('/api/config')]);
+  _customers=cfg.customers||[];
   // ensure mfgSteps is always a proper array on every order
   _orders=orders.map(o=>({
     ...o,
@@ -369,7 +379,7 @@ async function loadAll(){
     const parseId=id=>{const m=id.match(/POI(\d{4})-(\d+)/i);return m?parseInt(m[1])*10000+parseInt(m[2]):0;};
     return parseId(b.id)-parseId(a.id);
   });
-  _team=cfg.team||[]; _steps=cfg.steps||[]; _suppliers=cfg.suppliers||[];
+  _team=cfg.team||[]; _steps=cfg.steps||[]; _suppliers=cfg.suppliers||[]; _customers=cfg.customers||[];
 }
 
 // ── Step name + default days ─────────────────────────────────
@@ -513,7 +523,7 @@ function rDetail(id){
         })()}
       </td>
       <td><input style="font-size:12px;padding:4px 6px;width:130px;border:1px solid var(--bd);border-radius:4px;background:var(--sur);font-family:'Sarabun',sans-serif" type="date" value="${dd}" ${done?'disabled':''} onchange="updStep('${id}',${i},'doneDate',this.value)" title="วันที่เสร็จจริง"></td>
-      <td style="white-space:nowrap">${done?`<button class="btn btn-sm btn-danger" onclick="undoStep('${id}',${i})" title="ย้อนกลับมาที่ขั้นตอนนี้ และยกเลิกทุกขั้นตอนหลังจากนี้">↩ ย้อนกลับมาที่นี่</button>`:active?`<button class="btn btn-sm btn-success" onclick="doneStep('${id}',${i})">✓ เสร็จ</button>`:''}</td>
+      <td style="white-space:nowrap">${done?`<button class="btn btn-sm btn-danger" onclick="undoStep('${id}',${i})" title="ย้อนกลับ">↩ ย้อน</button>`:(isSkipped?'':`<button class="btn btn-sm btn-success" onclick="doneStep('${id}',${i})">✓ เสร็จ</button>`)}</td>
     </tr>`;
   }).join('');
 
@@ -522,7 +532,7 @@ function rDetail(id){
 <div class="page-hdr">
   <div>
     <div class="page-title">${o.id} <span class="pill ${pillCls(s)}">${pillLbl(s)}</span></div>
-    <div class="page-sub">🏭 ${o.factory||'—'}</div><div style="display:flex;gap:16px;font-size:12px;color:var(--mu);margin-top:4px">${o.startDate?`<span>📋 เปิด PO: <strong style="color:var(--tx)">${o.startDate}</strong></span>`:''} ${o.productionFinishDate?`<span>🏭 ผลิตเสร็จ: <strong style="color:var(--tx)">${o.productionFinishDate}</strong></span>`:''} ${o.dueDate?`<span>📦 ส่งมอบ: <strong style="color:var(--tx)">${o.dueDate}</strong></span>`:''}</div>
+    <div class="page-sub">🏭 ${o.factory||'—'}</div><div style="display:flex;gap:16px;font-size:12px;color:var(--mu);margin-top:4px;flex-wrap:wrap">${o.startDate?`<span>📋 เปิด PO: <strong style="color:var(--tx)">${o.startDate}</strong></span>`:''} ${o.productionFinishDate?`<span>🏭 ผลิตเสร็จ: <strong style="color:var(--tx)">${o.productionFinishDate}</strong></span>`:''} ${o.deliveryDateSup?`<span>🚚 ส่งมอบจาก SUP: <strong style="color:var(--tx)">${o.deliveryDateSup}</strong></span>`:''} ${o.deliveryDateCust?`<span>👤 ส่งลูกค้า (เร็วสุด): <strong style="color:var(--done)">${o.deliveryDateCust}</strong></span>`:''} ${o.dueDate?`<span>📦 กำหนดหลัก: <strong style="color:var(--tx)">${o.dueDate}</strong></span>`:''}</div>
   </div>
   <div style="display:flex;gap:6px">
     <button class="btn btn-sm btn-secondary" onclick="editOrder('${id}')">✏️ แก้ไข</button>
@@ -546,8 +556,10 @@ ${(()=>{
     const subs=(it.subItems&&it.subItems.length)?it.subItems:[{product:it.product||'',quantity:it.quantity||''}];
     const ss=it.shipStatus||{};
     return subs.map((s,si)=>`<tr style="${ss[si]?'opacity:.7':''}">
-      ${si===0?`<td rowspan="${subs.length}" style="font-weight:600;vertical-align:top;border-right:1px solid var(--bd2)">${it.customer||'—'}${it.sendDate?`<div style="font-size:10px;color:var(--mu);font-weight:400;margin-top:2px">📅 ${it.sendDate}</div>`:''}</td>
-       <td rowspan="${subs.length}" style="color:var(--spec);vertical-align:top;border-right:1px solid var(--bd2)">${it.prNumber||'—'}</td>`:''}
+      ${si===0?`<td rowspan="${subs.length}" style="font-weight:600;vertical-align:top;border-right:1px solid var(--bd2)">${it.customer||'—'}</td>
+       <td rowspan="${subs.length}" style="color:var(--spec);vertical-align:top;border-right:1px solid var(--bd2)">${it.prNumber||'—'}</td>
+       <td rowspan="${subs.length}" style="font-size:11px;color:var(--mu);vertical-align:top">${it.sendDate||'—'}</td>
+       <td rowspan="${subs.length}" style="vertical-align:top;font-size:12px;font-weight:600;color:${it.fine==='yes'?'var(--late)':it.fine==='no'?'var(--done)':'var(--mu)'}">${it.fine==='yes'?'⚠️ มี Fine':it.fine==='no'?'✅ ไม่มี':'—'}</td>`:''}
       <td>${s.product||'—'}</td>
       <td style="color:var(--mu)">${s.quantity||'—'}</td>
       ${o.isPartial?`<td>
@@ -563,7 +575,7 @@ ${(()=>{
       <span class="card-title">📦 รายการสินค้าใน Order (${items.length} ลูกค้า · ${totalSubs} รายการ)</span>
       ${o.isPartial?`<span style="font-size:12px;color:${receivedCount===totalSubs?'var(--done)':'var(--warn)'}">📦 รับแล้ว ${receivedCount}/${totalSubs}</span>`:''}
     </div>
-    <table class="items-table"><thead><tr><th>ลูกค้า</th><th>PR Number</th><th>สินค้า / Valve</th><th>จำนวน</th>${o.isPartial?'<th>สถานะรับสินค้า</th>':''}</tr></thead><tbody>${rows}</tbody></table>
+    <table class="items-table"><thead><tr><th>ลูกค้า</th><th>PR Number</th><th>วันที่ส่งลูกค้า</th><th>Fine</th><th>สินค้า / Valve</th><th>จำนวน</th>${o.isPartial?'<th>สถานะรับสินค้า</th>':''}</tr></thead><tbody>${rows}</tbody></table>
   </div>`;
 })()}
 <div class="sum-row">
@@ -594,6 +606,7 @@ ${(()=>{
 async function doneStep(id,i){
   const today=new Date().toISOString().split('T')[0];
   await patch(`/api/orders/${id}/steps/${i}`,{doneDate:today});
+  // recalculate completedSteps server-side via full reload
   await loadAll();rSide();rDetail(id);shAlert('✅ บันทึกสำเร็จ','success');
 }
 async function undoStep(id,i){
@@ -728,13 +741,13 @@ async function addSupFromDrop(name){
 function openNew(){
   document.getElementById('modal-t').textContent='เพิ่ม Order ใหม่';
   ['f-id','f-fac'].forEach(x=>document.getElementById(x).value='');
-  ['f-start','f-prod-finish','f-due'].forEach(x=>setDateField(x,''));
+  ['f-start','f-prod-finish','f-due','f-del-sup','f-del-cust'].forEach(x=>setDateField(x,''));
   document.getElementById('f-partial').checked=false;
   document.getElementById('f-id').disabled=false;
   document.getElementById('f-prepay').checked=false;
   document.getElementById('modal-alert').innerHTML='';
   _editId=null;
-  renderItemsList([{customer:'',prNumber:'',sendDate:'',subItems:[{product:'',quantity:''}]}]);
+  renderItemsList([{customer:'',prNumber:'',sendDate:'',fine:'',subItems:[{product:'',quantity:''}]}]);
   document.getElementById('modal').classList.add('open');
 }
 function editOrder(id){
@@ -745,12 +758,15 @@ function editOrder(id){
   setDateField('f-start',o.startDate||o.poOpenDate||'');
   setDateField('f-prod-finish',o.productionFinishDate||'');
   setDateField('f-due',o.dueDate||'');
+  setDateField('f-del-sup',o.deliveryDateSup||'');
+  setDateField('f-del-cust',o.deliveryDateCust||'');
   document.getElementById('f-prepay').checked=o.prepayment;
   document.getElementById('f-partial').checked=o.isPartial||false;
   document.getElementById('modal-alert').innerHTML='';
   const items=(o.items&&o.items.length)?o.items.map(it=>({
     ...it,
     sendDate:it.sendDate||'',
+    fine:it.fine||'',
     subItems:(it.subItems&&it.subItems.length)?it.subItems:[{product:it.product||'',quantity:it.quantity||''}]
   })):[{customer:o.customer||'',prNumber:'',sendDate:'',subItems:[{product:o.product||'',quantity:o.quantity||''}]}];
   renderItemsList(items);
@@ -805,7 +821,7 @@ function removeSub(i,j){
   subs.splice(j,1);_modalItems[i].subItems=subs;
   renderItemsList(_modalItems);
 }
-function addItemRow(){_modalItems.push({customer:'',prNumber:'',sendDate:'',subItems:[{product:'',quantity:''}]});renderItemsList(_modalItems);}
+function addItemRow(){_modalItems.push({customer:'',prNumber:'',sendDate:'',fine:'',subItems:[{product:'',quantity:''}]});renderItemsList(_modalItems);}
 function removeItemRow(i){if(_modalItems.length<=1)return;_modalItems.splice(i,1);renderItemsList(_modalItems);}
 function getItems(){
   return _modalItems.filter(it=>it.customer||it.prNumber||(it.subItems&&it.subItems.some(s=>s.product||s.quantity)))
@@ -822,7 +838,7 @@ async function saveOrder(){
   const items=getItems();
   if(!items.length){document.getElementById('modal-alert').innerHTML='<div class="alert alert-error">กรุณาเพิ่มรายการสินค้าอย่างน้อย 1 รายการ</div>';return;}
   const firstItem=items[0];
-  const body={id,customer:firstItem.customer||'',factory:fac,product:firstItem.product||'',quantity:firstItem.quantity||'',customerPO:'',startDate:getDateField('f-start'),productionFinishDate:getDateField('f-prod-finish'),dueDate:getDateField('f-due'),prepayment:document.getElementById('f-prepay').checked,isPartial:document.getElementById('f-partial').checked,items};
+  const body={id,customer:firstItem.customer||'',factory:fac,product:firstItem.product||'',quantity:firstItem.quantity||'',customerPO:'',startDate:getDateField('f-start'),productionFinishDate:getDateField('f-prod-finish'),dueDate:getDateField('f-due'),deliveryDateSup:getDateField('f-del-sup'),deliveryDateCust:getDateField('f-del-cust'),prepayment:document.getElementById('f-prepay').checked,isPartial:document.getElementById('f-partial').checked,items};
   if(_editId){await put(`/api/orders/${_editId}`,body);}
   else{const r=await post('/api/orders',body);if(r.error){document.getElementById('modal-alert').innerHTML=`<div class="alert alert-error">${r.error==='Order ID already exists'?'เลขที่ Order นี้มีอยู่แล้ว':r.error}</div>`;return;}}
   try{
@@ -876,6 +892,23 @@ async function delMember(i){
 }
 
 // ── Config: Suppliers ─────────────────────────────────────────
+function rCustGrid(){
+  document.getElementById('cust-grid').innerHTML=(_customers||[]).map((c,i)=>`
+    <div class="cfg-row">
+      <div class="cfg-row-main">👤 ${c}</div>
+      <button class="cfg-del" onclick="delCustomer(${i})">×</button>
+    </div>`).join('');
+}
+async function addCustomer(){
+  const v=document.getElementById('new-cust').value.trim();if(!v)return;
+  if(_customers.includes(v)){alert('มีลูกค้านี้อยู่แล้ว');return}
+  _customers.push(v);await put('/api/config/customers',{customers:_customers});
+  document.getElementById('new-cust').value='';rCustGrid();
+}
+async function delCustomer(i){
+  if(!confirm('ลบลูกค้านี้?'))return;
+  _customers.splice(i,1);await put('/api/config/customers',{customers:_customers});rCustGrid();
+}
 function rSupGrid(){
   document.getElementById('sup-grid').innerHTML=_suppliers.map((s,i)=>`
     <div class="cfg-row">
@@ -927,7 +960,7 @@ function _doSwTab(tab,el){
   document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');
   document.getElementById('tab-orders').style.display=tab==='orders'?'block':'none';
   document.getElementById('tab-config').style.display=tab==='config'?'block':'none';
-  if(tab==='config'){rTeam();rSupGrid();rStepsCfg();}
+  if(tab==='config'){rTeam();rCustGrid();rSupGrid();rStepsCfg();}
 }
 function swTab(tab,el){
   if(tab==='config'&&!_pwUnlocked){document.getElementById('pw-gate').classList.add('show');setTimeout(()=>document.getElementById('pw-inp').focus(),50);return}
@@ -985,7 +1018,7 @@ function getDateField(id){
   const el=document.getElementById(id);if(!el)return'';
   return toISO(el.value);
 }
-async function init(){await loadAll();rSide();rTeam();rSupGrid();rStepsCfg()}
+async function init(){await loadAll();rSide();rTeam();rCustGrid();rSupGrid();rStepsCfg()}
 init();
 </script>
 </body>

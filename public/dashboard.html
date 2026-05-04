@@ -377,7 +377,7 @@ main{display:grid;grid-template-columns:280px 1fr 260px;overflow:hidden;height:c
 <script>
 const API='';
 const MFG_STEPS=['Design','Die-casting','Mechanical processing','Assembly','Testing','Quality','Packing'];
-function getMfgStepIndex(o){ return o.prepayment ? 11 : 10; }
+function getMfgStepIndex(o){ return o.prepayment ? 12 : 11; }
 let _flt='all',_orders=[],_steps=[];
 
 async function loadAll(){
@@ -555,7 +555,7 @@ function render(){
       <div class="ct">
         <div class="ct-main">
           <div class="ct-id">${o.id}${ppFlag}${o.isPartial?'<span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:99px;background:#fff7ed;color:#92400e;border:1px solid #f59e0b;margin-left:6px">📦 PARTIAL</span>':''}</div>
-          <div class="ct-fac">🏭 ${o.factory||'—'}</div>
+          <div class="ct-fac">🏭 ${o.factory||'—'}${(o.items||[]).some(it=>it.fine==='yes')?'<span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:99px;background:var(--late-dim);color:var(--late);border:1px solid var(--late-bd);margin-left:5px">⚠️ FINE</span>':''}</div>
           <div style="font-size:11px;color:var(--mu);margin-top:2px">${(o.items&&o.items.length?o.items:[{customer:o.customer}]).slice(0,2).map(it=>it.customer).filter(Boolean).join(' · ')}${o.items&&o.items.length>2?` +${o.items.length-2} more`:''}</div>
           <div style="display:flex;gap:10px;font-size:10px;color:var(--mu);margin-top:3px">${o.poOpenDate?`<span>📋 ${o.poOpenDate}</span>`:''} ${o.dueDate?`<span>📦 ${o.dueDate}</span>`:''}</div>
         </div>
@@ -758,7 +758,8 @@ function openM(id){
           const rec=!!(ss[si]);const note=ss['note_'+si]||'';
           return`<tr style="${rec?'opacity:.65':''}">
             ${si===0?`<td rowspan="${subs.length}" style="font-size:13px;font-weight:600;padding:7px 10px;border-bottom:1px solid var(--bd2);vertical-align:top;border-right:1px solid var(--bd2)">${it.customer||'—'}${it.sendDate?`<div style="font-size:10px;color:var(--mu);font-weight:400;margin-top:2px">📅 ${it.sendDate}</div>`:''}</td>
-             <td rowspan="${subs.length}" style="font-size:11px;color:var(--spec);padding:7px 10px;border-bottom:1px solid var(--bd2);vertical-align:top;border-right:1px solid var(--bd2)">${it.prNumber||'—'}</td>`:''}
+             <td rowspan="${subs.length}" style="font-size:11px;color:var(--spec);padding:7px 10px;border-bottom:1px solid var(--bd2);vertical-align:top;border-right:1px solid var(--bd2)">${it.prNumber||'—'}</td>
+             <td rowspan="${subs.length}" style="font-size:11px;font-weight:600;padding:7px 10px;border-bottom:1px solid var(--bd2);vertical-align:top;color:${it.fine==='yes'?'var(--late)':it.fine==='no'?'var(--done)':'var(--mu)'}">${it.fine==='yes'?'⚠️ มี Fine':it.fine==='no'?'✅ ไม่มี':'—'}</td>`:''}
             <td style="font-size:12px;color:var(--tx);padding:7px 10px;border-bottom:1px solid var(--bd2)">${s.product||'—'}</td>
             <td style="font-size:12px;color:var(--mu);padding:7px 10px;border-bottom:1px solid var(--bd2)">${s.quantity||'—'}</td>
             ${o.isPartial?`<td style="padding:6px 10px;border-bottom:1px solid var(--bd2)"><span style="font-size:11px;font-weight:600;padding:3px 10px;border-radius:99px;${rec?'background:rgba(34,197,94,.15);color:var(--done);border:1px solid rgba(34,197,94,.3)':'background:var(--s3);color:var(--mu);border:1px solid var(--bd)'}">${rec?'✅ รับแล้ว':'⏳ รอรับ'}</span>${note?`<div style="font-size:10px;color:var(--mu);margin-top:3px">${note}</div>`:''}</td>`:''}
@@ -773,6 +774,7 @@ function openM(id){
           <thead><tr>
             <th style="font-size:10px;font-weight:700;color:var(--mu);text-transform:uppercase;padding:6px 10px;text-align:left;border-bottom:1px solid var(--bd2)">ลูกค้า</th>
             <th style="font-size:10px;font-weight:700;color:var(--mu);text-transform:uppercase;padding:6px 10px;text-align:left;border-bottom:1px solid var(--bd2)">PR Number</th>
+            <th style="font-size:10px;font-weight:700;color:var(--mu);text-transform:uppercase;padding:6px 10px;text-align:left;border-bottom:1px solid var(--bd2)">Fine</th>
             <th style="font-size:10px;font-weight:700;color:var(--mu);text-transform:uppercase;padding:6px 10px;text-align:left;border-bottom:1px solid var(--bd2)">สินค้า / Valve</th>
             <th style="font-size:10px;font-weight:700;color:var(--mu);text-transform:uppercase;padding:6px 10px;text-align:left;border-bottom:1px solid var(--bd2)">จำนวน</th>
             ${o.isPartial?'<th style="font-size:10px;font-weight:700;color:var(--mu);text-transform:uppercase;padding:6px 10px;text-align:left;border-bottom:1px solid var(--bd2)">สถานะ</th>':''}
