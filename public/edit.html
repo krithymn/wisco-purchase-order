@@ -958,10 +958,9 @@ function showCustDrop(i,q){
   const drop=document.getElementById('cust-drop-'+i);
   if(!drop)return;
   const filtered=(_customers||[]).filter(c=>c.toLowerCase().includes((q||'').toLowerCase()));
-  const items=filtered.map(c=>`<div class="sup-option" onmousedown="pickCust(${i},this.textContent.trim())">${c}</div>`).join('');
-  const qt=(q||'').trim();
-  const addOpt=qt&&!(_customers||[]).includes(qt)?`<div class="sup-option sup-add" onmousedown="addCustFromField(${i},'${qt.replace(/'/g,"\\\'")}')">+ บันทึก "${qt}" ลงรายการ</div>`:'';
-  drop.innerHTML=items+addOpt||'<div style="padding:8px 12px;font-size:12px;color:var(--mu)">พิมพ์ชื่อลูกค้าได้เลย</div>';
+  drop.innerHTML=filtered.length
+    ?filtered.map(c=>`<div class="sup-option" onmousedown="pickCust(${i},'${c.replace(/'/g,"\\'")}')">${c}</div>`).join('')
+    :'<div style="padding:8px 12px;font-size:12px;color:var(--mu)">ไม่พบ — เพิ่มลูกค้าได้ที่ ⚙️ ตั้งค่า</div>';
   drop.classList.add('show');
 }
 function hideCustDrop(i){const d=document.getElementById('cust-drop-'+i);if(d)d.classList.remove('show');}
