@@ -365,8 +365,9 @@ input:focus,select:focus{outline:none;border-color:var(--ac);box-shadow:0 0 0 3p
 <script>
 const API='', PW='08122005';
 const MFG_STEPS=['Design','Die-casting','Mechanical processing','Assembly','Testing','Quality','Packing'];
-// Manufacturing step is index 10 (เริ่มผลิต) without prepayment, 11 with prepayment
-function getMfgStepIndex(o){ return o.prepayment ? 11 : 10; }
+// Manufacturing step is index 11 (เริ่มผลิต) without prepayment, 12 with prepayment
+// แจ้งบัญชี is index 10 (without prepay), 11 (with prepay)
+function getMfgStepIndex(o){ return o.prepayment ? 12 : 11; }
 let _orders=[],_team=[],_steps=[],_suppliers=[],_customers=[],_active=null,_editId=null,_sfilt='',_pwUnlocked=false,_pwShow=false;
 
 async function get(p){const r=await fetch(API+p);return r.json()}
@@ -395,17 +396,19 @@ async function loadAll(){
 // ── Step name + default days ─────────────────────────────────
 function stepName(o,i){
   if(!o.prepayment) return _steps[i]?.name||('Step '+(i+1));
-  if(i<10) return _steps[i]?.name||('Step '+(i+1));
-  if(i===10) return '💳 จ่ายเงินล่วงหน้า';
+  if(i<11) return _steps[i]?.name||('Step '+(i+1));
+  if(i===11) return '💳 จ่ายเงินล่วงหน้า';
   return _steps[i-1]?.name||('Step '+i);
 }
 function defDays(o,i){
   if(!o.prepayment) return _steps[i]?.defaultDays||1;
+  if(i<11) return _steps[i]?.defaultDays||1;
+  if(i===11) return 1; // prepayment step
   if(i<10) return _steps[i]?.defaultDays||1;
   if(i===10) return 3;
   return _steps[i-1]?.defaultDays||1;
 }
-function isPP(o,i){ return o.prepayment && i===10; }
+function isPP(o,i){ return o.prepayment && i===11; } // 💳 at index 11
 
 // ── Deadline calculation ─────────────────────────────────────
 // Calculate expected finish date for step i based on start date + cumulative days
