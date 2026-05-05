@@ -532,7 +532,7 @@ function rDetail(id){
           return`<div class="mfg-checklist" id="mfg-${id}-${i}">${renderMfgChecklist(id,i,mfgArr)}</div>`;
         })()}
       </td>
-      <td><input style="font-size:12px;padding:4px 6px;width:130px;border:1px solid var(--bd);border-radius:4px;background:var(--sur);font-family:'Sarabun',sans-serif" type="date" value="${dd}" ${done?'disabled':''} onchange="updStep('${id}',${i},'doneDate',this.value)" title="วันที่เสร็จจริง"></td>
+      <td><input class="date-display" style="font-size:12px;padding:4px 6px;width:130px" placeholder="วว/ดด/ปปปป" maxlength="10" value="${fromISO(dd)}" ${done?'disabled':''} oninput="fmtDate(this)" onchange="updStep('${id}',${i},'doneDate',toISO(this.value))" title="วันที่เสร็จจริง"></td>
       <td style="white-space:nowrap">${done?`<button class="btn btn-sm btn-danger" onclick="undoStep('${id}',${i})" title="ย้อนกลับ">↩ ย้อน</button>`:(isSkipped?'':`<button class="btn btn-sm btn-success" onclick="doneStep('${id}',${i})">✓ เสร็จ</button>`)}</td>
     </tr>`;
   }).join('');
@@ -614,10 +614,16 @@ ${(()=>{
 
 // ── Step actions ─────────────────────────────────────────────
 async function doneStep(id,i){
-  const today=new Date().toISOString().split('T')[0];
-  await patch(`/api/orders/${id}/steps/${i}`,{doneDate:today});
+  // Fill today's date in the input field but let user edit before saving
+  const today=new Date();
+  const dd=String(today.getDate()).padStart(2,'0');
+  const mm=String(today.getMonth()+1).padStart(2,'0');
+  const yyyy=today.getFullYear();
+  const todayDMY=`${dd}/${mm}/${yyyy}`;
+  const todayISO=`${yyyy}-${mm}-${dd}`;
+  await patch(`/api/orders/${id}/steps/${i}`,{doneDate:todayISO});
   // recalculate completedSteps server-side via full reload
-  await loadAll();rSide();rDetail(id);shAlert('✅ บันทึกสำเร็จ','success');
+  await loadAll();rSide();rDetail(id);shAlert('✅ บันทึกสำเร็จ — แก้ไขวันที่ได้ในช่อง วันที่เสร็จจริง','success');
 }
 async function undoStep(id,i){
   const o=_orders.find(x=>x.id===id);if(!o)return;
@@ -703,8 +709,8 @@ async function togSkip(id,i){
   if(!o.skippedSteps)o.skippedSteps=Array(o.totalSteps).fill(false);
   const newVal=!o.skippedSteps[i];
   if(newVal){
-    // marking as skipped → also auto-complete this step so progress advances
-    const today=new Date().toISOString().split('T')[0];
+    const _d=new Date();const _dd=String(_d.getDate()).padStart(2,'0');const _mm=String(_d.getMonth()+1).padStart(2,'0');const _yyyy=_d.getFullYear();
+    const today=`${_yyyy}-${_mm}-${_dd}`;
     await patch(`/api/orders/${id}/steps/${i}`,{isSkipped:true,doneDate:today});
   } else {
     // un-skip → remove done date so it becomes active again
@@ -794,13 +800,18 @@ function renderItemsList(items){
         <input placeholder="จำนวน" value="${s.quantity||''}" onchange="updSub(${i},${j},'quantity',this.value)">
         <button class="sub-item-del" onclick="removeSub(${i},${j})" title="ลบ">×</button>
       </div>`).join('');
-    const custOpts=['—',...(_customers||[])].map(c=>`<option ${(it.customer||'')===(c==='—'?'':c)?'selected':''}>${c==='—'?'':c}</option>`).join('');
+    const custListId=`cust-drop-${i}`;
     return`<div class="item-row" id="item-row-${i}">
       <div class="item-row-top">
-        <select onchange="updItem(${i},'customer',this.value)" style="font-weight:600;font-size:13px;padding:4px 7px;border:1px solid var(--bd);border-radius:4px;background:var(--sur);font-family:'Sarabun',sans-serif;flex:1">
-          <option value="">— เลือกลูกค้า —</option>
-          ${custOpts}
-        </select>
+        <div style="flex:1;position:relative">
+          <input placeholder="ชื่อลูกค้า (พิมพ์หรือเลือก)" value="${it.customer||''}" 
+            onchange="updItem(${i},'customer',this.value)"
+            oninput="showCustDrop(${i},this.value)"
+            onfocus="showCustDrop(${i},this.value)"
+            onblur="setTimeout(()=>hideCustDrop(${i}),200)"
+            style="font-weight:600;font-size:13px;padding:4px 7px;border:1px solid var(--bd);border-radius:4px;background:var(--sur);font-family:'Sarabun',sans-serif;width:100%">
+          <div id="${custListId}" class="sup-dropdown"></div>
+        </div>
         <input placeholder="PR Number" value="${it.prNumber||''}" onchange="updItem(${i},'prNumber',this.value)">
         <button class="item-del" onclick="removeItemRow(${i})" title="ลบลูกค้า">×</button>
       </div>
@@ -929,6 +940,32 @@ async function delMember(i){
 }
 
 // ── Config: Suppliers ─────────────────────────────────────────
+function showCustDrop(i,q){
+  const drop=document.getElementById('cust-drop-'+i);
+  if(!drop)return;
+  const filtered=(_customers||[]).filter(c=>c.toLowerCase().includes((q||'').toLowerCase()));
+  const items=filtered.map(c=>`<div class="sup-option" onmousedown="pickCust(${i},this.textContent.trim())">${c}</div>`).join('');
+  const qt=(q||'').trim();
+  const addOpt=qt&&!(_customers||[]).includes(qt)?`<div class="sup-option sup-add" onmousedown="addCustFromField(${i},'${qt.replace(/'/g,"\\\'")}')">+ บันทึก "${qt}" ลงรายการ</div>`:'';
+  drop.innerHTML=items+addOpt||'<div style="padding:8px 12px;font-size:12px;color:var(--mu)">พิมพ์ชื่อลูกค้าได้เลย</div>';
+  drop.classList.add('show');
+}
+function hideCustDrop(i){const d=document.getElementById('cust-drop-'+i);if(d)d.classList.remove('show');}
+function pickCust(i,name){
+  updItem(i,'customer',name);
+  const inp=document.querySelector('#item-row-'+i+' input[placeholder*="ลูกค้า"]');
+  if(inp)inp.value=name;
+  hideCustDrop(i);
+}
+async function addCustFromField(i,name){
+  if(!(_customers||[]).includes(name)){
+    if(!_customers)_customers=[];
+    _customers.push(name);
+    await put('/api/config/customers',{customers:_customers});
+    rCustGrid();
+  }
+  pickCust(i,name);
+}
 function rCustGrid(){
   document.getElementById('cust-grid').innerHTML=(_customers||[]).map((c,i)=>`
     <div class="cfg-row">
