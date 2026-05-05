@@ -494,7 +494,10 @@ function rDetail(id){
   }
 
   const rows=Array.from({length:o.totalSteps},(_,i)=>{
-    const ss=stepSt(o,i);const done=i<o.completedSteps;const active=i===o.completedSteps;
+    const ss=stepSt(o,i);
+    const done=!!(o.doneDates[i]||o.skippedSteps&&o.skippedSteps[i]);
+    const isConsecDone=i<o.completedSteps; // consecutive from start
+    const active=i===o.completedSteps;
     const name=stepName(o,i);const def=defDays(o,i);
     const curDays=(o.plannedDays[i]&&o.plannedDays[i]>0)?o.plannedDays[i]:def;
     const isSpec=isStepSpecial(o,i);const reason=o.specialReason[i]||'';
@@ -502,9 +505,9 @@ function rDetail(id){
     const isSkipped=o.skippedSteps&&!!o.skippedSteps[i];
     const dl=isSkipped?null:calcDeadline(o,i);const dlStr=dl?fmtDateStr(dl):'';
     const dlPast=dl&&new Date()>dl&&!done;
-    let rowCls=isSkipped?'row-skipped':done?'row-done':ss==='late'?'row-late':ss==='spec'?'row-spec':active?'row-active':'';
+    let rowCls=isSkipped?'row-skipped':done?(isConsecDone?'row-done':'row-done'):ss==='late'?'row-late':ss==='spec'?'row-spec':active?'row-active':'';
     let nc=isSkipped?'p-wait':done?'p-done':ss==='late'?'p-late':ss==='spec'?'p-spec':active?'p-active':'p-wait';
-    let stxt=isSkipped?'⏭ ข้าม':done?'เสร็จแล้ว':ss==='late'?'เลยกำหนด':ss==='spec'?'⚡ Special':active?'กำลังทำ':'รอ';
+    let stxt=isSkipped?'⏭ ข้าม':done?(isConsecDone?'เสร็จแล้ว':'✓ เสร็จ (รอลำดับ)'):ss==='late'?'เลยกำหนด':ss==='spec'?'⚡ Special':active?'กำลังทำ':'รอ';
     const opts=['—',..._team].map(t=>`<option ${resp===t?'selected':''}>${t}</option>`).join('');
     const specTag=isSpec&&!done?`<span class="spec-tag">⚡ ${curDays}วัน (ปกติ ${def}วัน)</span>`:'';
     const lateTag=ss==='late'&&!done?`<span class="late-tag">เลยกำหนด</span>`:'';
@@ -512,7 +515,7 @@ function rDetail(id){
     const deadlineInfo=dlStr&&!done?`<div class="deadline-info ${dlPast?'deadline-late':''}">📅 กำหนด: ${dlStr}${dlPast?' (เลย!)':''}</div>`:'';
 
     return`<tr class="${rowCls}">
-      <td><span class="snum ${nc}">${done?'✓':isPP(o,i)?'💳':i+1}</span></td>
+      <td><span class="snum ${nc}">${isConsecDone?'✓':isPP(o,i)?'💳':i+1}</span></td>
       <td style="font-weight:500;font-size:12px">${name}${ppBadge}${specTag}${lateTag}</td>
       <td><span class="pill ${nc}">${stxt}</span></td>
       <td><select class="sel-sm" ${done?'disabled':''} onchange="updStep('${id}',${i},'responsible',this.value)">${opts}</select></td>
@@ -533,7 +536,7 @@ function rDetail(id){
         })()}
       </td>
       <td><input class="date-display step-date-input" style="font-size:12px;padding:4px 6px;width:130px" placeholder="วว/ดด/ปปปป" maxlength="10" value="${fromISO(dd)}" ${done?'disabled':''} oninput="fmtDate(this)" onchange="updStep('${id}',${i},'doneDate',toISO(this.value))" title="วันที่เสร็จจริง"></td>
-      <td style="white-space:nowrap">${done?`<button class="btn btn-sm btn-danger" onclick="undoStep('${id}',${i})" title="ย้อนกลับ">↩ ย้อน</button>`:(isSkipped?'':`<button class="btn btn-sm btn-success" onclick="doneStep('${id}',${i})">✓ เสร็จ</button>`)}</td>
+      <td style="white-space:nowrap">${isConsecDone?`<button class="btn btn-sm btn-danger" onclick="undoStep('${id}',${i})" title="ย้อนกลับ">↩ ย้อน</button>`:(isSkipped?'':`<button class="btn btn-sm btn-success" onclick="doneStep('${id}',${i})">✓ เสร็จ</button>`)}</td>
     </tr>`;
   }).join('');
 
