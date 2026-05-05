@@ -164,8 +164,14 @@ function buildOrder(row) {
     stepNotes[i]     = s.notes         || '';
     try { mfgSteps[i] = JSON.parse(s.mfg_steps||'[]'); } catch(e){ mfgSteps[i]=[]; }
     skippedSteps[i] = !!s.is_skipped;
-    if (s.done_date) completedSteps = Math.max(completedSteps, i + 1);
   });
+
+  // completedSteps = longest consecutive run of done/skipped steps from index 0
+  let completedSteps = 0;
+  for (let i = 0; i < totalSteps; i++) {
+    if (doneDates[i] || skippedSteps[i]) completedSteps = i + 1;
+    else break;
+  }
 
   return {
     id: row.id, customer: row.customer||'', factory: row.factory||'',
@@ -306,6 +312,22 @@ app.post('/api/migrate-steps', (req, res) => {
     saveDB();
     res.json({ ok: true, migrated, newStepCount: steps.length });
   } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ── DEBUG: check step dates ──────────────────────────────────
+app.get('/api/orders/:id/steps-debug', (req, res) => {
+  try {
+    const rows = query("SELECT step_index, done_date, is_skipped FROM order_steps WHERE order_id=? ORDER BY step_index", [req.params.id]);
+    res.json(rows);
+  } catch(e) { res.status(500).json({error:e.message}); }
+});
+
+// ── CLEAR a specific step's done_date ─────────────────────────
+app.delete('/api/orders/:id/steps/:step/done', (req, res) => {
+  try {
+    run("UPDATE order_steps SET done_date='' WHERE order_id=? AND step_index=?", [req.params.id, parseInt(req.params.step)]);
+    res.json(buildOrder(query("SELECT * FROM orders WHERE id=?",[req.params.id])[0]));
+  } catch(e) { res.status(500).json({error:e.message}); }
 });
 
 // ── BACKUP DOWNLOAD (protected by BACKUP_TOKEN env var) ──────
