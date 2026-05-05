@@ -150,7 +150,6 @@ function buildOrder(row) {
   const stepNotes     = Array(totalSteps).fill('');
   const mfgSteps      = Array(totalSteps).fill(null).map(()=>[]);
   const skippedSteps  = Array(totalSteps).fill(false);
-  let completedSteps  = 0;
 
   stepRows.forEach(s => {
     const i = s.step_index;
