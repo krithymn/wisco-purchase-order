@@ -532,7 +532,7 @@ function rDetail(id){
           return`<div class="mfg-checklist" id="mfg-${id}-${i}">${renderMfgChecklist(id,i,mfgArr)}</div>`;
         })()}
       </td>
-      <td><input class="date-display" style="font-size:12px;padding:4px 6px;width:130px" placeholder="วว/ดด/ปปปป" maxlength="10" value="${fromISO(dd)}" ${done?'disabled':''} oninput="fmtDate(this)" onchange="updStep('${id}',${i},'doneDate',toISO(this.value))" title="วันที่เสร็จจริง"></td>
+      <td><input class="date-display step-date-input" style="font-size:12px;padding:4px 6px;width:130px" placeholder="วว/ดด/ปปปป" maxlength="10" value="${fromISO(dd)}" ${done?'disabled':''} oninput="fmtDate(this)" onchange="updStep('${id}',${i},'doneDate',toISO(this.value))" title="วันที่เสร็จจริง"></td>
       <td style="white-space:nowrap">${done?`<button class="btn btn-sm btn-danger" onclick="undoStep('${id}',${i})" title="ย้อนกลับ">↩ ย้อน</button>`:(isSkipped?'':`<button class="btn btn-sm btn-success" onclick="doneStep('${id}',${i})">✓ เสร็จ</button>`)}</td>
     </tr>`;
   }).join('');
@@ -604,7 +604,7 @@ ${(()=>{
     <span style="font-size:11px;color:var(--mu)">⚡ Special = วันที่ต่างจากมาตรฐาน &nbsp; 🔴 เลยกำหนด &nbsp; 📅 = วันกำหนดจากวันเริ่ม+วันสะสม</span>
   </div>
   <div style="overflow-x:auto">
-    <table class="steps-table">
+    <table class="steps-table" id="detail-${id}">
       <thead><tr><th>#</th><th>ขั้นตอน</th><th>สถานะ</th><th>ผู้รับผิดชอบ</th><th>วัน / Special Case</th><th>วันที่เสร็จจริง</th><th>Action</th></tr></thead>
       <tbody>${rows}</tbody>
     </table>
@@ -614,16 +614,15 @@ ${(()=>{
 
 // ── Step actions ─────────────────────────────────────────────
 async function doneStep(id,i){
-  // Fill today's date in the input field but let user edit before saving
+  // Read whatever date is already typed in the field for this step
+  const inputs=document.querySelectorAll(`#detail-${id} .step-date-input`);
+  const fieldVal=inputs[i]?toISO(inputs[i].value):'';
+  // Fall back to today only if field is empty
   const today=new Date();
-  const dd=String(today.getDate()).padStart(2,'0');
-  const mm=String(today.getMonth()+1).padStart(2,'0');
-  const yyyy=today.getFullYear();
-  const todayDMY=`${dd}/${mm}/${yyyy}`;
-  const todayISO=`${yyyy}-${mm}-${dd}`;
-  await patch(`/api/orders/${id}/steps/${i}`,{doneDate:todayISO});
-  // recalculate completedSteps server-side via full reload
-  await loadAll();rSide();rDetail(id);shAlert('✅ บันทึกสำเร็จ — แก้ไขวันที่ได้ในช่อง วันที่เสร็จจริง','success');
+  const todayISO=`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+  const doneDate=fieldVal||todayISO;
+  await patch(`/api/orders/${id}/steps/${i}`,{doneDate});
+  await loadAll();rSide();rDetail(id);shAlert('✅ บันทึกสำเร็จ','success');
 }
 async function undoStep(id,i){
   const o=_orders.find(x=>x.id===id);if(!o)return;
