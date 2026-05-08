@@ -543,10 +543,10 @@ function rDetail(id){
         ${isSkipped?'':deadlineInfo}
         ${(()=>{
           const base=o.prepayment?1:0;
-          const msi=getMfgStepIndex(o); // เริ่มผลิต
-          const psi=8;                   // ส่ง POI/Drawing/Nameplate (always index 8)
-          const dsi=13+base;             // รับเอกสารจาก SUP
-          const nsi=17+base;             // แจ้งสินค้าเข้า
+          const msi=11+base;  // เริ่มผลิต: index 11 no-prepay, 12 with
+          const psi=8;        // ส่ง POI/Drawing/Nameplate: always index 8 (step 9)
+          const dsi=13+base;  // รับเอกสารจาก SUP: index 13 no-prepay, 14 with (step 14/15)
+          const nsi=17+base;  // แจ้งสินค้าเข้า: index 17 no-prepay, 18 with (step 18/19)
           if(i===msi){
             const arr=(o.mfgSteps&&Array.isArray(o.mfgSteps[i]))?o.mfgSteps[i]:Array(MFG_STEPS.length).fill(false);
             return`<div class="mfg-checklist" id="mfg-${id}-${i}">${renderMfgChecklist(id,i,arr,MFG_STEPS)}</div>`;
