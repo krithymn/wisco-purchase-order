@@ -28,10 +28,10 @@ const DEFAULT_STEPS = [
   { name: "แจ้งบัญชี",                            defaultDays: 1  },
   { name: "เริ่มผลิต",                            defaultDays: 30 },
   { name: "ตรวจสอบก่อนแพ็คสินค้า",              defaultDays: 2  },
+  { name: "รับเอกสารจาก SUP",                    defaultDays: 2  },
   { name: "จ่ายเงิน SUP",                         defaultDays: 2  },
   { name: "ติดตามการขนส่ง",                       defaultDays: 7  },
   { name: "แจ้งสินค้าเข้า",                       defaultDays: 1  },
-  { name: "ส่งเอกสาร CER/DRAWING",               defaultDays: 1  },
   { name: "ตรวจสอบสินค้าเข้า",                   defaultDays: 2  },
   { name: "รับสินค้าเข้าระบบ",                   defaultDays: 1  }
 ];
