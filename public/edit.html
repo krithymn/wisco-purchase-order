@@ -233,8 +233,9 @@ input:focus,select:focus{outline:none;border-color:var(--ac);box-shadow:0 0 0 3p
       <thead><tr style="background:var(--sur2);border-bottom:1px solid var(--bd)">
         <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase">POI Number</th>
         <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase">Supplier</th>
-        <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase">ลูกค้า</th>
+        <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase">ลูกค้า / PR Number</th>
         <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase">วันที่ส่งมอบ</th>
+        <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase">สถานะการส่ง</th>
         <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase">การดำเนินการ</th>
       </tr></thead>
       <tbody id="archive-body"></tbody>
@@ -1119,13 +1120,36 @@ function rArchive(){
       const na=pa?parseInt(pa[1])*10000+parseInt(pa[2]):0;const nb=pb?parseInt(pb[1])*10000+parseInt(pb[2]):0;return nb-na;});
   document.getElementById('archive-count').textContent=`${done.length} Order เสร็จสมบูรณ์`;
   document.getElementById('archive-empty').style.display=done.length?'none':'block';
+  // update archive table header
+  const archTbl=document.getElementById('archive-body').closest('table');
+  if(archTbl){
+    archTbl.querySelector('thead tr').innerHTML=`
+      <th style="padding:10px 14px;font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase">POI Number</th>
+      <th style="padding:10px 14px;font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase">Supplier</th>
+      <th style="padding:10px 14px;font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase">ลูกค้า / PR Number</th>
+      <th style="padding:10px 14px;font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase">วันที่ส่งมอบ</th>
+      <th style="padding:10px 14px;font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase">สถานะการส่ง</th>
+      <th style="padding:10px 14px;font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase">การดำเนินการ</th>`;
+  }
   document.getElementById('archive-body').innerHTML=done.map(o=>{
-    const customers=(o.items||[]).map(it=>it.customer).filter(Boolean).join(', ')||o.customer||'—';
+    const items=o.items||[];
+    const custPR=items.map(it=>{
+      const pr=it.prNumber?` (${it.prNumber})`:'';
+      return`${it.customer||'—'}${pr}`;
+    }).join(', ')||o.customer||'—';
+    // Check if delivered late: compare last doneDate vs dueDate
+    const lastDone=o.doneDates?[...o.doneDates].filter(Boolean).pop():'';
+    const isLate=o.dueDate&&lastDone&&lastDone>o.dueDate;
+    const daysLate=isLate?Math.ceil((new Date(lastDone)-new Date(o.dueDate))/(86400000)):0;
+    const statusBadge=isLate
+      ?`<span style="font-size:11px;font-weight:700;padding:3px 9px;border-radius:99px;background:var(--late-bg);color:var(--late);border:1px solid var(--late-bd)">⚠️ ส่งช้า ${daysLate} วัน (${lastDone})</span>`
+      :`<span style="font-size:11px;font-weight:700;padding:3px 9px;border-radius:99px;background:var(--done-bg);color:var(--done);border:1px solid var(--done-bd)">✅ ส่งตรงเวลา</span>`;
     return`<tr style="border-bottom:1px solid var(--bd2)">
       <td style="padding:10px 14px;font-weight:700;font-size:13px">${o.id}</td>
       <td style="padding:10px 14px;font-size:13px">${o.factory||'—'}</td>
-      <td style="padding:10px 14px;font-size:12px;color:var(--mu);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${customers}</td>
+      <td style="padding:10px 14px;font-size:12px;color:var(--mu);max-width:220px">${custPR}</td>
       <td style="padding:10px 14px;font-size:12px;color:var(--done);font-weight:600">${o.dueDate||'—'}</td>
+      <td style="padding:10px 14px">${o.dueDate?statusBadge:'<span style="color:var(--mu);font-size:12px">—</span>'}</td>
       <td style="padding:10px 14px"><button class="btn btn-sm btn-secondary" onclick="activePO='${o.id}';swTab('orders',document.querySelectorAll('.nav-tab')[0]);setTimeout(()=>openOrder('${o.id}'),100)">เปิด</button></td>
     </tr>`;
   }).join('');
