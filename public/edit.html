@@ -542,17 +542,27 @@ function rDetail(id){
         ${isSpec&&!done?`<input style="margin-top:4px;font-size:11px;padding:3px 6px;border:1px solid var(--spec-bd);border-radius:4px;width:100%;font-family:'Sarabun',sans-serif;background:var(--spec-bg)" placeholder="เหตุผล special case..." value="${reason}" onchange="updStep('${id}',${i},'specialReason',this.value)">`:''}
         ${isSkipped?'':deadlineInfo}
         ${(()=>{
-          const msi=getMfgStepIndex(o);
-          const psi=getPOISubIndex(o);
-          const dsi=getDocSubIndex(o);
-          const nsi=getNotifySubIndex(o);
+          const base=o.prepayment?1:0;
+          const msi=getMfgStepIndex(o); // เริ่มผลิต
+          const psi=8;                   // ส่ง POI/Drawing/Nameplate (always index 8)
+          const dsi=13+base;             // รับเอกสารจาก SUP
+          const nsi=17+base;             // แจ้งสินค้าเข้า
           if(i===msi){
-            const mfgArr=(o.mfgSteps&&Array.isArray(o.mfgSteps[i]))?o.mfgSteps[i]:Array(MFG_STEPS.length).fill(false);
-            return`<div class="mfg-checklist" id="mfg-${id}-${i}">${renderMfgChecklist(id,i,mfgArr)}</div>`;
+            const arr=(o.mfgSteps&&Array.isArray(o.mfgSteps[i]))?o.mfgSteps[i]:Array(MFG_STEPS.length).fill(false);
+            return`<div class="mfg-checklist" id="mfg-${id}-${i}">${renderMfgChecklist(id,i,arr,MFG_STEPS)}</div>`;
           }
-          if(i===psi) return renderSubChecklist(id,i,'poi',POI_SUB,o.mfgSteps,'📄 เอกสารที่ส่ง');
-          if(i===dsi) return renderSubChecklist(id,i,'doc',DOC_SUB,o.mfgSteps,'📂 เอกสารที่รับ');
-          if(i===nsi) return renderSubChecklist(id,i,'notify',NOTIFY_SUB,o.mfgSteps,'📋 เอกสารแจ้ง');
+          if(i===psi){
+            const arr=(o.mfgSteps&&Array.isArray(o.mfgSteps[i]))?o.mfgSteps[i]:Array(SEND_DOC_STEPS.length).fill(false);
+            return`<div class="mfg-checklist" id="mfg-${id}-${i}">${renderMfgChecklist(id,i,arr,SEND_DOC_STEPS)}</div>`;
+          }
+          if(i===dsi){
+            const arr=(o.mfgSteps&&Array.isArray(o.mfgSteps[i]))?o.mfgSteps[i]:Array(RECV_DOC_STEPS.length).fill(false);
+            return`<div class="mfg-checklist" id="mfg-${id}-${i}">${renderMfgChecklist(id,i,arr,RECV_DOC_STEPS)}</div>`;
+          }
+          if(i===nsi){
+            const arr=(o.mfgSteps&&Array.isArray(o.mfgSteps[i]))?o.mfgSteps[i]:Array(NOTIFY_STEPS.length).fill(false);
+            return`<div class="mfg-checklist" id="mfg-${id}-${i}">${renderMfgChecklist(id,i,arr,NOTIFY_STEPS)}</div>`;
+          }
           return '';
         })()}
       </td>
@@ -1083,8 +1093,10 @@ function canPW(){document.getElementById('pw-gate').classList.remove('show');doc
 function _doSwTab(tab,el){
   document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');
   document.getElementById('tab-orders').style.display=tab==='orders'?'block':'none';
+  document.getElementById('tab-archive').style.display=tab==='archive'?'block':'none';
   document.getElementById('tab-config').style.display=tab==='config'?'block':'none';
   if(tab==='config'){rTeam();rCustGrid();rSupGrid();rStepsCfg();}
+  if(tab==='archive'){rArchive();}
 }
 function swTab(tab,el){
   if(tab==='config'&&!_pwUnlocked){document.getElementById('pw-gate').classList.add('show');setTimeout(()=>document.getElementById('pw-inp').focus(),50);return}
