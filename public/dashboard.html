@@ -333,9 +333,9 @@ main{display:grid;grid-template-columns:280px 1fr 260px;overflow:hidden;height:c
   <!-- Due soon -->
   <div class="section-block">
     <div class="section-head" onclick="togSection('due')">
-      <span>⏰ ใกล้ครบกำหนด (7 วัน)</span>
+      <span>⏰ 5 Order ใกล้ส่งมอบ</span>
       <div style="display:flex;align-items:center;gap:6px">
-        <span class="section-badge" id="due-badge" style="background:var(--warn-dim);color:var(--warn)">0</span>
+        <span class="section-badge" id="due-badge" style="background:var(--prog-dim);color:var(--prog)">0</span>
         <span class="section-toggle" id="due-toggle">▼</span>
       </div>
     </div>
@@ -608,27 +608,26 @@ function renderRightPanel(ps){
     </div>`).join('')
     :'<div style="padding:12px 14px;font-size:12px;color:var(--mu)">ไม่มีข้อมูล</div>';
 
-  // ── Due soon (within 7 days, not done, not already late) ──
+  // ── 5 soonest upcoming orders by due date (not done) ──
   const now=new Date();
-  const in7=new Date(now.getTime()+7*86400000);
-  const dueSoon=ps.filter(o=>{
+  const upcoming=ps.filter(o=>{
     if(orderSt(o)==='done')return false;
     if(!o.dueDate)return false;
-    const d=new Date(o.dueDate);
-    return d>=now&&d<=in7;
-  }).sort((a,b)=>new Date(a.dueDate)-new Date(b.dueDate));
-  document.getElementById('due-badge').textContent=dueSoon.length;
-  document.getElementById('due-list').innerHTML=dueSoon.length?dueSoon.map(o=>{
+    return true;
+  }).sort((a,b)=>new Date(a.dueDate)-new Date(b.dueDate)).slice(0,5);
+  document.getElementById('due-badge').textContent=upcoming.length;
+  document.getElementById('due-list').innerHTML=upcoming.length?upcoming.map(o=>{
     const d=new Date(o.dueDate);const diff=Math.ceil((d-now)/86400000);
-    return`<div class="due-item soon" onclick="openM('${o.id}')">
+    const isLate=diff<0;
+    return`<div class="due-item ${isLate?'urgent':'soon'}" onclick="openM('${o.id}')">
       <div style="display:flex;align-items:center;justify-content:space-between">
         <span class="due-id">${o.id}</span>
-        <span class="due-days soon">อีก ${diff} วัน</span>
+        <span class="due-days ${isLate?'urgent':'soon'}">${isLate?`เลย ${Math.abs(diff)} วัน`:`อีก ${diff} วัน`}</span>
       </div>
       <div style="font-size:10px;color:var(--mu);margin-top:2px">${o.factory||'—'} · ${o.dueDate}</div>
     </div>`;
   }).join('')
-  :'<div style="padding:12px 14px;font-size:12px;color:var(--mu)">ไม่มี Order ที่จะครบใน 7 วัน</div>';
+  :'<div style="padding:12px 14px;font-size:12px;color:var(--mu)">ไม่มี Order ที่มีกำหนดส่ง</div>';
 
   // ── Manufacturing (step เริ่มผลิต = index 10 without prepay, 11 with) ──
   const mfgStep=o=>o.prepayment?11:10;

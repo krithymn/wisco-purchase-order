@@ -365,6 +365,15 @@ input:focus,select:focus{outline:none;border-color:var(--ac);box-shadow:0 0 0 3p
 <script>
 const API='', PW='08122005';
 const MFG_STEPS=['Design','Die-casting','Mechanical processing','Assembly','Testing','Quality','Packing'];
+const SEND_DOC_STEPS=['ส่ง POI (Approved)','ส่ง Drawing (Approved)','ส่ง Nameplate (Approved)'];
+const RECV_DOC_STEPS=['Cer.','Packing List','อื่น ๆ'];
+const NOTIFY_STEPS=['ใบแจ้งสินค้าเข้า','Cer.','Drawing','อื่น ๆ'];
+// Sub-steps for step 9 (ส่ง POI/Drawing/Nameplate ให้ SUP) - index 8
+const POI_SUB=['ส่ง POI (Approved)','ส่ง Drawing (Approved)','ส่ง Nameplate (Approved)'];
+// Sub-steps for step 14 (รับเอกสารจาก SUP) - index 13 without prepay, 14 with
+const DOC_SUB=['Cer.','Packing List','อื่นๆ'];
+// Sub-steps for step 17 (แจ้งสินค้าเข้า) - index 16 without prepay, 17 with
+const NOTIFY_SUB=['ใบแจ้งสินค้าเข้า','Cer.','Drawing','อื่นๆ'];
 // Manufacturing step is index 11 (เริ่มผลิต) without prepayment, 12 with prepayment
 // แจ้งบัญชี is index 10 (without prepay), 11 (with prepay)
 function getMfgStepIndex(o){ return o.prepayment ? 12 : 11; }
@@ -466,7 +475,8 @@ function fcol(s){return{done:'#1a7f37',late:'#cf222e',progress:'#0969da',pending
 // ── Sidebar ──────────────────────────────────────────────────
 function filtSide(v){_sfilt=v.toLowerCase();rSide()}
 function rSide(){
-  const list=_orders.filter(o=>!_sfilt||o.id.toLowerCase().includes(_sfilt)||(o.customer||'').toLowerCase().includes(_sfilt)||(o.factory||'').toLowerCase().includes(_sfilt));
+  // Active list = exclude completed orders
+  const list=_orders.filter(o=>(o.completedSteps<o.totalSteps)&&(!_sfilt||o.id.toLowerCase().includes(_sfilt)||(o.customer||'').toLowerCase().includes(_sfilt)||(o.factory||'').toLowerCase().includes(_sfilt)));
   document.getElementById('sidebar').innerHTML=list.map(o=>{
     const s=orderSt(o);const pct=Math.round((o.completedSteps/o.totalSteps)*100);
     return`<div class="order-item ${_active===o.id?'active':''}" onclick="openOrder('${o.id}')">
@@ -533,9 +543,17 @@ function rDetail(id){
         ${isSkipped?'':deadlineInfo}
         ${(()=>{
           const msi=getMfgStepIndex(o);
-          if(i!==msi) return '';
-          const mfgArr=(o.mfgSteps&&Array.isArray(o.mfgSteps[i]))?o.mfgSteps[i]:Array(MFG_STEPS.length).fill(false);
-          return`<div class="mfg-checklist" id="mfg-${id}-${i}">${renderMfgChecklist(id,i,mfgArr)}</div>`;
+          const psi=getPOISubIndex(o);
+          const dsi=getDocSubIndex(o);
+          const nsi=getNotifySubIndex(o);
+          if(i===msi){
+            const mfgArr=(o.mfgSteps&&Array.isArray(o.mfgSteps[i]))?o.mfgSteps[i]:Array(MFG_STEPS.length).fill(false);
+            return`<div class="mfg-checklist" id="mfg-${id}-${i}">${renderMfgChecklist(id,i,mfgArr)}</div>`;
+          }
+          if(i===psi) return renderSubChecklist(id,i,'poi',POI_SUB,o.mfgSteps,'📄 เอกสารที่ส่ง');
+          if(i===dsi) return renderSubChecklist(id,i,'doc',DOC_SUB,o.mfgSteps,'📂 เอกสารที่รับ');
+          if(i===nsi) return renderSubChecklist(id,i,'notify',NOTIFY_SUB,o.mfgSteps,'📋 เอกสารแจ้ง');
+          return '';
         })()}
       </td>
       <td><input class="date-display step-date-input" data-step="${i}" style="font-size:12px;padding:4px 6px;width:130px" placeholder="วว/ดด/ปปปป" maxlength="10" value="${fromISO(dd)}" ${isConsecDone?'disabled':''} oninput="fmtDate(this)" onchange="updStep('${id}',${i},'doneDate',toISO(this.value))" title="วันที่เสร็จจริง"></td>
@@ -688,6 +706,23 @@ async function saveMfg(id,stepIdx,mfgArr){
   // re-render just the checklist without full page reload
   const el=document.getElementById(`mfg-${id}-${stepIdx}`);
   if(el) el.innerHTML=renderMfgChecklist(id,stepIdx,mfgArr);
+}
+function renderSubChecklist(id,stepIdx,key,items,mfgSteps,title){
+  const arr=(mfgSteps&&Array.isArray(mfgSteps[stepIdx]))?mfgSteps[stepIdx]:Array(items.length).fill(false);
+  const done=arr.filter(Boolean).length;
+  const rows=items.map((s,i)=>{
+    const chk=!!(arr[i]);
+    return`<label class="mfg-item ${chk?'checked':''}" onclick="togMfg('${id}',${stepIdx},${i},${!chk})">
+      <span class="mfg-chk">${chk?'✓':''}</span><span>${s}</span>
+    </label>`;
+  }).join('');
+  return`<div class="mfg-checklist" id="mfg-${id}-${stepIdx}">
+    <div class="mfg-title">${title} (${done}/${items.length})</div>
+    ${rows}
+    <div style="margin-top:6px;height:3px;background:var(--bd2);border-radius:99px;overflow:hidden">
+      <div style="height:100%;width:${Math.round(done/items.length*100)}%;background:var(--done);border-radius:99px;transition:width .3s"></div>
+    </div>
+  </div>`;
 }
 function renderMfgChecklist(id,stepIdx,checked){
   const done=MFG_STEPS.filter((_,i)=>(checked||[])[i]).length;
@@ -1059,7 +1094,7 @@ function swTab(tab,el){
 window.swTab=swTab;
 
 function rArchive(){
-  const done=_orders.filter(o=>o.completedSteps>=o.totalSteps)
+  const done=_orders.filter(o=>o.completedSteps>=o.totalSteps||orderSt(o)==='done')
     .sort((a,b)=>{const pa=(a.id||'').match(/POI(\d{4})-(\d+)/i);const pb=(b.id||'').match(/POI(\d{4})-(\d+)/i);
       const na=pa?parseInt(pa[1])*10000+parseInt(pa[2]):0;const nb=pb?parseInt(pb[1])*10000+parseInt(pb[2]):0;return nb-na;});
   document.getElementById('archive-count').textContent=`${done.length} Order เสร็จสมบูรณ์`;
