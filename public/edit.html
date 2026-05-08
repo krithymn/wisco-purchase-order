@@ -332,6 +332,7 @@ input:focus,select:focus{outline:none;border-color:var(--ac);box-shadow:0 0 0 3p
         <div class="fg"><label>วันที่ส่งมอบจาก SUP</label><input id="f-del-sup" class="date-display" placeholder="วว/ดด/ปปปป" maxlength="10" oninput="fmtDate(this)" autocomplete="off"></div>
         <div class="fg"><label>วันที่ส่งมอบลูกค้า (เร็วที่สุด)</label><input id="f-del-cust" class="date-display" placeholder="วว/ดด/ปปปป" maxlength="10" oninput="fmtDate(this)" autocomplete="off"></div>
         <div class="fg" style="grid-column:span 2"><label>วันที่ส่งมอบ (กำหนดหลัก)</label><input id="f-due" class="date-display" style="width:100%" placeholder="วว/ดด/ปปปป" maxlength="10" oninput="fmtDate(this)" autocomplete="off"></div>
+        <div class="fg" style="grid-column:span 2"><label>📦 วันที่คาดว่าจะถึง Wisco (ETA)</label><input id="f-eta-wisco" class="date-display" style="width:100%" placeholder="วว/ดด/ปปปป" maxlength="10" oninput="fmtDate(this)" autocomplete="off"></div>
       </div>
       <!-- ITEMS -->
       <div style="margin-bottom:10px">
@@ -583,7 +584,7 @@ function rDetail(id){
 <div class="page-hdr">
   <div>
     <div class="page-title">${o.id} <span class="pill ${pillCls(s)}">${pillLbl(s)}</span></div>
-    <div class="page-sub">🏭 ${o.factory||'—'}</div><div style="display:flex;gap:16px;font-size:12px;color:var(--mu);margin-top:4px;flex-wrap:wrap">${o.startDate?`<span>📋 เปิด PO: <strong style="color:var(--tx)">${o.startDate}</strong></span>`:''} ${o.productionFinishDate?`<span>🏭 ผลิตเสร็จ: <strong style="color:var(--tx)">${o.productionFinishDate}</strong></span>`:''} ${o.deliveryDateSup?`<span>🚚 ส่งมอบจาก SUP: <strong style="color:var(--tx)">${o.deliveryDateSup}</strong></span>`:''} ${o.deliveryDateCust?`<span>👤 ส่งลูกค้า (เร็วสุด): <strong style="color:var(--done)">${o.deliveryDateCust}</strong></span>`:''} ${o.dueDate?`<span>📦 กำหนดหลัก: <strong style="color:var(--tx)">${o.dueDate}</strong></span>`:''}</div>
+    <div class="page-sub">🏭 ${o.factory||'—'}</div><div style="display:flex;gap:16px;font-size:12px;color:var(--mu);margin-top:4px;flex-wrap:wrap">${o.startDate?`<span>📋 เปิด PO: <strong style="color:var(--tx)">${o.startDate}</strong></span>`:''} ${o.productionFinishDate?`<span>🏭 ผลิตเสร็จ: <strong style="color:var(--tx)">${o.productionFinishDate}</strong></span>`:''} ${o.deliveryDateSup?`<span>🚚 ส่งมอบจาก SUP: <strong style="color:var(--tx)">${o.deliveryDateSup}</strong></span>`:''} ${o.deliveryDateCust?`<span>👤 ส่งลูกค้า (เร็วสุด): <strong style="color:var(--done)">${o.deliveryDateCust}</strong></span>`:''} ${o.dueDate?`<span>📦 กำหนดหลัก: <strong style="color:var(--tx)">${o.dueDate}</strong></span>`:''} ${o.etaWisco?`<span>🚢 ETA Wisco: <strong style="color:var(--prog)">${o.etaWisco}</strong></span>`:''}</div>
   </div>
   <div style="display:flex;gap:6px">
     <button class="btn btn-sm btn-secondary" onclick="editOrder('${id}')">✏️ แก้ไข</button>
@@ -824,7 +825,7 @@ async function addSupFromDrop(name){
 function openNew(){
   document.getElementById('modal-t').textContent='เพิ่ม Order ใหม่';
   ['f-id','f-fac'].forEach(x=>document.getElementById(x).value='');
-  ['f-start','f-prod-finish','f-due','f-del-sup','f-del-cust'].forEach(x=>setDateField(x,''));
+  ['f-start','f-prod-finish','f-due','f-del-sup','f-del-cust','f-eta-wisco'].forEach(x=>setDateField(x,''));
   document.getElementById('f-partial').checked=false;
   document.getElementById('f-id').disabled=false;
   document.getElementById('f-prepay').checked=false;
@@ -843,6 +844,7 @@ function editOrder(id){
   setDateField('f-due',o.dueDate||'');
   setDateField('f-del-sup',o.deliveryDateSup||'');
   setDateField('f-del-cust',o.deliveryDateCust||'');
+  setDateField('f-eta-wisco',o.etaWisco||'');
   document.getElementById('f-prepay').checked=o.prepayment;
   document.getElementById('f-partial').checked=o.isPartial||false;
   document.getElementById('modal-alert').innerHTML='';
@@ -935,7 +937,8 @@ async function saveOrder(){
   const items=getItems();
   if(!items.length){document.getElementById('modal-alert').innerHTML='<div class="alert alert-error">กรุณาเพิ่มรายการสินค้าอย่างน้อย 1 รายการ</div>';return;}
   const firstItem=items[0];
-  const body={id,customer:firstItem.customer||'',factory:fac,product:firstItem.product||'',quantity:firstItem.quantity||'',customerPO:'',startDate:getDateField('f-start'),productionFinishDate:getDateField('f-prod-finish'),dueDate:getDateField('f-due'),deliveryDateSup:getDateField('f-del-sup'),deliveryDateCust:getDateField('f-del-cust'),prepayment:document.getElementById('f-prepay').checked,isPartial:document.getElementById('f-partial').checked,items};
+  const body={id,customer:firstItem.customer||'',factory:fac,product:firstItem.product||'',quantity:firstItem.quantity||'',customerPO:'',startDate:getDateField('f-start'),productionFinishDate:getDateField('f-prod-finish'),dueDate:getDateField('f-due'),deliveryDateSup:getDateField('f-del-sup'),deliveryDateCust:getDateField('f-del-cust'),
+    etaWisco:getDateField('f-eta-wisco'),prepayment:document.getElementById('f-prepay').checked,isPartial:document.getElementById('f-partial').checked,items};
   if(_editId){await put(`/api/orders/${_editId}`,body);}
   else{const r=await post('/api/orders',body);if(r.error){document.getElementById('modal-alert').innerHTML=`<div class="alert alert-error">${r.error==='Order ID already exists'?'เลขที่ Order นี้มีอยู่แล้ว':r.error}</div>`;return;}}
   try{
