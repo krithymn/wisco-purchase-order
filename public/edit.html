@@ -701,15 +701,19 @@ async function updStep(id,i,field,val){
 }
 async function saveMfg(id,stepIdx,mfgArr){
   await patch(`/api/orders/${id}/steps/${stepIdx}`,{mfgSteps:mfgArr});
-  // update local cache immediately
   const o=_orders.find(x=>x.id===id);
   if(o){
     if(!o.mfgSteps) o.mfgSteps=Array(o.totalSteps).fill([]);
     o.mfgSteps[stepIdx]=[...mfgArr];
   }
-  // re-render just the checklist without full page reload
+  // get correct steps for this step index
+  const base=o?(o.prepayment?1:0):0;
+  let customSteps=MFG_STEPS;
+  if(stepIdx===8) customSteps=SEND_DOC_STEPS;
+  else if(stepIdx===13+base) customSteps=RECV_DOC_STEPS;
+  else if(stepIdx===17+base) customSteps=NOTIFY_STEPS;
   const el=document.getElementById(`mfg-${id}-${stepIdx}`);
-  if(el) el.innerHTML=renderMfgChecklist(id,stepIdx,mfgArr);
+  if(el) el.innerHTML=renderMfgChecklist(id,stepIdx,mfgArr,customSteps);
 }
 function renderSubChecklist(id,stepIdx,key,items,mfgSteps,title){
   const arr=(mfgSteps&&Array.isArray(mfgSteps[stepIdx]))?mfgSteps[stepIdx]:Array(items.length).fill(false);
