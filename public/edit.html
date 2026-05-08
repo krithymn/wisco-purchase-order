@@ -734,16 +734,18 @@ function renderSubChecklist(id,stepIdx,key,items,mfgSteps,title){
     </div>
   </div>`;
 }
-function renderMfgChecklist(id,stepIdx,checked){
-  const done=MFG_STEPS.filter((_,i)=>(checked||[])[i]).length;
-  const items=MFG_STEPS.map((s,i)=>{
+function renderMfgChecklist(id,stepIdx,checked,customSteps){
+  const steps=customSteps||MFG_STEPS;
+  const title=steps===MFG_STEPS?'🔧 ขั้นตอนการผลิต':'📋 รายการ';
+  const done=steps.filter((_,i)=>(checked||[])[i]).length;
+  const items=steps.map((s,i)=>{
     const chk=(checked||[])[i]?true:false;
     return`<label class="mfg-item ${chk?'checked':''}" onclick="togMfg('${id}',${stepIdx},${i},${!chk})">
       <input type="checkbox" ${chk?'checked':''} onclick="event.stopPropagation();togMfg('${id}',${stepIdx},${i},this.checked)"> ${s}
     </label>`;
   }).join('');
-  const pct=Math.round((done/MFG_STEPS.length)*100);
-  return`<div class="mfg-title">🔧 ขั้นตอนการผลิต (${done}/${MFG_STEPS.length})</div>
+  const pct=Math.round((done/steps.length)*100);
+  return`<div class="mfg-title">${title} (${done}/${steps.length})</div>
     ${items}
     <div class="mfg-progress">
       <div class="mfg-bar-outer"><div class="mfg-bar-inner" style="width:${pct}%"></div></div>
@@ -752,9 +754,14 @@ function renderMfgChecklist(id,stepIdx,checked){
 }
 async function togMfg(id,stepIdx,mfgIdx,val){
   const o=_orders.find(x=>x.id===id);if(!o)return;
-  // ensure mfgSteps exists and is initialized
-  if(!o.mfgSteps||!Array.isArray(o.mfgSteps)) o.mfgSteps=Array(o.totalSteps||20).fill(null).map(()=>Array(MFG_STEPS.length).fill(false));
-  if(!Array.isArray(o.mfgSteps[stepIdx])) o.mfgSteps[stepIdx]=Array(MFG_STEPS.length).fill(false);
+  const base=o.prepayment?1:0;
+  // get correct steps array for this step
+  let steps=MFG_STEPS;
+  if(stepIdx===8) steps=SEND_DOC_STEPS;
+  else if(stepIdx===13+base) steps=RECV_DOC_STEPS;
+  else if(stepIdx===17+base) steps=NOTIFY_STEPS;
+  if(!o.mfgSteps||!Array.isArray(o.mfgSteps)) o.mfgSteps=Array(o.totalSteps||20).fill(null).map(()=>[]);
+  if(!Array.isArray(o.mfgSteps[stepIdx])) o.mfgSteps[stepIdx]=Array(steps.length).fill(false);
   const arr=[...o.mfgSteps[stepIdx]];
   arr[mfgIdx]=!!val;
   await saveMfg(id,stepIdx,arr);
