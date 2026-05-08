@@ -672,14 +672,8 @@ async function clearStep(id,i){
 }
 async function undoStep(id,i){
   const o=_orders.find(x=>x.id===id);if(!o)return;
-  const stepsAfter=o.completedSteps-i; // how many steps will be cleared
-  if(!confirm(`ย้อนกลับไปที่ขั้นตอน ${i+1}?\n(จะยกเลิก ${stepsAfter} ขั้นตอนที่ทำไปแล้ว)`))return;
-  // Clear all done dates from step i onwards
-  const clears=[];
-  for(let j=i;j<o.completedSteps;j++){
-    clears.push(patch(`/api/orders/${id}/steps/${j}`,{doneDate:''}));
-  }
-  await Promise.all(clears);
+  if(!confirm(`ยกเลิกขั้นตอน ${i+1} เฉพาะขั้นตอนนี้?\n(ขั้นตอนอื่นจะไม่เปลี่ยน)`))return;
+  await patch(`/api/orders/${id}/steps/${i}`,{doneDate:''});
   await loadAll();rSide();rDetail(id);
 }
 async function togShipItem(orderId,itemIdx,subIdx,val){
