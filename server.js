@@ -332,6 +332,63 @@ app.delete('/api/orders/:id/steps/:step/done', (req, res) => {
   } catch(e) { res.status(500).json({error:e.message}); }
 });
 
+// ── PR (Purchase Request) ENDPOINTS ─────────────────────────
+app.get('/api/prs', (req, res) => {
+  try {
+    const rows = query("SELECT * FROM purchase_requests ORDER BY created_at DESC");
+    res.json(rows.map(r => ({
+      id: r.id, prNo: r.pr_no, openDate: r.open_date,
+      customerName: r.customer_name, customerPO: r.customer_po,
+      poValue: r.po_value, fineYN: r.fine_yn, finePct: r.fine_pct,
+      dueDate: r.due_date, saleTeam: r.sale_team, sale: r.sale,
+      quotationNo: r.quotation_no, ldNo: r.ld_no, domestic: r.domestic,
+      poNo: r.po_no, items: (() => { try { return JSON.parse(r.items||'[]'); } catch(e) { return []; } })(),
+      linkedPOI: r.linked_poi
+    })));
+  } catch(e) { res.status(500).json({error:e.message}); }
+});
+
+app.post('/api/prs', (req, res) => {
+  try {
+    const b = req.body;
+    run(\`INSERT INTO purchase_requests(pr_no,open_date,customer_name,customer_po,po_value,fine_yn,fine_pct,due_date,sale_team,sale,quotation_no,ld_no,domestic,po_no,items)
+         VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)\`,
+      [b.prNo||'',b.openDate||'',b.customerName||'',b.customerPO||'',b.poValue||'',
+       b.fineYN||'no',b.finePct||'',b.dueDate||'',b.saleTeam||'',b.sale||'',
+       b.quotationNo||'',b.ldNo||'',b.domestic||'',b.poNo||'',JSON.stringify(b.items||[])]);
+    saveDB();
+    res.json({ok:true});
+  } catch(e) { res.status(500).json({error:e.message}); }
+});
+
+app.put('/api/prs/:id', (req, res) => {
+  try {
+    const b = req.body;
+    run(\`UPDATE purchase_requests SET pr_no=?,open_date=?,customer_name=?,customer_po=?,po_value=?,fine_yn=?,fine_pct=?,due_date=?,sale_team=?,sale=?,quotation_no=?,ld_no=?,domestic=?,po_no=?,items=? WHERE id=?\`,
+      [b.prNo||'',b.openDate||'',b.customerName||'',b.customerPO||'',b.poValue||'',
+       b.fineYN||'no',b.finePct||'',b.dueDate||'',b.saleTeam||'',b.sale||'',
+       b.quotationNo||'',b.ldNo||'',b.domestic||'',b.poNo||'',JSON.stringify(b.items||[]),req.params.id]);
+    saveDB();
+    res.json({ok:true});
+  } catch(e) { res.status(500).json({error:e.message}); }
+});
+
+app.delete('/api/prs/:id', (req, res) => {
+  try {
+    run("DELETE FROM purchase_requests WHERE id=?",[req.params.id]);
+    saveDB();
+    res.json({ok:true});
+  } catch(e) { res.status(500).json({error:e.message}); }
+});
+
+app.patch('/api/prs/:id/link', (req, res) => {
+  try {
+    run("UPDATE purchase_requests SET linked_poi=? WHERE id=?",[req.body.poiId||'',req.params.id]);
+    saveDB();
+    res.json({ok:true});
+  } catch(e) { res.status(500).json({error:e.message}); }
+});
+
 // ── BACKUP DOWNLOAD (protected by BACKUP_TOKEN env var) ──────
 const BACKUP_TOKEN = process.env.BACKUP_TOKEN || 'wisco-admin-2026';
 function checkToken(req, res) {
