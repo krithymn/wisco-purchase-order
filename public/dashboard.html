@@ -393,7 +393,7 @@ let _flt='all',_orders=[],_steps=[];
 
 async function loadAll(){
   const [orders,cfg,prs]=await Promise.all([fetch(API+'/api/orders').then(r=>r.json()),fetch(API+'/api/config').then(r=>r.json()),fetch(API+'/api/prs').then(r=>r.json()).catch(()=>[])]);
-  window._prs=prs||[];
+  window._prs=Array.isArray(prs)?prs:[];
   _steps=cfg.steps||[];
   _orders=orders.map(o=>({
     ...o,

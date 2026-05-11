@@ -416,8 +416,8 @@ async function patch(p,b){const r=await fetch(API+p,{method:'PATCH',headers:{'Co
 async function del(p){const r=await fetch(API+p,{method:'DELETE'});return r.json()}
 
 async function loadAll(){
-  const [orders,cfg,prs]=await Promise.all([get('/api/orders'),get('/api/config'),get('/api/prs')]);
-  _prs=prs||[];
+  const [orders,cfg,prs]=await Promise.all([get('/api/orders'),get('/api/config'),get('/api/prs').catch(()=>[])]);
+  _prs=Array.isArray(prs)?prs:[];
   _customers=cfg.customers||[];
   // ensure mfgSteps is always a proper array on every order
   _orders=orders.map(o=>({

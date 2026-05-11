@@ -207,8 +207,8 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--spec);bo
 let _prs=[], _editId=null, _items=[];
 
 async function init(){
-  const data=await fetch('/api/prs').then(r=>r.json());
-  _prs=data;
+  const data=await fetch('/api/prs').then(r=>r.json()).catch(()=>[]);
+  _prs=Array.isArray(data)?data:[];
   renderStats();
   renderTable();
 }
