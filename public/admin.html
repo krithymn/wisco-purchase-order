@@ -81,6 +81,9 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--spec);bo
 .items-tbl td{padding:6px 8px;border-bottom:1px solid var(--bd2)}
 
 ::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:var(--bd);border-radius:99px}
+.admin-drop{display:none;position:absolute;top:100%;left:0;right:0;background:var(--sur);border:1px solid var(--bd);border-radius:var(--r);box-shadow:0 4px 12px rgba(0,0,0,.1);z-index:100;max-height:180px;overflow-y:auto}
+.admin-drop.show{display:block}
+.admin-opt{padding:8px 12px;font-size:13px;cursor:pointer;font-family:'Sarabun',sans-serif}.admin-opt:hover{background:var(--sur2)}
 </style>
 </head>
 <body>
@@ -166,8 +169,24 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--spec);bo
 
       <div class="section-label">👥 ทีม Sales</div>
       <div class="form-grid">
-        <div class="fg"><label>Sale Team</label><input id="f-sale-team" placeholder="ชื่อทีม"></div>
-        <div class="fg"><label>Sale</label><input id="f-sale" placeholder="ชื่อ Sale"></div>
+        <div class="fg"><label>Sale Team</label>
+          <div style="position:relative">
+            <input id="f-sale-team" placeholder="พิมพ์หรือเลือก..." autocomplete="off"
+              oninput="showDropdown('sale-team-drop',_saleTeams,this.value,'f-sale-team')"
+              onfocus="showDropdown('sale-team-drop',_saleTeams,this.value,'f-sale-team')"
+              onblur="setTimeout(()=>hideDropdown('sale-team-drop'),200)">
+            <div id="sale-team-drop" class="admin-drop"></div>
+          </div>
+        </div>
+        <div class="fg"><label>Sale</label>
+          <div style="position:relative">
+            <input id="f-sale" placeholder="พิมพ์หรือเลือก..." autocomplete="off"
+              oninput="showDropdown('sale-drop',_sales,this.value,'f-sale')"
+              onfocus="showDropdown('sale-drop',_sales,this.value,'f-sale')"
+              onblur="setTimeout(()=>hideDropdown('sale-drop'),200)">
+            <div id="sale-drop" class="admin-drop"></div>
+          </div>
+        </div>
         <div class="fg"><label>QUOTATION No.</label><input id="f-quot-no" placeholder="QT-XXXX"></div>
         <div class="fg"><label>LD No.</label><input id="f-ld-no" placeholder="LD-XXXX"></div>
         <div class="fg"><label>นปท. / ตปท.</label>
@@ -206,9 +225,29 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--spec);bo
 <script>
 let _prs=[], _editId=null, _items=[];
 
+function showDropdown(dropId,list,q,inputId){
+  const drop=document.getElementById(dropId);if(!drop)return;
+  const filtered=(list||[]).filter(s=>s.toLowerCase().includes((q||'').toLowerCase()));
+  drop.innerHTML=filtered.map(s=>`<div class="admin-opt" onmousedown="pickDrop('${inputId}','${dropId}','${s.replace(/'/g,"\'")}')"> ${s}</div>`).join('')
+    ||'<div style="padding:8px 12px;font-size:12px;color:var(--mu)">ไม่พบ</div>';
+  drop.classList.add('show');
+}
+function hideDropdown(dropId){const d=document.getElementById(dropId);if(d)d.classList.remove('show');}
+function pickDrop(inputId,dropId,val){
+  const el=document.getElementById(inputId);if(el)el.value=val;
+  hideDropdown(dropId);
+}
+
+let _saleTeams=[], _sales=[];
+
 async function init(){
-  const data=await fetch('/api/prs').then(r=>r.json()).catch(()=>[]);
+  const [data,cfg]=await Promise.all([
+    fetch('/api/prs').then(r=>r.json()).catch(()=>[]),
+    fetch('/api/config').then(r=>r.json()).catch(()=>({}))
+  ]);
   _prs=Array.isArray(data)?data:[];
+  _saleTeams=cfg.saleTeams||[];
+  _sales=cfg.sales||[];
   renderStats();
   renderTable();
 }

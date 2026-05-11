@@ -283,6 +283,24 @@ input:focus,select:focus{outline:none;border-color:var(--ac);box-shadow:0 0 0 3p
         <button class="btn btn-primary" onclick="addMember()">+ เพิ่ม</button>
       </div>
     </div>
+    <!-- SALE TEAMS -->
+    <div style="margin-bottom:28px">
+      <div class="cfg-title">👔 Sale Team</div>
+      <div id="saleteam-grid"></div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <input id="new-saleteam" placeholder="ชื่อ Sale Team" style="flex:1;font-size:13px;padding:7px 10px;border:1px solid var(--bd);border-radius:var(--r);font-family:'Sarabun',sans-serif">
+        <button class="btn btn-primary" onclick="addSaleTeam()">+ เพิ่ม</button>
+      </div>
+    </div>
+    <!-- SALES -->
+    <div style="margin-bottom:28px">
+      <div class="cfg-title">🧑‍💼 Sale</div>
+      <div id="sale-grid"></div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <input id="new-sale" placeholder="ชื่อ Sale" style="flex:1;font-size:13px;padding:7px 10px;border:1px solid var(--bd);border-radius:var(--r);font-family:'Sarabun',sans-serif">
+        <button class="btn btn-primary" onclick="addSale()">+ เพิ่ม</button>
+      </div>
+    </div>
     <!-- CUSTOMERS -->
     <div style="margin-bottom:28px">
       <div class="cfg-title">👥 จัดการลูกค้า (Customer)</div>
@@ -407,7 +425,7 @@ const NOTIFY_SUB=['ใบแจ้งสินค้าเข้า','Cer.','Dra
 // Manufacturing step is index 11 (เริ่มผลิต) without prepayment, 12 with prepayment
 // แจ้งบัญชี is index 10 (without prepay), 11 (with prepay)
 function getMfgStepIndex(o){ return o.prepayment ? 12 : 11; }
-let _orders=[],_prs=[],_team=[],_steps=[],_suppliers=[],_customers=[],_active=null,_editId=null,_sfilt='',_pwUnlocked=false,_pwShow=false;
+let _orders=[],_prs=[],_team=[],_steps=[],_suppliers=[],_customers=[],_saleTeams=[],_sales=[],_active=null,_editId=null,_sfilt='',_pwUnlocked=false,_pwShow=false;
 
 async function get(p){const r=await fetch(API+p);return r.json()}
 async function post(p,b){const r=await fetch(API+p,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)});return r.json()}
@@ -431,6 +449,7 @@ async function loadAll(){
     return parseId(b.id)-parseId(a.id);
   });
   _team=cfg.team||[]; _steps=cfg.steps||[]; _suppliers=cfg.suppliers||[]; _customers=cfg.customers||[];
+  _saleTeams=cfg.saleTeams||[]; _sales=cfg.sales||[];
 }
 
 // ── Step name + default days ─────────────────────────────────
@@ -1077,6 +1096,38 @@ async function addCustFromField(i,name){
   }
   pickCust(i,name);
 }
+function rSaleTeamGrid(){
+  document.getElementById('saleteam-grid').innerHTML=(_saleTeams||[]).map((s,i)=>`
+    <div class="cfg-row"><div class="cfg-row-main">👔 ${s}</div>
+    <button class="cfg-del" onclick="delSaleTeam(${i})">×</button></div>`).join('');
+}
+async function addSaleTeam(){
+  const v=document.getElementById('new-saleteam').value.trim();if(!v)return;
+  if(!_saleTeams)_saleTeams=[];
+  if(_saleTeams.includes(v)){alert('มีอยู่แล้ว');return;}
+  _saleTeams.push(v);await put('/api/config/saleTeams',{saleTeams:_saleTeams});
+  document.getElementById('new-saleteam').value='';rSaleTeamGrid();
+}
+async function delSaleTeam(i){
+  if(!confirm('ลบ?'))return;
+  _saleTeams.splice(i,1);await put('/api/config/saleTeams',{saleTeams:_saleTeams});rSaleTeamGrid();
+}
+function rSaleGrid(){
+  document.getElementById('sale-grid').innerHTML=(_sales||[]).map((s,i)=>`
+    <div class="cfg-row"><div class="cfg-row-main">🧑‍💼 ${s}</div>
+    <button class="cfg-del" onclick="delSale(${i})">×</button></div>`).join('');
+}
+async function addSale(){
+  const v=document.getElementById('new-sale').value.trim();if(!v)return;
+  if(!_sales)_sales=[];
+  if(_sales.includes(v)){alert('มีอยู่แล้ว');return;}
+  _sales.push(v);await put('/api/config/sales',{sales:_sales});
+  document.getElementById('new-sale').value='';rSaleGrid();
+}
+async function delSale(i){
+  if(!confirm('ลบ?'))return;
+  _sales.splice(i,1);await put('/api/config/sales',{sales:_sales});rSaleGrid();
+}
 function rCustGrid(){
   document.getElementById('cust-grid').innerHTML=(_customers||[]).map((c,i)=>`
     <div class="cfg-row">
@@ -1160,29 +1211,26 @@ function rPRTab(){
 }
 async function openNewFromPR(prId){
   const p=(_prs||[]).find(x=>String(x.id)===String(prId));if(!p)return;
-  // Open modal with fresh state
   document.getElementById('modal-t').textContent='เพิ่ม Order ใหม่ (จาก PR '+p.prNo+')';
   document.getElementById('f-id').value='';
   document.getElementById('f-id').disabled=false;
   document.getElementById('f-fac').value='';
-  // Clear all date fields properly
   ['f-start','f-prod-finish','f-due','f-del-sup','f-del-cust','f-eta-wisco'].forEach(x=>setDateField(x,''));
   document.getElementById('f-partial').checked=false;
   document.getElementById('f-prepay').checked=false;
   document.getElementById('modal-alert').innerHTML='';
   _editId=null;
-  // Pre-fill items from PR
+  // Build items from PR items list
+  const prItems=p.items&&p.items.length?p.items:[{product:'',quantity:''}];
   const items=[{
     customer: p.customerName||'',
     prNumber: p.prNo||'',
     sendDate: '',
     fine: p.fineYN==='yes'?'yes':'',
-    subItems:[{product:'',quantity:''}]
+    subItems: prItems.map(it=>({product:it.product||'',quantity:it.quantity||''}))
   }];
   renderItemsList(items);
-  // Pre-fill due date
   if(p.dueDate) setDateField('f-due', p.dueDate);
-  // Store PR id for linking after save
   document.getElementById('modal').setAttribute('data-pr-id', String(prId));
   document.getElementById('modal').classList.add('open');
 }
@@ -1192,7 +1240,7 @@ function _doSwTab(tab,el){
   document.getElementById('tab-prs').style.display=tab==='prs'?'block':'none';
   document.getElementById('tab-archive').style.display=tab==='archive'?'block':'none';
   document.getElementById('tab-config').style.display=tab==='config'?'block':'none';
-  if(tab==='config'){rTeam();rCustGrid();rSupGrid();rStepsCfg();}
+  if(tab==='config'){rTeam();rSaleTeamGrid();rSaleGrid();rCustGrid();rSupGrid();rStepsCfg();}
   if(tab==='archive'){rArchive();}
   if(tab==='prs'){rPRTab();}
 }
@@ -1275,7 +1323,26 @@ function getDateField(id){
   const el=document.getElementById(id);if(!el)return'';
   return toISO(el.value);
 }
-async function init(){await loadAll();rSide();rPRTab();rTeam();rCustGrid();rSupGrid();rStepsCfg()}
+async function init(){
+  await loadAll();rSide();rPRTab();rTeam();rSaleTeamGrid();rSaleGrid();rCustGrid();rSupGrid();rStepsCfg();
+  // Auto-refresh PRs every 30 seconds
+  setInterval(async()=>{
+    const freshPrs=await fetch('/api/prs').then(r=>r.json()).catch(()=>[]);
+    const prev=_prs.length;
+    _prs=Array.isArray(freshPrs)?freshPrs:[];
+    // Update badge count
+    const pending=_prs.filter(p=>!p.linkedPOI);
+    const badge=document.getElementById('pr-badge');
+    if(badge){badge.style.display=pending.length?'inline':'none';badge.textContent=pending.length;}
+    // If PR tab is open, refresh it
+    const prTab=document.getElementById('tab-prs');
+    if(prTab&&prTab.style.display!=='none') rPRTab();
+    // Alert if new PRs added
+    if(pending.length>prev&&prev>=0&&document.hidden===false){
+      shAlert('📋 มี PR ใหม่ '+pending.length+' รายการรอเปิด POI','info');
+    }
+  },30000);
+}
 init();
 </script>
 </body>
