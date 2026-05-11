@@ -972,10 +972,10 @@ async function saveOrder(){
   if(_editId){await put(`/api/orders/${_editId}`,body);}
   else{const r=await post('/api/orders',body);if(r.error){document.getElementById('modal-alert').innerHTML=`<div class="alert alert-error">${r.error==='Order ID already exists'?'เลขที่ Order นี้มีอยู่แล้ว':r.error}</div>`;return;}
     // Link to PR if opened from PR tab
-    const prId=document.getElementById('form-modal').getAttribute('data-pr-id');
+    const prId=document.getElementById('modal').getAttribute('data-pr-id');
     if(prId){
       await fetch('/api/prs/'+prId+'/link',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({poiId:id})});
-      document.getElementById('form-modal').removeAttribute('data-pr-id');
+      document.getElementById('modal').removeAttribute('data-pr-id');
       // refresh PRs list
       const freshPrs=await fetch('/api/prs').then(r=>r.json()).catch(()=>[]);
       _prs=Array.isArray(freshPrs)?freshPrs:[];
@@ -1158,19 +1158,31 @@ function rPRTab(){
 }
 async function openNewFromPR(prId){
   const p=(_prs||[]).find(x=>String(x.id)===String(prId));if(!p)return;
-  openNew();
-  // Pre-fill from PR data after modal is ready
-  setTimeout(()=>{
-    if(_modalItems&&_modalItems[0]){
-      _modalItems[0].customer=p.customerName||'';
-      _modalItems[0].prNumber=p.prNo||'';
-      _modalItems[0].fine=p.fineYN==='yes'?'yes':'no';
-    }
-    renderItemsList(_modalItems);
-    setDateField('f-due',p.dueDate||'');
-    // store PR id to link after save
-    document.getElementById('form-modal').setAttribute('data-pr-id',String(prId));
-  },200);
+  // Open modal with fresh state
+  document.getElementById('modal-t').textContent='เพิ่ม Order ใหม่ (จาก PR '+p.prNo+')';
+  document.getElementById('f-id').value='';
+  document.getElementById('f-id').disabled=false;
+  document.getElementById('f-fac').value='';
+  // Clear all date fields properly
+  ['f-start','f-prod-finish','f-due','f-del-sup','f-del-cust','f-eta-wisco'].forEach(x=>setDateField(x,''));
+  document.getElementById('f-partial').checked=false;
+  document.getElementById('f-prepay').checked=false;
+  document.getElementById('modal-alert').innerHTML='';
+  _editId=null;
+  // Pre-fill items from PR
+  const items=[{
+    customer: p.customerName||'',
+    prNumber: p.prNo||'',
+    sendDate: '',
+    fine: p.fineYN==='yes'?'yes':'',
+    subItems:[{product:'',quantity:''}]
+  }];
+  renderItemsList(items);
+  // Pre-fill due date
+  if(p.dueDate) setDateField('f-due', p.dueDate);
+  // Store PR id for linking after save
+  document.getElementById('modal').setAttribute('data-pr-id', String(prId));
+  document.getElementById('modal').classList.add('open');
 }
 function _doSwTab(tab,el){
   document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');
