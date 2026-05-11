@@ -548,10 +548,29 @@ function render(){
   });
 
   // Cards
-  const filtered=_flt==='all'?ps:ps.filter(o=>orderSt(o)===_flt);
+  // Add pending PRs as virtual "ยังไม่เริ่ม" cards when filter is 'all' or 'pending'
+  const pendingPRCards=(window._prs||[]).filter(p=>!p.linkedPOI).map(p=>({
+    _isPR:true, id:'PR:'+p.prNo, prNo:p.prNo, factory:'', customerName:p.customerName,
+    dueDate:p.dueDate, fineYN:p.fineYN, finePct:p.finePct, sale:p.sale,
+    completedSteps:0, totalSteps:1
+  }));
+  const filtered=_flt==='all'?[...ps,...pendingPRCards]:
+    _flt==='pending'?[...ps.filter(o=>orderSt(o)===_flt),...pendingPRCards]:
+    ps.filter(o=>orderSt(o)===_flt);
   const ca=document.getElementById('cards');
-  if(!filtered.length){ca.innerHTML='<div class="empty"><div class="empty-icon">📭</div><div style="font-size:14px">ไม่มีข้อมูลที่ตรงกับตัวกรอง</div></div>';return}
-  ca.innerHTML=filtered.map(o=>{
+  if(!filtered.filter(o=>!o._isPR).length&&!pendingPRCards.length){ca.innerHTML='<div class="empty"><div class="empty-icon">📭</div><div style="font-size:14px">ไม่มีข้อมูลที่ตรงกับตัวกรอง</div></div>';return}
+  // Render PR pending cards separately first
+  const prHtml=(_flt==='all'||_flt==='pending')?pendingPRCards.map(p=>`<div class="ocard" style="border-left:3px solid #9a6700">
+    <div class="ct">
+      <div class="ct-id" style="color:#9a6700">📋 ${p.prNo}<span style="font-size:9px;font-weight:700;padding:1px 6px;border-radius:99px;background:#fff8c5;color:#9a6700;border:1px solid #e3b341;margin-left:6px">รอเปิด POI</span></div>
+      <div class="ct-fac">👤 ${p.customerName||'—'} ${p.fineYN==='yes'?'<span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:99px;background:var(--late-bg);color:var(--late);border:1px solid var(--late-bd);margin-left:4px">⚠️ FINE</span>':''}</div>
+      ${p.dueDate?`<div style="font-size:11px;color:var(--mu);margin-top:2px">📅 กำหนดส่ง: ${p.dueDate}</div>`:''}
+      ${p.sale?`<div style="font-size:11px;color:var(--mu)">Sale: ${p.sale}</div>`:''}
+    </div>
+    <div style="padding:8px 12px;background:rgba(154,103,0,.06);font-size:11px;color:#9a6700;border-top:1px solid rgba(154,103,0,.15)">⏳ ยังไม่มี POI — รอทีม Purchasing</div>
+  </div>`).join(''):'';
+
+  const orderHtml=filtered.filter(o=>!o._isPR).map(o=>{
     const s=orderSt(o);const si=Math.min(o.completedSteps,o.totalSteps-1);
     const pct=Math.round((o.completedSteps/o.totalSteps)*100);
     const curStep=o.completedSteps>=o.totalSteps?'เสร็จสมบูรณ์':getStepName(o,si);
@@ -608,9 +627,8 @@ function render(){
       </div>
     </div>`;
   }).join('');
+  ca.innerHTML=prHtml+orderHtml;
 }
-
-function renderRightPanel(ps){
   // ── Supplier summary ──
   const supMap={};
   ps.forEach(o=>{

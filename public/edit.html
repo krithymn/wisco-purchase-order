@@ -972,10 +972,14 @@ async function saveOrder(){
   if(_editId){await put(`/api/orders/${_editId}`,body);}
   else{const r=await post('/api/orders',body);if(r.error){document.getElementById('modal-alert').innerHTML=`<div class="alert alert-error">${r.error==='Order ID already exists'?'เลขที่ Order นี้มีอยู่แล้ว':r.error}</div>`;return;}
     // Link to PR if opened from PR tab
-    const prId=document.getElementById('form-modal').dataset.prId;
+    const prId=document.getElementById('form-modal').getAttribute('data-pr-id');
     if(prId){
-      await fetch(`/api/prs/${prId}/link`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({poiId:id})});
-      delete document.getElementById('form-modal').dataset.prId;
+      await fetch('/api/prs/'+prId+'/link',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({poiId:id})});
+      document.getElementById('form-modal').removeAttribute('data-pr-id');
+      // refresh PRs list
+      const freshPrs=await fetch('/api/prs').then(r=>r.json()).catch(()=>[]);
+      _prs=Array.isArray(freshPrs)?freshPrs:[];
+      rPRTab();
     }
 }
   try{
@@ -1153,21 +1157,20 @@ function rPRTab(){
   </tr>`).join('');
 }
 async function openNewFromPR(prId){
-  const p=(_prs||[]).find(x=>x.id===prId);if(!p)return;
+  const p=(_prs||[]).find(x=>String(x.id)===String(prId));if(!p)return;
   openNew();
-  // Pre-fill from PR data
+  // Pre-fill from PR data after modal is ready
   setTimeout(()=>{
-    // pre-fill customer name as first item
     if(_modalItems&&_modalItems[0]){
       _modalItems[0].customer=p.customerName||'';
       _modalItems[0].prNumber=p.prNo||'';
-      if(p.fineYN==='yes')_modalItems[0].fine='yes';
+      _modalItems[0].fine=p.fineYN==='yes'?'yes':'no';
     }
     renderItemsList(_modalItems);
     setDateField('f-due',p.dueDate||'');
     // store PR id to link after save
-    document.getElementById('form-modal').dataset.prId=prId;
-  },100);
+    document.getElementById('form-modal').setAttribute('data-pr-id',String(prId));
+  },200);
 }
 function _doSwTab(tab,el){
   document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');
