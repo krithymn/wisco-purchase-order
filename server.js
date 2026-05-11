@@ -117,6 +117,27 @@ async function initDB() {
   try { db.run("ALTER TABLE orders ADD COLUMN delivery_date_sup TEXT DEFAULT ''"); } catch(e) { /* already exists */ }
   try { db.run("ALTER TABLE orders ADD COLUMN delivery_date_cust TEXT DEFAULT ''"); } catch(e) { /* already exists */ }
   try { db.run("ALTER TABLE orders ADD COLUMN eta_wisco TEXT DEFAULT ''"); } catch(e) { /* already exists */ }
+  // Create purchase_requests table if not exists
+  db.run(`CREATE TABLE IF NOT EXISTS purchase_requests (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    pr_no         TEXT UNIQUE NOT NULL,
+    open_date     TEXT DEFAULT '',
+    customer_name TEXT DEFAULT '',
+    customer_po   TEXT DEFAULT '',
+    po_value      TEXT DEFAULT '',
+    fine_yn       TEXT DEFAULT 'no',
+    fine_pct      TEXT DEFAULT '',
+    due_date      TEXT DEFAULT '',
+    sale_team     TEXT DEFAULT '',
+    sale          TEXT DEFAULT '',
+    quotation_no  TEXT DEFAULT '',
+    ld_no         TEXT DEFAULT '',
+    domestic      TEXT DEFAULT '',
+    po_no         TEXT DEFAULT '',
+    items         TEXT DEFAULT '[]',
+    linked_poi    TEXT DEFAULT '',
+    created_at    TEXT DEFAULT (datetime('now'))
+  )`);
 
   saveDB();
   console.log('  ✅ Database ready.');
