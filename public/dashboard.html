@@ -392,7 +392,8 @@ function getMfgStepIndex(o){ return o.prepayment ? 12 : 11; }
 let _flt='all',_orders=[],_steps=[];
 
 async function loadAll(){
-  const [orders,cfg]=await Promise.all([fetch(API+'/api/orders').then(r=>r.json()),fetch(API+'/api/config').then(r=>r.json())]);
+  const [orders,cfg,prs]=await Promise.all([fetch(API+'/api/orders').then(r=>r.json()),fetch(API+'/api/config').then(r=>r.json()),fetch(API+'/api/prs').then(r=>r.json()).catch(()=>[])]);
+  window._prs=prs||[];
   _steps=cfg.steps||[];
   _orders=orders.map(o=>({
     ...o,
@@ -472,6 +473,14 @@ function render(){
   ps.forEach(o=>{ const s=orderSt(o); cnt[s]=(cnt[s]||0)+1; });
   const total=ps.length;
 
+  // PR badge
+  const pendingPRs=(window._prs||[]).filter(p=>!p.linkedPOI);
+  if(pendingPRs.length){
+    document.getElementById('pr-pending-kpi').style.display='';
+    document.getElementById('pr-pending-n').textContent=pendingPRs.length;
+  } else {
+    document.getElementById('pr-pending-kpi').style.display='none';
+  }
   document.getElementById('kpi').innerHTML=`
     <div class="kpi k-total"><div class="kpi-n" style="color:var(--tx)">${total}</div><div class="kpi-l">Order ทั้งหมด</div><div class="kpi-glow"></div></div>
     <div class="kpi k-done"><div class="kpi-n" style="color:var(--done)">${cnt.done}</div><div class="kpi-l">เสร็จแล้ว</div><div class="kpi-glow"></div></div>

@@ -200,6 +200,7 @@ input:focus,select:focus{outline:none;border-color:var(--ac);box-shadow:0 0 0 3p
 </header>
 <div class="nav-tabs">
   <button class="nav-tab active" onclick="swTab('orders',this)">📦 Active Orders</button>
+  <button class="nav-tab" onclick="swTab('prs',this)">📋 PR รอเปิด POI <span id="pr-badge" style="display:none;background:var(--late);color:#fff;font-size:9px;font-weight:700;padding:1px 6px;border-radius:99px;margin-left:4px">0</span></button>
   <button class="nav-tab" onclick="swTab('archive',this)">🗄 Archive (เสร็จแล้ว)</button>
   <button class="nav-tab" onclick="swTab('config',this)">⚙️ ตั้งค่า</button>
 </div>
@@ -217,6 +218,33 @@ input:focus,select:focus{outline:none;border-color:var(--ac);box-shadow:0 0 0 3p
     <div class="welcome"><div class="welcome-icon">📦</div><h2>เลือก Order จากรายการ</h2><p style="color:var(--mu);font-size:14px;margin:8px 0 20px">หรือสร้าง Order ใหม่</p><button class="btn btn-primary" onclick="openNew()">+ เพิ่ม Order ใหม่</button></div>
   </div>
 </div>
+</div>
+
+<!-- TAB: PR -->
+<div id="tab-prs" style="padding:20px 24px;display:none">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+    <div>
+      <div style="font-size:18px;font-weight:700">📋 PR รอเปิด POI</div>
+      <div style="font-size:13px;color:var(--mu);margin-top:3px" id="pr-tab-count"></div>
+    </div>
+    <a href="admin.html" target="_blank"><button class="btn btn-secondary">⚙️ Admin PR Page</button></a>
+  </div>
+  <div style="background:var(--sur);border:1px solid var(--bd);border-radius:var(--rl);overflow:hidden">
+    <table style="width:100%;border-collapse:collapse">
+      <thead><tr style="background:var(--sur2);border-bottom:1px solid var(--bd)">
+        <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase">PR No.</th>
+        <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase">ลูกค้า</th>
+        <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase">PO ลูกค้า</th>
+        <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase">กำหนดส่ง</th>
+        <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase">ค่าปรับ</th>
+        <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase">Sale</th>
+        <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase">สถานะ</th>
+        <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase">Action</th>
+      </tr></thead>
+      <tbody id="pr-tab-body"></tbody>
+    </table>
+    <div id="pr-tab-empty" style="display:none;padding:40px;text-align:center;font-size:14px;color:var(--mu)">✅ PR ทั้งหมดมี POI แล้ว</div>
+  </div>
 </div>
 
 <!-- TAB: ARCHIVE -->
@@ -379,7 +407,7 @@ const NOTIFY_SUB=['ใบแจ้งสินค้าเข้า','Cer.','Dra
 // Manufacturing step is index 11 (เริ่มผลิต) without prepayment, 12 with prepayment
 // แจ้งบัญชี is index 10 (without prepay), 11 (with prepay)
 function getMfgStepIndex(o){ return o.prepayment ? 12 : 11; }
-let _orders=[],_team=[],_steps=[],_suppliers=[],_customers=[],_active=null,_editId=null,_sfilt='',_pwUnlocked=false,_pwShow=false;
+let _orders=[],_prs=[],_team=[],_steps=[],_suppliers=[],_customers=[],_active=null,_editId=null,_sfilt='',_pwUnlocked=false,_pwShow=false;
 
 async function get(p){const r=await fetch(API+p);return r.json()}
 async function post(p,b){const r=await fetch(API+p,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)});return r.json()}
@@ -388,7 +416,8 @@ async function patch(p,b){const r=await fetch(API+p,{method:'PATCH',headers:{'Co
 async function del(p){const r=await fetch(API+p,{method:'DELETE'});return r.json()}
 
 async function loadAll(){
-  const [orders,cfg]=await Promise.all([get('/api/orders'),get('/api/config')]);
+  const [orders,cfg,prs]=await Promise.all([get('/api/orders'),get('/api/config'),get('/api/prs')]);
+  _prs=prs||[];
   _customers=cfg.customers||[];
   // ensure mfgSteps is always a proper array on every order
   _orders=orders.map(o=>({
@@ -941,7 +970,14 @@ async function saveOrder(){
   const body={id,customer:firstItem.customer||'',factory:fac,product:firstItem.product||'',quantity:firstItem.quantity||'',customerPO:'',startDate:getDateField('f-start'),productionFinishDate:getDateField('f-prod-finish'),dueDate:getDateField('f-due'),deliveryDateSup:getDateField('f-del-sup'),deliveryDateCust:getDateField('f-del-cust'),
     etaWisco:getDateField('f-eta-wisco'),prepayment:document.getElementById('f-prepay').checked,isPartial:document.getElementById('f-partial').checked,items};
   if(_editId){await put(`/api/orders/${_editId}`,body);}
-  else{const r=await post('/api/orders',body);if(r.error){document.getElementById('modal-alert').innerHTML=`<div class="alert alert-error">${r.error==='Order ID already exists'?'เลขที่ Order นี้มีอยู่แล้ว':r.error}</div>`;return;}}
+  else{const r=await post('/api/orders',body);if(r.error){document.getElementById('modal-alert').innerHTML=`<div class="alert alert-error">${r.error==='Order ID already exists'?'เลขที่ Order นี้มีอยู่แล้ว':r.error}</div>`;return;}
+    // Link to PR if opened from PR tab
+    const prId=document.getElementById('form-modal').dataset.prId;
+    if(prId){
+      await fetch(`/api/prs/${prId}/link`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({poiId:id})});
+      delete document.getElementById('form-modal').dataset.prId;
+    }
+}
   try{
     await loadAll();
     closeModal();
@@ -1099,13 +1135,49 @@ function chkPW(){
 }
 function togPW(){_pwShow=!_pwShow;document.getElementById('pw-inp').type=_pwShow?'text':'password';document.getElementById('pw-eye').textContent=_pwShow?'🙈':'👁'}
 function canPW(){document.getElementById('pw-gate').classList.remove('show');document.getElementById('pw-inp').value='';document.getElementById('pw-err').textContent='';_doSwTab('orders',document.querySelectorAll('.nav-tab')[0]);}
+function rPRTab(){
+  const pending=(_prs||[]).filter(p=>!p.linkedPOI);
+  const badge=document.getElementById('pr-badge');
+  if(badge){badge.style.display=pending.length?'inline':'none';badge.textContent=pending.length;}
+  document.getElementById('pr-tab-count').textContent=`${pending.length} PR รอเปิด POI จากทั้งหมด ${(_prs||[]).length} PR`;
+  document.getElementById('pr-tab-empty').style.display=pending.length?'none':'block';
+  document.getElementById('pr-tab-body').innerHTML=pending.map(p=>`<tr style="border-bottom:1px solid var(--bd2)">
+    <td style="padding:10px 14px;font-weight:700">${p.prNo}</td>
+    <td style="padding:10px 14px;font-size:13px">${p.customerName||'—'}</td>
+    <td style="padding:10px 14px;font-size:12px;color:var(--mu)">${p.customerPO||'—'}</td>
+    <td style="padding:10px 14px;font-size:12px;color:${p.dueDate&&new Date(p.dueDate)<new Date()?'var(--late)':'var(--mu)'};font-weight:${p.dueDate&&new Date(p.dueDate)<new Date()?'600':'400'}">${p.dueDate||'—'}</td>
+    <td style="padding:10px 14px">${p.fineYN==='yes'?`<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:var(--late-bg);color:var(--late);border:1px solid var(--late-bd)">⚠️ ${p.finePct||'?'}%</span>`:'—'}</td>
+    <td style="padding:10px 14px;font-size:12px">${p.sale||'—'}</td>
+    <td style="padding:10px 14px"><span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:#fff8c5;color:#9a6700;border:1px solid #e3b341">⏳ รอเปิด POI</span></td>
+    <td style="padding:10px 14px"><button class="btn btn-sm btn-primary" onclick="openNewFromPR(${p.id})">+ เปิด POI จาก PR นี้</button></td>
+  </tr>`).join('');
+}
+async function openNewFromPR(prId){
+  const p=(_prs||[]).find(x=>x.id===prId);if(!p)return;
+  openNew();
+  // Pre-fill from PR data
+  setTimeout(()=>{
+    // pre-fill customer name as first item
+    if(_modalItems&&_modalItems[0]){
+      _modalItems[0].customer=p.customerName||'';
+      _modalItems[0].prNumber=p.prNo||'';
+      if(p.fineYN==='yes')_modalItems[0].fine='yes';
+    }
+    renderItemsList(_modalItems);
+    setDateField('f-due',p.dueDate||'');
+    // store PR id to link after save
+    document.getElementById('form-modal').dataset.prId=prId;
+  },100);
+}
 function _doSwTab(tab,el){
   document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');
   document.getElementById('tab-orders').style.display=tab==='orders'?'block':'none';
+  document.getElementById('tab-prs').style.display=tab==='prs'?'block':'none';
   document.getElementById('tab-archive').style.display=tab==='archive'?'block':'none';
   document.getElementById('tab-config').style.display=tab==='config'?'block':'none';
   if(tab==='config'){rTeam();rCustGrid();rSupGrid();rStepsCfg();}
   if(tab==='archive'){rArchive();}
+  if(tab==='prs'){rPRTab();}
 }
 function swTab(tab,el){
   if(tab==='config'&&!_pwUnlocked){document.getElementById('pw-gate').classList.add('show');setTimeout(()=>document.getElementById('pw-inp').focus(),50);return}
@@ -1186,7 +1258,7 @@ function getDateField(id){
   const el=document.getElementById(id);if(!el)return'';
   return toISO(el.value);
 }
-async function init(){await loadAll();rSide();rTeam();rCustGrid();rSupGrid();rStepsCfg()}
+async function init(){await loadAll();rSide();rPRTab();rTeam();rCustGrid();rSupGrid();rStepsCfg()}
 init();
 </script>
 </body>
