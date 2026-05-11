@@ -253,6 +253,7 @@ app.delete('/api/orders/:id', (req, res) => {
   try {
     run("DELETE FROM order_steps WHERE order_id=?",[req.params.id]);
     run("DELETE FROM orders WHERE id=?",[req.params.id]);
+    saveDB();
     res.json({ok:true});
   } catch(e) { res.status(500).json({error:e.message}); }
 });
