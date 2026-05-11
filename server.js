@@ -351,8 +351,8 @@ app.get('/api/prs', (req, res) => {
 app.post('/api/prs', (req, res) => {
   try {
     const b = req.body;
-    run(\`INSERT INTO purchase_requests(pr_no,open_date,customer_name,customer_po,po_value,fine_yn,fine_pct,due_date,sale_team,sale,quotation_no,ld_no,domestic,po_no,items)
-         VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)\`,
+    run(`INSERT INTO purchase_requests(pr_no,open_date,customer_name,customer_po,po_value,fine_yn,fine_pct,due_date,sale_team,sale,quotation_no,ld_no,domestic,po_no,items)
+         VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
       [b.prNo||'',b.openDate||'',b.customerName||'',b.customerPO||'',b.poValue||'',
        b.fineYN||'no',b.finePct||'',b.dueDate||'',b.saleTeam||'',b.sale||'',
        b.quotationNo||'',b.ldNo||'',b.domestic||'',b.poNo||'',JSON.stringify(b.items||[])]);
@@ -364,7 +364,7 @@ app.post('/api/prs', (req, res) => {
 app.put('/api/prs/:id', (req, res) => {
   try {
     const b = req.body;
-    run(\`UPDATE purchase_requests SET pr_no=?,open_date=?,customer_name=?,customer_po=?,po_value=?,fine_yn=?,fine_pct=?,due_date=?,sale_team=?,sale=?,quotation_no=?,ld_no=?,domestic=?,po_no=?,items=? WHERE id=?\`,
+    run(`UPDATE purchase_requests SET pr_no=?,open_date=?,customer_name=?,customer_po=?,po_value=?,fine_yn=?,fine_pct=?,due_date=?,sale_team=?,sale=?,quotation_no=?,ld_no=?,domestic=?,po_no=?,items=? WHERE id=?`,
       [b.prNo||'',b.openDate||'',b.customerName||'',b.customerPO||'',b.poValue||'',
        b.fineYN||'no',b.finePct||'',b.dueDate||'',b.saleTeam||'',b.sale||'',
        b.quotationNo||'',b.ldNo||'',b.domestic||'',b.poNo||'',JSON.stringify(b.items||[]),req.params.id]);
