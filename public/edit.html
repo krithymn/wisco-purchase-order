@@ -963,6 +963,7 @@ async function saveOrder(){
   const id=document.getElementById('f-id').value.trim();
   const fac=document.getElementById('f-fac').value.trim();
   if(!id){document.getElementById('modal-alert').innerHTML='<div class="alert alert-error">กรุณากรอกเลขที่ Order</div>';return}
+  if(/[\/\\?#%]/.test(id)){document.getElementById('modal-alert').innerHTML='<div class="alert alert-error">เลขที่ Order ไม่สามารถมีอักขระ / \\ ? # %</div>';return}
 
   const items=getItems();
   if(!items.length){document.getElementById('modal-alert').innerHTML='<div class="alert alert-error">กรุณาเพิ่มรายการสินค้าอย่างน้อย 1 รายการ</div>';return;}
@@ -996,7 +997,8 @@ async function saveOrder(){
 }
 async function delOrder(id){
   if(!confirm('ลบ Order '+id+'?'))return;
-  await del(`/api/orders/${id}`);await loadAll();_active=null;rSide();
+  await fetch(API+'/api/orders/'+encodeURIComponent(id),{method:'DELETE'});
+  await loadAll();_active=null;rSide();
   document.getElementById('content').innerHTML='<div class="welcome"><div class="welcome-icon">🗑</div><h2>Order ถูกลบแล้ว</h2><button class="btn btn-primary" onclick="openNew()">+ เพิ่มใหม่</button></div>';
 }
 function shAlert(msg,type){const el=document.getElementById('sa');if(!el)return;el.innerHTML=`<div class="alert alert-${type}" style="margin-bottom:12px">${msg}</div>`;setTimeout(()=>{if(el)el.innerHTML=''},3000)}
