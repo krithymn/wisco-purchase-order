@@ -131,6 +131,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--spec);bo
         <th>ค่าปรับ</th>
         <th>Sale</th>
         <th>สถานะ POI</th>
+        <th>📦 ETA Wisco</th>
         <th>Action</th>
       </tr></thead>
       <tbody id="pr-body"></tbody>
@@ -240,14 +241,18 @@ function pickDrop(inputId,dropId,val){
 
 let _saleTeams=[], _sales=[];
 
+let _orders=[];
+
 async function init(){
-  const [data,cfg]=await Promise.all([
+  const [data,cfg,orders]=await Promise.all([
     fetch('/api/prs').then(r=>r.json()).catch(()=>[]),
-    fetch('/api/config').then(r=>r.json()).catch(()=>({}))
+    fetch('/api/config').then(r=>r.json()).catch(()=>({})),
+    fetch('/api/orders').then(r=>r.json()).catch(()=>[])
   ]);
   _prs=Array.isArray(data)?data:[];
   _saleTeams=cfg.saleTeams||[];
   _sales=cfg.sales||[];
+  _orders=Array.isArray(orders)?orders:[];
   renderStats();
   renderTable();
 }
@@ -283,6 +288,14 @@ function renderTable(){
     <td>${p.fineYN==='yes'?`<span class="badge b-fine">⚠️ ${p.finePct||''}%</span>`:'<span style="font-size:12px;color:var(--mu)">—</span>'}</td>
     <td style="font-size:12px">${hl(p.sale,q)||'—'}</td>
     <td>${p.linkedPOI?`<span class="badge b-linked">✅ ${p.linkedPOI}</span>`:'<span class="badge b-pending">⏳ รอเปิด POI</span>'}</td>
+    <td>${(()=>{
+      if(!p.linkedPOI) return '<span style="color:var(--mu);font-size:12px">—</span>';
+      const o=_orders.find(x=>x.id===p.linkedPOI);
+      if(!o||!o.etaWisco) return '<span style="color:var(--mu);font-size:12px">ยังไม่ระบุ</span>';
+      const d=new Date(o.etaWisco); const diff=Math.ceil((d-new Date())/86400000);
+      const color=diff<0?'var(--late)':diff<=7?'#f59e0b':'var(--done)';
+      return `<span style="font-size:12px;font-weight:600;color:${color}">${o.etaWisco}${diff<0?' (เลย '+Math.abs(diff)+' วัน)':diff<=7?' (อีก '+diff+' วัน)':''}</span>`;
+    })()}</td>
     <td><div style="display:flex;gap:4px">
       <button class="btn btn-sm" onclick="openDetail(${p.id})">ดู</button>
       <button class="btn btn-sm" onclick="openEditModal(${p.id})">✏️</button>
@@ -423,7 +436,18 @@ function openDetail(id){
     <div class="detail-section">
       <div class="detail-title">🔗 สถานะ POI</div>
       ${p.linkedPOI
-        ?`<span class="badge b-linked" style="font-size:12px;padding:4px 12px">✅ เปิด POI แล้ว: ${p.linkedPOI}</span>`
+        ?`<div style="display:flex;flex-direction:column;gap:8px">
+            <span class="badge b-linked" style="font-size:12px;padding:4px 12px">✅ เปิด POI แล้ว: ${p.linkedPOI}</span>
+            ${(()=>{
+              const o=_orders.find(x=>x.id===p.linkedPOI);
+              if(!o) return '';
+              const eta=o.etaWisco?`<div style="margin-top:6px;padding:10px 14px;background:var(--prog-bg);border:1px solid var(--prog-bd);border-radius:var(--r)">
+                <div style="font-size:11px;color:var(--mu)">📦 วันที่คาดว่าจะถึง Wisco (ETA)</div>
+                <div style="font-size:16px;font-weight:700;color:var(--prog);margin-top:2px">${o.etaWisco}</div>
+              </div>`:'<div style="font-size:12px;color:var(--mu);margin-top:4px">📦 ETA Wisco: ยังไม่ระบุ</div>';
+              return eta;
+            })()}
+          </div>`
         :`<span class="badge b-pending" style="font-size:12px;padding:4px 12px">⏳ ยังไม่มี POI — รอทีม Purchasing</span>`}
     </div>`;
   document.getElementById('detail-modal').classList.add('open');
