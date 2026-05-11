@@ -554,13 +554,14 @@ function render(){
     dueDate:p.dueDate, fineYN:p.fineYN, finePct:p.finePct, sale:p.sale,
     completedSteps:0, totalSteps:1
   }));
-  const filtered=_flt==='all'?[...ps,...pendingPRCards]:
-    _flt==='pending'?[...ps.filter(o=>orderSt(o)===_flt),...pendingPRCards]:
-    ps.filter(o=>orderSt(o)===_flt);
+  const filtered=_flt==='pending'
+    ?[...ps.filter(o=>orderSt(o)===_flt),...pendingPRCards]
+    :ps.filter(o=>_flt==='all'||orderSt(o)===_flt);
   const ca=document.getElementById('cards');
-  if(!filtered.filter(o=>!o._isPR).length&&!pendingPRCards.length){ca.innerHTML='<div class="empty"><div class="empty-icon">📭</div><div style="font-size:14px">ไม่มีข้อมูลที่ตรงกับตัวกรอง</div></div>';return}
+  const totalVisible=filtered.length+(_flt==='pending'?0:0);
+  if(!filtered.length&&(_flt!=='pending'||!pendingPRCards.length)){ca.innerHTML='<div class="empty"><div class="empty-icon">📭</div><div style="font-size:14px">ไม่มีข้อมูลที่ตรงกับตัวกรอง</div></div>';return}
   // Render PR pending cards separately first
-  const prHtml=(_flt==='all'||_flt==='pending')?pendingPRCards.map(p=>`<div class="ocard" style="border-left:3px solid #9a6700">
+  const prHtml=(_flt==='pending')?pendingPRCards.map(p=>`<div class="ocard" style="border-left:3px solid #9a6700">
     <div class="ct">
       <div class="ct-id" style="color:#9a6700">📋 ${p.prNo}<span style="font-size:9px;font-weight:700;padding:1px 6px;border-radius:99px;background:#fff8c5;color:#9a6700;border:1px solid #e3b341;margin-left:6px">รอเปิด POI</span></div>
       <div class="ct-fac">👤 ${p.customerName||'—'} ${p.fineYN==='yes'?'<span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:99px;background:var(--late-bg);color:var(--late);border:1px solid var(--late-bd);margin-left:4px">⚠️ FINE</span>':''}</div>

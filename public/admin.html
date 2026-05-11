@@ -92,7 +92,10 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--spec);bo
     <img src="logo.png" style="height:30px;width:auto;object-fit:contain" alt="Wisco">
     <span style="color:#b39ddb;font-weight:600">Admin — PR Management</span>
   </div>
-  <div style="font-size:12px;color:#9575cd">🔒 Admin Only Page</div>
+  <div style="display:flex;align-items:center;gap:10px">
+    <div id="last-update" style="font-size:11px;color:#9575cd"></div>
+    <div style="font-size:12px;color:#9575cd">🔒 Admin Only Page</div>
+  </div>
 </header>
 
 <!-- STATS -->
@@ -255,6 +258,19 @@ async function init(){
   _orders=Array.isArray(orders)?orders:[];
   renderStats();
   renderTable();
+  // Auto-refresh every 30 seconds
+  setInterval(async()=>{
+    const [fresh,freshOrders]=await Promise.all([
+      fetch('/api/prs').then(r=>r.json()).catch(()=>[]),
+      fetch('/api/orders').then(r=>r.json()).catch(()=>[])
+    ]);
+    _prs=Array.isArray(fresh)?fresh:[];
+    _orders=Array.isArray(freshOrders)?freshOrders:[];
+    renderStats();
+    renderTable();
+    const el=document.getElementById('last-update');
+    if(el) el.textContent='🔄 อัปเดต: '+new Date().toLocaleTimeString('th-TH');
+  },30000);
 }
 
 function renderStats(){
