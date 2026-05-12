@@ -660,7 +660,7 @@ ${(()=>{
       ${si===0?`<td rowspan="${subs.length}" style="font-weight:600;vertical-align:top;border-right:1px solid var(--bd2)">${it.customer||'—'}</td>
        <td rowspan="${subs.length}" style="color:var(--spec);vertical-align:top;border-right:1px solid var(--bd2)">${it.prNumber||'—'}</td>
        <td rowspan="${subs.length}" style="font-size:11px;color:var(--mu);vertical-align:top">${it.sendDate||'—'}</td>
-       <td rowspan="${subs.length}" style="vertical-align:top;font-size:12px;font-weight:600;color:${it.fine==='yes'?'var(--late)':it.fine==='no'?'var(--done)':'var(--mu)'}">${it.fine==='yes'?'⚠️ มี Fine':it.fine==='no'?'✅ ไม่มี':'—'}</td>`:''}
+       <td rowspan="${subs.length}" style="vertical-align:top;font-size:12px;font-weight:600;color:${it.fine==='yes'?'var(--late)':it.fine==='no'?'var(--done)':'var(--mu)'}">${it.fine==='yes'?'⚠️ มีค่าปรับ':it.fine==='no'?'✅ ไม่มี':'—'}</td>`:''}
       <td>${s.product||'—'}</td>
       <td style="color:var(--mu)">${s.quantity||'—'}</td>
       ${o.isPartial?`<td>
@@ -939,8 +939,8 @@ function renderItemsList(items){
         <span style="font-size:11px;color:var(--mu);white-space:nowrap">⚠️ Fine:</span>
         <select onchange="updItem(${i},'fine',this.value)" style="font-size:12px;padding:3px 7px;border:1px solid var(--bd);border-radius:4px;background:${it.fine==='yes'?'#fff0f0':it.fine==='no'?'#f0fff4':'var(--sur)'};font-family:'Sarabun',sans-serif">
           <option value="" ${!it.fine?'selected':''}>—</option>
-          <option value="yes" ${it.fine==='yes'?'selected':''}>⚠️ มี Fine</option>
-          <option value="no" ${it.fine==='no'?'selected':''}>✅ ไม่มี Fine</option>
+          <option value="yes" ${it.fine==='yes'?'selected':''}>⚠️ มีค่าปรับ</option>
+          <option value="no" ${it.fine==='no'?'selected':''}>✅ ไม่มีค่าปรับ</option>
         </select>
       </div>
       <div class="sub-items">
