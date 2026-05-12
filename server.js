@@ -286,13 +286,19 @@ app.patch('/api/orders/:id/prepayment', (req, res) => {
 
 app.get('/api/config', (req, res) => {
   try {
-    const team  = query("SELECT value FROM config WHERE key='team'");
-    const steps = query("SELECT value FROM config WHERE key='steps'");
-    const suppliers = query("SELECT value FROM config WHERE key='suppliers'");
+    const team       = query("SELECT value FROM config WHERE key='team'");
+    const steps      = query("SELECT value FROM config WHERE key='steps'");
+    const suppliers  = query("SELECT value FROM config WHERE key='suppliers'");
+    const customers  = query("SELECT value FROM config WHERE key='customers'");
+    const saleTeams  = query("SELECT value FROM config WHERE key='saleTeams'");
+    const sales      = query("SELECT value FROM config WHERE key='sales'");
     res.json({
       team:      team.length      ? JSON.parse(team[0].value)      : [],
       steps:     steps.length     ? JSON.parse(steps[0].value)     : DEFAULT_STEPS,
-      suppliers: suppliers.length ? JSON.parse(suppliers[0].value) : []
+      suppliers: suppliers.length ? JSON.parse(suppliers[0].value) : [],
+      customers: customers.length ? JSON.parse(customers[0].value) : [],
+      saleTeams: saleTeams.length ? JSON.parse(saleTeams[0].value) : [],
+      sales:     sales.length     ? JSON.parse(sales[0].value)     : [],
     });
   } catch(e) { res.status(500).json({error:e.message}); }
 });
@@ -311,6 +317,19 @@ app.put('/api/config/suppliers', (req, res) => {
     res.json({ok:true});
   }
   catch(e) { console.error('Supplier save error:',e); res.status(500).json({error:e.message}); }
+});
+
+app.put('/api/config/customers', (req, res) => {
+  try { run("INSERT OR REPLACE INTO config(key,value) VALUES('customers',?)",[JSON.stringify(req.body.customers)]); res.json({ok:true}); }
+  catch(e) { res.status(500).json({error:e.message}); }
+});
+app.put('/api/config/saleTeams', (req, res) => {
+  try { run("INSERT OR REPLACE INTO config(key,value) VALUES('saleTeams',?)",[JSON.stringify(req.body.saleTeams)]); res.json({ok:true}); }
+  catch(e) { res.status(500).json({error:e.message}); }
+});
+app.put('/api/config/sales', (req, res) => {
+  try { run("INSERT OR REPLACE INTO config(key,value) VALUES('sales',?)",[JSON.stringify(req.body.sales)]); res.json({ok:true}); }
+  catch(e) { res.status(500).json({error:e.message}); }
 });
 
 // ── MIGRATE ORDERS TO NEW STEPS ─────────────────────────────
