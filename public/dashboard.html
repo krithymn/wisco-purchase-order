@@ -746,15 +746,24 @@ function togSection(id){
   const isOpen=content.classList.contains('open');
   content.classList.toggle('open',!isOpen);
   toggle.classList.toggle('open',!isOpen);
+  // Save state to localStorage
+  try {
+    const states=JSON.parse(localStorage.getItem('wisco-sections')||'{}');
+    states[id]=!isOpen;
+    localStorage.setItem('wisco-sections',JSON.stringify(states));
+  } catch(e){}
 }
-// Auto-open sections that have items after render
+// Auto-open sections that have items after render, but respect user's saved preferences
 function autoOpenSections(){
+  let states={};
+  try { states=JSON.parse(localStorage.getItem('wisco-sections')||'{}'); } catch(e){}
   ['sup','due','eta','mfg','ship'].forEach(id=>{
     const badge=document.getElementById(id+'-badge');
-    if(badge&&parseInt(badge.textContent)>0){
-      document.getElementById(id+'-content').classList.add('open');
-      document.getElementById(id+'-toggle').classList.add('open');
-    }
+    const hasItems=badge&&parseInt(badge.textContent)>0;
+    // If user has a saved preference, use it; otherwise open if has items
+    const shouldOpen = id in states ? states[id] : hasItems;
+    document.getElementById(id+'-content').classList.toggle('open', shouldOpen);
+    document.getElementById(id+'-toggle').classList.toggle('open', shouldOpen);
   });
 }
 function setF(f,el){_flt=f;document.querySelectorAll('.fchip').forEach(c=>c.classList.remove('active'));el.classList.add('active');render()}
