@@ -377,15 +377,43 @@ app.delete('/api/orders/:id/steps/:step/done', (req, res) => {
 app.get('/api/prs', (req, res) => {
   try {
     const rows = query("SELECT * FROM purchase_requests ORDER BY created_at DESC");
-    res.json(rows.map(r => ({
-      id: r.id, prNo: r.pr_no, openDate: r.open_date,
-      customerName: r.customer_name, customerPO: r.customer_po,
-      poValue: r.po_value, fineYN: r.fine_yn, finePct: r.fine_pct,
-      dueDate: r.due_date, saleTeam: r.sale_team, sale: r.sale,
-      quotationNo: r.quotation_no, ldNo: r.ld_no, domestic: r.domestic,
-      poNo: r.po_no, items: (() => { try { return JSON.parse(r.items||'[]'); } catch(e) { return []; } })(),
-      linkedPOI: r.linked_poi
-    })));
+    // Build a map: prNumber -> [orderId, ...] from all order items
+    const allOrders = query("SELECT id, items FROM orders");
+    const prToOrders = {};
+    for (const o of allOrders) {
+      try {
+        const items = JSON.parse(o.items || '[]');
+        for (const it of items) {
+          const prNum = (it.prNumber||'').trim().toLowerCase();
+          if (prNum) {
+            if (!prToOrders[prNum]) prToOrders[prNum] = [];
+            if (!prToOrders[prNum].includes(o.id)) prToOrders[prNum].push(o.id);
+          }
+        }
+      } catch(e) {}
+    }
+    res.json(rows.map(r => {
+      const key = (r.pr_no||'').trim().toLowerCase();
+      const matchedOrders = prToOrders[key] || [];
+      // linkedPOI: prefer DB value, but also check live scan; join multiple with ', '
+      const linkedPOI = matchedOrders.length > 0
+        ? matchedOrders.join(', ')
+        : (r.linked_poi || '');
+      // Also update DB if we found a link that wasn't stored
+      if (matchedOrders.length > 0 && !r.linked_poi) {
+        try { run("UPDATE purchase_requests SET linked_poi=? WHERE id=?", [matchedOrders[0], r.id]); } catch(e) {}
+      }
+      return {
+        id: r.id, prNo: r.pr_no, openDate: r.open_date,
+        customerName: r.customer_name, customerPO: r.customer_po,
+        poValue: r.po_value, fineYN: r.fine_yn, finePct: r.fine_pct,
+        dueDate: r.due_date, saleTeam: r.sale_team, sale: r.sale,
+        quotationNo: r.quotation_no, ldNo: r.ld_no, domestic: r.domestic,
+        poNo: r.po_no, items: (() => { try { return JSON.parse(r.items||'[]'); } catch(e) { return []; } })(),
+        linkedPOI: linkedPOI,
+        linkedPOIs: matchedOrders  // full array for UI use
+      };
+    }));
   } catch(e) { res.status(500).json({error:e.message}); }
 });
 
