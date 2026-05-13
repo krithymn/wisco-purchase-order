@@ -408,6 +408,13 @@ async function savePR(){
   if(d.error){document.getElementById('form-err').textContent='Error: '+d.error;return;}
   closeFormModal();
   await init();
+
+async function autoLinkAll(){
+  try {
+    await fetch('/api/prs/auto-link-all', {method:'POST', headers:{'Content-Type':'application/json'}});
+  } catch(e) {}
+}
+autoLinkAll(); // silently fix any unlinked PRs on page load
 }
 
 async function deletePR(id){
@@ -471,6 +478,27 @@ function openDetail(id){
 function closeDetail(){document.getElementById('detail-modal').classList.remove('open');}
 
 init();
+
+async function autoLinkAll(){
+  const btn = document.getElementById('auto-link-btn');
+  btn.disabled = true;
+  btn.textContent = '⏳ กำลังตรวจสอบ...';
+  try {
+    const r = await fetch('/api/prs/auto-link-all', {method:'POST', headers:{'Content-Type':'application/json'}});
+    const d = await r.json();
+    if(d.ok){
+      if(d.linked > 0){
+        alert(`✅ เชื่อมโยงสำเร็จ ${d.linked} PR เข้ากับ POI ที่มีอยู่แล้ว\n(จากทั้งหมด ${d.total} PR ที่ยังไม่มี POI)`);
+      } else {
+        alert(`ตรวจสอบแล้ว — ไม่พบ PR ที่สามารถเชื่อมโยงได้\n(${d.total} PR ไม่มี PR Number ตรงกับ Order ใดๆ)`);
+      }
+      await loadPRs();
+      renderTable();
+    }
+  } catch(e){ alert('เกิดข้อผิดพลาด: '+e.message); }
+  btn.disabled = false;
+  btn.textContent = '🔗 Auto-Link PR เดิม';
+}
 </script>
 </body>
 </html>
