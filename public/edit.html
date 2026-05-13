@@ -72,6 +72,7 @@ header{background:linear-gradient(90deg,#08090e,#0e1018);border-bottom:1px solid
 .p-active{background:var(--prog-bg);color:var(--prog);border:1px solid var(--prog-bd)}
 .p-wait{background:var(--sur2);color:var(--mu);border:1px solid var(--bd)}
 .p-spec{background:var(--spec-bg);color:var(--spec);border:1px solid var(--spec-bd)}
+.p-canc{background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1}
 .spec-tag{font-size:10px;color:var(--spec);background:var(--spec-bg);border:1px solid var(--spec-bd);padding:1px 6px;border-radius:4px;margin-left:4px}
 .late-tag{font-size:10px;color:var(--late);background:var(--late-bg);border:1px solid var(--late-bd);padding:1px 6px;border-radius:4px;margin-left:4px}
 .sel-sm{font-size:12px;padding:4px 6px;min-width:160px;border:1px solid var(--bd);border-radius:var(--r);background:var(--sur);font-family:'Sarabun',sans-serif}
@@ -507,6 +508,7 @@ function stepSt(o,i){
   return'pending';
 }
 function orderSt(o){
+  if(o.isCancelled) return'cancelled';
   if(o.completedSteps>=o.totalSteps) return'done';
   // late overrides everything
   for(let i=o.completedSteps;i<o.totalSteps;i++){
@@ -518,15 +520,15 @@ function orderSt(o){
   return'progress';
 }
 function osDot(s){return{done:'d-done',late:'d-late',progress:'d-prog',pending:'d-pend',spec:'d-spec'}[s]||'d-pend'}
-function pillCls(s){return{done:'p-done',late:'p-late',progress:'p-active',pending:'p-wait',spec:'p-spec'}[s]||'p-wait'}
-function pillLbl(s){return{done:'เสร็จแล้ว',late:'เลยกำหนด',progress:'กำลังดำเนินการ',pending:'รอ',spec:'⚡ Special'}[s]||s}
+function pillCls(s){return{done:'p-done',late:'p-late',progress:'p-active',pending:'p-wait',spec:'p-spec',cancelled:'p-canc'}[s]||'p-wait'}
+function pillLbl(s){return{done:'เสร็จแล้ว',late:'เลยกำหนด',progress:'กำลังดำเนินการ',pending:'รอ',spec:'⚡ Special',cancelled:'🚫 ยกเลิกแล้ว'}[s]||s}
 function fcol(s){return{done:'#1a7f37',late:'#cf222e',progress:'#0969da',pending:'#9a6700',spec:'#7c3aed'}[s]||'#9ca3af'}
 
 // ── Sidebar ──────────────────────────────────────────────────
 function filtSide(v){_sfilt=v.toLowerCase();rSide()}
 function rSide(){
   // Active list = exclude completed orders
-  const list=_orders.filter(o=>(o.completedSteps<o.totalSteps)&&(!_sfilt||o.id.toLowerCase().includes(_sfilt)||(o.customer||'').toLowerCase().includes(_sfilt)||(o.factory||'').toLowerCase().includes(_sfilt)));
+  const list=_orders.filter(o=>(!o.isCancelled&&o.completedSteps<o.totalSteps)&&(!_sfilt||o.id.toLowerCase().includes(_sfilt)||(o.customer||'').toLowerCase().includes(_sfilt)||(o.factory||'').toLowerCase().includes(_sfilt)));
   document.getElementById('sidebar').innerHTML=list.map(o=>{
     const s=orderSt(o);const pct=Math.round((o.completedSteps/o.totalSteps)*100);
     return`<div class="order-item ${_active===o.id?'active':''}" onclick="openOrder('${o.id}')">
@@ -550,6 +552,14 @@ function rDetail(id){
     if(isStepSpecial(o,i)) specCount++;
   }
 
+  let cancelBanner='';
+  if(o.isCancelled){
+    cancelBanner=`<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:var(--r);margin-bottom:12px;background:#f1f5f9;border:1px solid #cbd5e1;color:#64748b">
+      <span style="font-size:18px">🚫</span>
+      <div style="flex:1"><strong>Order นี้ถูกยกเลิกแล้ว</strong>${o.cancelReason?` — ${o.cancelReason}`:''}</div>
+      <button class="btn btn-sm" style="background:#e0f2fe;color:#0550ae;border-color:#7dd3fc" onclick="uncancelOrder('${o.id}')">↩ เปิดใหม่</button>
+    </div>`;
+  }
   let prepBanner='';
   if(o.prepayment){
     if(o.prepaymentDone) prepBanner=`<div class="prepay-banner pb-done">💳 <strong>จ่ายเงินล่วงหน้าแล้ว</strong> <button class="btn btn-sm btn-danger" style="margin-left:auto;font-size:11px" onclick="undoPrepaid('${o.id}')">↩ ยกเลิก</button></div>`;
@@ -637,10 +647,13 @@ function rDetail(id){
   </div>
   <div style="display:flex;gap:6px">
     <button class="btn btn-sm btn-secondary" onclick="editOrder('${id}')">✏️ แก้ไข</button>
+    ${o.isCancelled
+      ?`<button class="btn btn-sm" style="background:#e0f2fe;color:#0550ae;border-color:#7dd3fc" onclick="uncancelOrder('${id}')">↩ เปิดใหม่</button>`
+      :`<button class="btn btn-sm" style="background:#f1f5f9;color:#64748b;border-color:#cbd5e1" onclick="cancelOrder('${id}')">🚫 ยกเลิก Order</button>`}
     <button class="btn btn-sm btn-danger" onclick="delOrder('${id}')">🗑 ลบ</button>
   </div>
 </div>
-${prepBanner}
+${cancelBanner}${prepBanner}
 ${o.isPartial?`<div class="partial-banner">
   <span style="font-size:18px">📦</span>
   <div style="flex:1">
@@ -1240,6 +1253,20 @@ async function linkPRToExisting(orderId){
   shAlert('✅ เชื่อม PR '+(p?p.prNo:'')+' กับ '+orderId+' เรียบร้อยแล้ว','success');
 }
 
+async function cancelOrder(id){
+  const reason=prompt('เหตุผลที่ยกเลิก (ไม่บังคับ):');
+  if(reason===null)return; // user pressed Cancel on prompt
+  await fetch(API+'/api/orders/'+encodeURIComponent(id)+'/cancel',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({cancel:true,reason:reason.trim()})});
+  await loadAll();rSide();rDetail(id);
+  shAlert('🚫 ยกเลิก Order '+id+' แล้ว','success');
+}
+async function uncancelOrder(id){
+  if(!confirm('เปิด Order '+id+' ใหม่อีกครั้ง?'))return;
+  await fetch(API+'/api/orders/'+encodeURIComponent(id)+'/cancel',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({cancel:false})});
+  await loadAll();rSide();rDetail(id);
+  shAlert('✅ เปิด Order '+id+' ใหม่แล้ว','success');
+}
+
 async function openNewFromPR(prId){
   const p=(_prs||[]).find(x=>String(x.id)===String(prId));if(!p)return;
   document.getElementById('modal-t').textContent='เพิ่ม Order ใหม่ (จาก PR '+p.prNo+')';
@@ -1283,7 +1310,7 @@ function swTab(tab,el){
 window.swTab=swTab;
 
 function rArchive(){
-  const done=_orders.filter(o=>o.completedSteps>=o.totalSteps||orderSt(o)==='done')
+  const done=_orders.filter(o=>o.completedSteps>=o.totalSteps||orderSt(o)==='done'||o.isCancelled)
     .sort((a,b)=>{const pa=(a.id||'').match(/POI(\d{4})-(\d+)/i);const pb=(b.id||'').match(/POI(\d{4})-(\d+)/i);
       const na=pa?parseInt(pa[1])*10000+parseInt(pa[2]):0;const nb=pb?parseInt(pb[1])*10000+parseInt(pb[2]):0;return nb-na;});
   document.getElementById('archive-count').textContent=`${done.length} Order เสร็จสมบูรณ์`;
@@ -1309,7 +1336,9 @@ function rArchive(){
     const lastDone=o.doneDates?[...o.doneDates].filter(Boolean).pop():'';
     const isLate=o.dueDate&&lastDone&&lastDone>o.dueDate;
     const daysLate=isLate?Math.ceil((new Date(lastDone)-new Date(o.dueDate))/(86400000)):0;
-    const statusBadge=isLate
+    const statusBadge=o.isCancelled
+      ?`<span style="font-size:11px;font-weight:700;padding:3px 9px;border-radius:99px;background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1">🚫 ยกเลิกแล้ว${o.cancelReason?' — '+o.cancelReason:''}</span>`
+      :isLate
       ?`<span style="font-size:11px;font-weight:700;padding:3px 9px;border-radius:99px;background:var(--late-bg);color:var(--late);border:1px solid var(--late-bd)">⚠️ ส่งช้า ${daysLate} วัน (${lastDone})</span>`
       :`<span style="font-size:11px;font-weight:700;padding:3px 9px;border-radius:99px;background:var(--done-bg);color:var(--done);border:1px solid var(--done-bd)">✅ ส่งตรงเวลา</span>`;
     return`<tr style="border-bottom:1px solid var(--bd2)">
