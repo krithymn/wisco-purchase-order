@@ -235,8 +235,11 @@ function showDropdown(dropId,list,q,inputId){
   const drop=document.getElementById(dropId);if(!drop)return;
   const filtered=(list||[]).filter(s=>s.toLowerCase().includes((q||'').toLowerCase()));
   const isSale = dropId==='sale-drop';
-  drop.innerHTML=filtered.map(s=>`<div class="admin-opt" onmousedown="${isSale?`addSaleTag('`+s.replace(/'/g,"\'")+"')`:`pickDrop('${inputId}','${dropId}','`+s.replace(/'/g,"\'")+`')`}">${s}</div>`).join('')
-    ||'<div style="padding:8px 12px;font-size:12px;color:var(--mu)">ไม่พบ</div>';
+  drop.innerHTML=filtered.map(function(s){
+    var safe=s.replace(/'/g,"&#39;");
+    var handler=isSale?('addSaleTag(\'' +safe+ '\')'):('pickDrop(\'' +inputId+ '\',\'' +dropId+ '\',\'' +safe+ '\')');
+    return '<div class="admin-opt" onmousedown="'+handler+'">'+s+'</div>';
+  }).join('')||'<div style="padding:8px 12px;font-size:12px;color:var(--mu)">ไม่พบ</div>';
   drop.classList.add('show');
 }
 function hideDropdown(dropId){const d=document.getElementById(dropId);if(d)d.classList.remove('show');}
