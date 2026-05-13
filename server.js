@@ -255,8 +255,11 @@ app.put('/api/orders/:id', (req, res) => {
 
 app.delete('/api/orders/:id', (req, res) => {
   try {
-    run("DELETE FROM order_steps WHERE order_id=?",[req.params.id]);
-    run("DELETE FROM orders WHERE id=?",[req.params.id]);
+    const id = req.params.id;
+    // Unlink any PRs that were linked to this order
+    run("UPDATE purchase_requests SET linked_poi='' WHERE linked_poi=?", [id]);
+    run("DELETE FROM order_steps WHERE order_id=?", [id]);
+    run("DELETE FROM orders WHERE id=?", [id]);
     saveDB();
     res.json({ok:true});
   } catch(e) { res.status(500).json({error:e.message}); }
@@ -527,7 +530,21 @@ app.put('/api/prs/:id', (req, res) => {
 
 app.delete('/api/prs/:id', (req, res) => {
   try {
-    run("DELETE FROM purchase_requests WHERE id=?",[req.params.id]);
+    // Before deleting, remove this PR's item row from any linked order
+    const prRec = query("SELECT pr_no, linked_poi FROM purchase_requests WHERE id=?", [req.params.id]);
+    if (prRec.length && prRec[0].linked_poi && prRec[0].pr_no) {
+      const poiId = prRec[0].linked_poi;
+      const prKey = (prRec[0].pr_no||'').trim().toLowerCase();
+      const orderRow = query("SELECT items FROM orders WHERE id=?", [poiId]);
+      if (orderRow.length) {
+        try {
+          let items = JSON.parse(orderRow[0].items || '[]');
+          items = items.filter(it => (it.prNumber||'').trim().toLowerCase() !== prKey);
+          run("UPDATE orders SET items=? WHERE id=?", [JSON.stringify(items), poiId]);
+        } catch(e) {}
+      }
+    }
+    run("DELETE FROM purchase_requests WHERE id=?", [req.params.id]);
     saveDB();
     res.json({ok:true});
   } catch(e) { res.status(500).json({error:e.message}); }
