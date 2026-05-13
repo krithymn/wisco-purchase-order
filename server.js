@@ -117,6 +117,8 @@ async function initDB() {
   try { db.run("ALTER TABLE orders ADD COLUMN delivery_date_sup TEXT DEFAULT ''"); } catch(e) { /* already exists */ }
   try { db.run("ALTER TABLE orders ADD COLUMN delivery_date_cust TEXT DEFAULT ''"); } catch(e) { /* already exists */ }
   try { db.run("ALTER TABLE orders ADD COLUMN eta_wisco TEXT DEFAULT ''"); } catch(e) { /* already exists */ }
+  try { db.run("ALTER TABLE orders ADD COLUMN is_cancelled INTEGER DEFAULT 0"); } catch(e) { /* already exists */ }
+  try { db.run("ALTER TABLE orders ADD COLUMN cancel_reason TEXT DEFAULT ''"); } catch(e) { /* already exists */ }
   // Create purchase_requests table if not exists
   db.run(`CREATE TABLE IF NOT EXISTS purchase_requests (
     id            INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -200,6 +202,8 @@ function buildOrder(row) {
     product: row.product||'', quantity: row.quantity||'',
     customerPO: row.customer_po||'', notes: row.notes||'',
     isPartial: !!row.is_partial,
+    isCancelled: !!row.is_cancelled,
+    cancelReason: row.cancel_reason||'',
     deliveryDateSup: row.delivery_date_sup||'',
     deliveryDateCust: row.delivery_date_cust||'',
     etaWisco: row.eta_wisco||'',
@@ -330,6 +334,18 @@ app.put('/api/config/saleTeams', (req, res) => {
 app.put('/api/config/sales', (req, res) => {
   try { run("INSERT OR REPLACE INTO config(key,value) VALUES('sales',?)",[JSON.stringify(req.body.sales)]); res.json({ok:true}); }
   catch(e) { res.status(500).json({error:e.message}); }
+});
+
+// ── CANCEL / UNCANCEL ORDER ──────────────────────────────────
+app.patch('/api/orders/:id/cancel', (req, res) => {
+  try {
+    const cancel = req.body.cancel !== false; // default true
+    const reason = req.body.reason || '';
+    run("UPDATE orders SET is_cancelled=?, cancel_reason=? WHERE id=?",
+      [cancel?1:0, reason, req.params.id]);
+    saveDB();
+    res.json({ok:true});
+  } catch(e) { res.status(500).json({error:e.message}); }
 });
 
 // ── MIGRATE ORDERS TO NEW STEPS ─────────────────────────────
