@@ -403,15 +403,34 @@ app.get('/api/prs', (req, res) => {
       if (matchedOrders.length > 0 && !r.linked_poi) {
         try { run("UPDATE purchase_requests SET linked_poi=? WHERE id=?", [matchedOrders[0], r.id]); } catch(e) {}
       }
+      // Pull product items from the linked order's matching item row (single source of truth)
+      let displayItems = [];
+      try { displayItems = JSON.parse(r.items||'[]'); } catch(e) {}
+      if (matchedOrders.length > 0) {
+        // Gather subItems from all matching order item rows
+        const mergedSubItems = [];
+        for (const oid of matchedOrders) {
+          const orderRow = allOrders.find(o => o.id === oid);
+          if (!orderRow) continue;
+          try {
+            const orderItems = JSON.parse(orderRow.items || '[]');
+            const matched = orderItems.find(it => (it.prNumber||'').trim().toLowerCase() === key);
+            if (matched && matched.subItems && matched.subItems.length) {
+              matched.subItems.forEach(s => mergedSubItems.push(s));
+            }
+          } catch(e) {}
+        }
+        if (mergedSubItems.length > 0) displayItems = mergedSubItems;
+      }
       return {
         id: r.id, prNo: r.pr_no, openDate: r.open_date,
         customerName: r.customer_name, customerPO: r.customer_po,
         poValue: r.po_value, fineYN: r.fine_yn, finePct: r.fine_pct,
         dueDate: r.due_date, saleTeam: r.sale_team, sale: r.sale,
         quotationNo: r.quotation_no, ldNo: r.ld_no, domestic: r.domestic,
-        poNo: r.po_no, items: (() => { try { return JSON.parse(r.items||'[]'); } catch(e) { return []; } })(),
+        poNo: r.po_no, items: displayItems,
         linkedPOI: linkedPOI,
-        linkedPOIs: matchedOrders  // full array for UI use
+        linkedPOIs: matchedOrders
       };
     }));
   } catch(e) { res.status(500).json({error:e.message}); }
@@ -420,6 +439,11 @@ app.get('/api/prs', (req, res) => {
 app.post('/api/prs', (req, res) => {
   try {
     const b = req.body;
+    // Check for duplicate PR number first
+    const existing = query("SELECT id FROM purchase_requests WHERE LOWER(pr_no)=LOWER(?)", [b.prNo||'']);
+    if (existing.length > 0) {
+      return res.status(409).json({error: 'PR number already exists'});
+    }
     run(`INSERT INTO purchase_requests(pr_no,open_date,customer_name,customer_po,po_value,fine_yn,fine_pct,due_date,sale_team,sale,quotation_no,ld_no,domestic,po_no,items)
          VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
       [b.prNo||'',b.openDate||'',b.customerName||'',b.customerPO||'',b.poValue||'',
@@ -454,6 +478,32 @@ app.put('/api/prs/:id', (req, res) => {
       [b.prNo||'',b.openDate||'',b.customerName||'',b.customerPO||'',b.poValue||'',
        b.fineYN||'no',b.finePct||'',b.dueDate||'',b.saleTeam||'',b.sale||'',
        b.quotationNo||'',b.ldNo||'',b.domestic||'',b.poNo||'',JSON.stringify(b.items||[]),req.params.id]);
+
+    // Sync updated PR items into the linked order's item row
+    const prRec = query("SELECT linked_poi, pr_no, fine_yn FROM purchase_requests WHERE id=?", [req.params.id]);
+    if (prRec.length && prRec[0].linked_poi) {
+      const poiId = prRec[0].linked_poi;
+      const prKey = (prRec[0].pr_no||'').trim().toLowerCase();
+      const orderRow = query("SELECT items FROM orders WHERE id=?", [poiId]);
+      if (orderRow.length) {
+        let orderItems = [];
+        try { orderItems = JSON.parse(orderRow[0].items || '[]'); } catch(e) {}
+        const idx = orderItems.findIndex(it => (it.prNumber||'').trim().toLowerCase() === prKey);
+        const newSubItems = (b.items||[]).map(i => ({product: i.product||'', quantity: i.quantity||''}));
+        if (idx >= 0) {
+          // Update existing row
+          orderItems[idx].subItems = newSubItems.length ? newSubItems : [{product:'',quantity:''}];
+          orderItems[idx].fine = b.fineYN==='yes'?'yes':'';
+        } else {
+          // Add new row
+          orderItems.push({customer: b.customerName||'', prNumber: b.prNo||'', sendDate:'',
+            fine: b.fineYN==='yes'?'yes':'',
+            subItems: newSubItems.length ? newSubItems : [{product:'',quantity:''}]});
+        }
+        run("UPDATE orders SET items=? WHERE id=?", [JSON.stringify(orderItems), poiId]);
+      }
+    }
+
     saveDB();
     res.json({ok:true});
   } catch(e) { res.status(500).json({error:e.message}); }
@@ -477,9 +527,21 @@ app.post('/api/prs/auto-link-all', (req, res) => {
       for (const order of allOrders) {
         try {
           const items = JSON.parse(order.items || '[]');
-          const found = items.some(it => (it.prNumber||'').trim().toLowerCase() === pr.pr_no.trim().toLowerCase());
+          const prKey = (pr.pr_no||'').trim().toLowerCase();
+          const found = items.some(it => (it.prNumber||'').trim().toLowerCase() === prKey);
           if (found) {
             run("UPDATE purchase_requests SET linked_poi=? WHERE id=?", [order.id, pr.id]);
+            // Sync PR items into the order item row if subItems are empty
+            const matchedItem = items.find(it => (it.prNumber||'').trim().toLowerCase() === prKey);
+            if (matchedItem && (!matchedItem.subItems || !matchedItem.subItems.some(s=>s.product))) {
+              let prItems = [];
+              try { prItems = JSON.parse(pr.items || '[]'); } catch(e) {}
+              if (prItems.length) {
+                const idx = items.indexOf(matchedItem);
+                items[idx].subItems = prItems.map(i=>({product:i.product||'',quantity:i.quantity||''}));
+                run("UPDATE orders SET items=? WHERE id=?", [JSON.stringify(items), order.id]);
+              }
+            }
             linked++;
             break;
           }
@@ -493,7 +555,36 @@ app.post('/api/prs/auto-link-all', (req, res) => {
 
 app.patch('/api/prs/:id/link', (req, res) => {
   try {
-    run("UPDATE purchase_requests SET linked_poi=? WHERE id=?",[req.body.poiId||'',req.params.id]);
+    const poiId = req.body.poiId || '';
+    run("UPDATE purchase_requests SET linked_poi=? WHERE id=?", [poiId, req.params.id]);
+
+    // Sync: if the order doesn't already have this PR as an item row, add it
+    if (poiId) {
+      const prRow = query("SELECT * FROM purchase_requests WHERE id=?", [req.params.id]);
+      const orderRow = query("SELECT items FROM orders WHERE id=?", [poiId]);
+      if (prRow.length && orderRow.length) {
+        const pr = prRow[0];
+        let orderItems = [];
+        try { orderItems = JSON.parse(orderRow[0].items || '[]'); } catch(e) {}
+        const prKey = (pr.pr_no||'').trim().toLowerCase();
+        const alreadyIn = orderItems.some(it => (it.prNumber||'').trim().toLowerCase() === prKey);
+        if (!alreadyIn) {
+          let prItems = [];
+          try { prItems = JSON.parse(pr.items || '[]'); } catch(e) {}
+          const newItem = {
+            customer: pr.customer_name || '',
+            prNumber: pr.pr_no || '',
+            sendDate: '',
+            fine: pr.fine_yn === 'yes' ? 'yes' : '',
+            subItems: prItems.length ? prItems.map(i => ({product: i.product||'', quantity: i.quantity||''}))
+                                     : [{product: '', quantity: ''}]
+          };
+          orderItems.push(newItem);
+          run("UPDATE orders SET items=? WHERE id=?", [JSON.stringify(orderItems), poiId]);
+        }
+      }
+    }
+
     saveDB();
     res.json({ok:true});
   } catch(e) { res.status(500).json({error:e.message}); }
