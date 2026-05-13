@@ -397,8 +397,25 @@ app.post('/api/prs', (req, res) => {
       [b.prNo||'',b.openDate||'',b.customerName||'',b.customerPO||'',b.poValue||'',
        b.fineYN||'no',b.finePct||'',b.dueDate||'',b.saleTeam||'',b.sale||'',
        b.quotationNo||'',b.ldNo||'',b.domestic||'',b.poNo||'',JSON.stringify(b.items||[])]);
+
+    // Auto-link: if any existing order already has this PR number in its items, link immediately
+    let autoLinkedPOI = '';
+    if (b.prNo) {
+      const allOrders = query("SELECT id, items FROM orders");
+      for (const order of allOrders) {
+        try {
+          const items = JSON.parse(order.items || '[]');
+          const found = items.some(it => (it.prNumber||'').trim().toLowerCase() === b.prNo.trim().toLowerCase());
+          if (found) { autoLinkedPOI = order.id; break; }
+        } catch(e) {}
+      }
+      if (autoLinkedPOI) {
+        run("UPDATE purchase_requests SET linked_poi=? WHERE pr_no=?", [autoLinkedPOI, b.prNo]);
+      }
+    }
+
     saveDB();
-    res.json({ok:true});
+    res.json({ok: true, autoLinkedPOI: autoLinkedPOI || null});
   } catch(e) { res.status(500).json({error:e.message}); }
 });
 
@@ -419,6 +436,30 @@ app.delete('/api/prs/:id', (req, res) => {
     run("DELETE FROM purchase_requests WHERE id=?",[req.params.id]);
     saveDB();
     res.json({ok:true});
+  } catch(e) { res.status(500).json({error:e.message}); }
+});
+
+// Bulk auto-link: scan all unlinked PRs and match against existing order items
+app.post('/api/prs/auto-link-all', (req, res) => {
+  try {
+    const unlinked = query("SELECT id, pr_no FROM purchase_requests WHERE linked_poi IS NULL OR linked_poi=''");
+    const allOrders = query("SELECT id, items FROM orders");
+    let linked = 0;
+    for (const pr of unlinked) {
+      for (const order of allOrders) {
+        try {
+          const items = JSON.parse(order.items || '[]');
+          const found = items.some(it => (it.prNumber||'').trim().toLowerCase() === pr.pr_no.trim().toLowerCase());
+          if (found) {
+            run("UPDATE purchase_requests SET linked_poi=? WHERE id=?", [order.id, pr.id]);
+            linked++;
+            break;
+          }
+        } catch(e) {}
+      }
+    }
+    saveDB();
+    res.json({ok: true, linked, total: unlinked.length});
   } catch(e) { res.status(500).json({error:e.message}); }
 });
 
