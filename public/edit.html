@@ -990,7 +990,20 @@ async function saveOrder(){
   const body={id,customer:firstItem.customer||'',factory:fac,product:firstItem.product||'',quantity:firstItem.quantity||'',customerPO:'',startDate:getDateField('f-start'),productionFinishDate:getDateField('f-prod-finish'),dueDate:getDateField('f-due'),deliveryDateSup:getDateField('f-del-sup'),deliveryDateCust:getDateField('f-del-cust'),
     etaWisco:getDateField('f-eta-wisco'),prepayment:document.getElementById('f-prepay').checked,isPartial:document.getElementById('f-partial').checked,items};
   if(_editId){await put(`/api/orders/${_editId}`,body);}
-  else{const r=await post('/api/orders',body);if(r.error){document.getElementById('modal-alert').innerHTML=`<div class="alert alert-error">${r.error==='Order ID already exists'?'เลขที่ Order นี้มีอยู่แล้ว':r.error}</div>`;return;}
+  else{const r=await post('/api/orders',body);if(r.error){
+    // If order already exists AND we came from a PR, offer to link to existing order
+    const prId=document.getElementById('modal').getAttribute('data-pr-id');
+    if(r.error==='Order ID already exists'&&prId){
+      document.getElementById('modal-alert').innerHTML=`
+        <div class="alert alert-error" style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+          <span>⚠️ เลขที่ Order <strong>${id}</strong> มีอยู่แล้ว — ต้องการเชื่อม PR นี้กับ Order ที่มีอยู่หรือไม่?</span>
+          <button class="btn btn-success btn-sm" onclick="linkPRToExisting('${id}')">✅ เชื่อมกับ ${id}</button>
+        </div>`;
+    } else {
+      document.getElementById('modal-alert').innerHTML=`<div class="alert alert-error">${r.error==='Order ID already exists'?'เลขที่ Order นี้มีอยู่แล้ว':r.error}</div>`;
+    }
+    return;
+  }
     // Link to PR if opened from PR tab
     const prId=document.getElementById('modal').getAttribute('data-pr-id');
     if(prId){
@@ -1209,6 +1222,22 @@ function rPRTab(){
     <td style="padding:10px 14px"><button class="btn btn-sm btn-primary" onclick="openNewFromPR(${p.id})">+ เปิด POI จาก PR นี้</button></td>
   </tr>`).join('');
 }
+async function linkPRToExisting(orderId){
+  const prId=document.getElementById('modal').getAttribute('data-pr-id');
+  if(!prId)return;
+  // Link the PR to the existing order
+  await fetch('/api/prs/'+prId+'/link',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({poiId:orderId})});
+  document.getElementById('modal').removeAttribute('data-pr-id');
+  // Refresh PRs list
+  const freshPrs=await fetch('/api/prs').then(r=>r.json()).catch(()=>[]);
+  _prs=Array.isArray(freshPrs)?freshPrs:[];
+  rPRTab();
+  closeModal();
+  // Open the existing order
+  await loadAll(); rSide(); openOrder(orderId);
+  shAlert('✅ เชื่อม PR กับ '+orderId+' เรียบร้อยแล้ว','success');
+}
+
 async function openNewFromPR(prId){
   const p=(_prs||[]).find(x=>String(x.id)===String(prId));if(!p)return;
   document.getElementById('modal-t').textContent='เพิ่ม Order ใหม่ (จาก PR '+p.prNo+')';
