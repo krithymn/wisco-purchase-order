@@ -182,12 +182,14 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--spec);bo
             <div id="sale-team-drop" class="admin-drop"></div>
           </div>
         </div>
-        <div class="fg"><label>Sale</label>
-          <div style="position:relative">
-            <input id="f-sale" placeholder="พิมพ์หรือเลือก..." autocomplete="off"
+        <div class="fg" style="grid-column:span 1"><label>Sale <span style="font-size:10px;color:var(--mu);font-weight:400">(เพิ่มได้หลายคน)</span></label>
+          <div id="sale-tags" style="display:flex;flex-wrap:wrap;gap:5px;min-height:32px;padding:5px 8px;border:1px solid var(--bd);border-radius:var(--r);background:var(--sur);align-items:center;cursor:text" onclick="document.getElementById('f-sale').focus()"></div>
+          <div style="position:relative;margin-top:5px">
+            <input id="f-sale" placeholder="พิมพ์หรือเลือกเพื่อเพิ่ม..." autocomplete="off"
               oninput="showDropdown('sale-drop',_sales,this.value,'f-sale')"
               onfocus="showDropdown('sale-drop',_sales,this.value,'f-sale')"
-              onblur="setTimeout(()=>hideDropdown('sale-drop'),200)">
+              onblur="setTimeout(()=>{hideDropdown('sale-drop');},200)"
+              onkeydown="if(event.key==='Enter'){event.preventDefault();addSaleTag(this.value.trim());}">
             <div id="sale-drop" class="admin-drop"></div>
           </div>
         </div>
@@ -232,7 +234,8 @@ let _prs=[], _editId=null, _items=[];
 function showDropdown(dropId,list,q,inputId){
   const drop=document.getElementById(dropId);if(!drop)return;
   const filtered=(list||[]).filter(s=>s.toLowerCase().includes((q||'').toLowerCase()));
-  drop.innerHTML=filtered.map(s=>`<div class="admin-opt" onmousedown="pickDrop('${inputId}','${dropId}','${s.replace(/'/g,"\'")}')"> ${s}</div>`).join('')
+  const isSale = dropId==='sale-drop';
+  drop.innerHTML=filtered.map(s=>`<div class="admin-opt" onmousedown="${isSale?`addSaleTag('`+s.replace(/'/g,"\'")+"')`:`pickDrop('${inputId}','${dropId}','`+s.replace(/'/g,"\'")+`')`}">${s}</div>`).join('')
     ||'<div style="padding:8px 12px;font-size:12px;color:var(--mu)">ไม่พบ</div>';
   drop.classList.add('show');
 }
@@ -240,6 +243,30 @@ function hideDropdown(dropId){const d=document.getElementById(dropId);if(d)d.cla
 function pickDrop(inputId,dropId,val){
   const el=document.getElementById(inputId);if(el)el.value=val;
   hideDropdown(dropId);
+}
+
+// ── Sale tags ────────────────────────────────────────────────
+let _saleTags=[];
+function addSaleTag(name){
+  if(!name)return;
+  if(_saleTags.includes(name)){document.getElementById('f-sale').value='';hideDropdown('sale-drop');return;}
+  _saleTags.push(name);
+  renderSaleTags();
+  document.getElementById('f-sale').value='';
+  hideDropdown('sale-drop');
+}
+function removeSaleTag(name){
+  _saleTags=_saleTags.filter(t=>t!==name);
+  renderSaleTags();
+}
+function renderSaleTags(){
+  const el=document.getElementById('sale-tags');if(!el)return;
+  el.innerHTML=_saleTags.map(t=>`<span style="display:inline-flex;align-items:center;gap:4px;background:#e8f0fe;color:#0550ae;border:1px solid #c2d4f8;border-radius:99px;font-size:12px;padding:2px 10px;font-weight:500">${t}<button type="button" onclick="removeSaleTag('${t.replace(/'/g,"\'")}')" style="background:none;border:none;color:#0550ae;cursor:pointer;font-size:14px;padding:0;line-height:1;margin-left:2px">×</button></span>`).join('');
+}
+function getSaleValue(){ return _saleTags.join(', '); }
+function setSaleValue(val){
+  _saleTags = val ? val.split(',').map(s=>s.trim()).filter(Boolean) : [];
+  renderSaleTags();
 }
 
 let _saleTeams=[], _sales=[];
@@ -346,7 +373,8 @@ function togFine(v){document.getElementById('fine-pct-wrap').classList.toggle('s
 function openAddModal(){
   _editId=null;_items=[{product:'',quantity:''}];
   document.getElementById('form-title').textContent='+ เพิ่ม PR ใหม่';
-  ['f-open-date','f-pr-no','f-cust-name','f-cust-po','f-po-value','f-due','f-sale-team','f-sale','f-quot-no','f-ld-no','f-po-no','f-fine-pct'].forEach(id=>document.getElementById(id).value='');
+  ['f-open-date','f-pr-no','f-cust-name','f-cust-po','f-po-value','f-due','f-sale-team','f-quot-no','f-ld-no','f-po-no','f-fine-pct'].forEach(id=>document.getElementById(id).value='');
+  setSaleValue('');
   document.getElementById('f-fine-yn').value='no';
   document.getElementById('f-domestic').value='';
   togFine('no');
@@ -368,7 +396,7 @@ function openEditModal(id){
   document.getElementById('f-fine-yn').value=p.fineYN||'no';
   document.getElementById('f-fine-pct').value=p.finePct||'';
   document.getElementById('f-sale-team').value=p.saleTeam||'';
-  document.getElementById('f-sale').value=p.sale||'';
+  setSaleValue(p.sale||'');
   document.getElementById('f-quot-no').value=p.quotationNo||'';
   document.getElementById('f-ld-no').value=p.ldNo||'';
   document.getElementById('f-domestic').value=p.domestic||'';
@@ -394,7 +422,7 @@ async function savePR(){
     finePct:document.getElementById('f-fine-pct').value.trim(),
     dueDate:isoFrom(document.getElementById('f-due').value),
     saleTeam:document.getElementById('f-sale-team').value.trim(),
-    sale:document.getElementById('f-sale').value.trim(),
+    sale:getSaleValue(),
     quotationNo:document.getElementById('f-quot-no').value.trim(),
     ldNo:document.getElementById('f-ld-no').value.trim(),
     domestic:document.getElementById('f-domestic').value,
