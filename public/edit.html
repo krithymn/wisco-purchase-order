@@ -1227,32 +1227,17 @@ async function linkPRToExisting(orderId){
   if(!prId)return;
   const p=(_prs||[]).find(x=>String(x.id)===String(prId));
 
-  // 1. Add PR as a new item row into the existing order's items
-  const order=_orders.find(x=>x.id===orderId);
-  if(order && p){
-    const prItems=(p.items&&p.items.length)?p.items:[{product:'',quantity:''}];
-    const newItem={
-      customer: p.customerName||'',
-      prNumber: p.prNo||'',
-      sendDate: '',
-      fine: p.fineYN==='yes'?'yes':'',
-      subItems: prItems.map(it=>({product:it.product||'',quantity:it.quantity||''}))
-    };
-    const updatedItems=[...(order.items||[]), newItem];
-    await put('/api/orders/'+orderId, {...order, items: updatedItems});
-  }
-
-  // 2. Link the PR record to this order
+  // Link PR to order — server handles adding the item row + syncing products automatically
   await fetch('/api/prs/'+prId+'/link',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({poiId:orderId})});
   document.getElementById('modal').removeAttribute('data-pr-id');
 
-  // 3. Refresh everything
+  // Refresh everything
   const freshPrs=await fetch('/api/prs').then(r=>r.json()).catch(()=>[]);
   _prs=Array.isArray(freshPrs)?freshPrs:[];
   rPRTab();
   closeModal();
   await loadAll(); rSide(); openOrder(orderId);
-  shAlert('✅ เชื่อม PR '+( p?p.prNo:'' )+' กับ '+orderId+' เรียบร้อยแล้ว','success');
+  shAlert('✅ เชื่อม PR '+(p?p.prNo:'')+' กับ '+orderId+' เรียบร้อยแล้ว','success');
 }
 
 async function openNewFromPR(prId){
