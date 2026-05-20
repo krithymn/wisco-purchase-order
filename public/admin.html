@@ -443,7 +443,7 @@ async function savePR(){
   const method=_editId?'PUT':'POST';
   const r=await fetch(url,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
   const d=await r.json();
-  if(d.error){document.getElementById('form-err').textContent='Error: '+d.error;return;}
+  if(d.error){document.getElementById('form-err').textContent=d.error==='PR number already exists'?'⚠️ PR Number นี้มีในระบบแล้ว':'Error: '+d.error;return;}
   closeFormModal();
   await init();
 
