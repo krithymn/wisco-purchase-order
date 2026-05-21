@@ -218,6 +218,30 @@ function buildOrder(row) {
   };
 }
 
+// ── SYNC: auto-create PR records when workers add prNumbers in orders ──
+function syncPRsFromOrderItems(orderId, items) {
+  try {
+    for (const item of (items||[])) {
+      const prNo = (item.prNumber||'').trim();
+      if (!prNo) continue;
+      const exists = query("SELECT id FROM purchase_requests WHERE LOWER(pr_no)=LOWER(?)", [prNo]);
+      if (exists.length > 0) {
+        // Already exists — just make sure it's linked
+        run("UPDATE purchase_requests SET linked_poi=? WHERE LOWER(pr_no)=LOWER(?) AND (linked_poi IS NULL OR linked_poi='')",
+          [orderId, prNo]);
+        continue;
+      }
+      // Create new PR record from order item data
+      run(`INSERT INTO purchase_requests(pr_no,open_date,customer_name,customer_po,po_value,fine_yn,fine_pct,due_date,sale_team,sale,quotation_no,ld_no,domestic,po_no,items,linked_poi)
+           VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+        [prNo, '', item.customer||'', '', '', item.fine==='yes'?'yes':'no', '',
+         item.sendDate||'', '', '', '', '', '', '',
+         JSON.stringify((item.subItems||[]).map(s=>({product:s.product||'',quantity:s.quantity||''}))),
+         orderId]);
+    }
+  } catch(e) { console.error('syncPRsFromOrderItems error:', e.message); }
+}
+
 // ── ROUTES ──────────────────────────────────────────────────
 app.get('/api/orders', (req, res) => {
   try {
@@ -240,6 +264,8 @@ app.post('/api/orders', (req, res) => {
     const steps = getSteps();
     const total = steps.length + (prepayment?1:0);
     for (let i=0;i<total;i++) run("INSERT OR IGNORE INTO order_steps(order_id,step_index,planned_days) VALUES(?,?,?)",[id,i,0]);
+    syncPRsFromOrderItems(id, req.body.items||[]);
+    saveDB();
     res.status(201).json(buildOrder(query("SELECT * FROM orders WHERE id=?",[id])[0]));
   } catch(e) { res.status(500).json({error:e.message}); }
 });
@@ -249,6 +275,8 @@ app.put('/api/orders/:id', (req, res) => {
     const {customer,factory,product,quantity,customerPO,prepayment,startDate,dueDate,notes} = req.body;
     run("UPDATE orders SET customer=?,factory=?,product=?,quantity=?,customer_po=?,prepayment=?,start_date=?,due_date=?,notes=?,items=?,po_open_date=?,production_finish_date=?,is_partial=?,delivery_date_sup=?,delivery_date_cust=?,eta_wisco=? WHERE id=?",
       [customer||'',factory||'',product||'',quantity||'',customerPO||'',prepayment?1:0,startDate||'',dueDate||'',notes||'',JSON.stringify(req.body.items||[]),req.body.poOpenDate||'',req.body.productionFinishDate||'',req.body.isPartial?1:0,req.body.deliveryDateSup||'',req.body.deliveryDateCust||'',req.body.etaWisco||'',req.params.id]);
+    syncPRsFromOrderItems(req.params.id, req.body.items||[]);
+    saveDB();
     res.json(buildOrder(query("SELECT * FROM orders WHERE id=?",[req.params.id])[0]));
   } catch(e) { res.status(500).json({error:e.message}); }
 });
@@ -430,6 +458,63 @@ app.post('/api/prs/auto-link-all', (req, res) => {
 });
 
 // ── BACKFILL: create PR records from existing order items ────
+// ── ONE-TIME DATA MIGRATION: inject missing pre-admin PRs ────
+const MISSING_PRS = [
+  {pr_no:"PR6903-0022",customer_name:"ฟินิกซ์ เอ็นจิเนียริ่ง",fine_yn:"no",due_date:"2026-03-18",items:'[{"product":"2-Way Pneumatic Control Valve DN32","quantity":"1"}]',linked_poi:"POI6904-0002"},
+  {pr_no:"PR6903-0027",customer_name:"ฟินิกซ์ เอ็นจิเนียริ่ง",fine_yn:"no",due_date:"2026-03-19",items:'[{"product":"2-Way Pneumatic Control Valve DN32","quantity":"1"}]',linked_poi:"POI6904-0002"},
+  {pr_no:"PR6904-0009",customer_name:"WISCO",fine_yn:"no",due_date:"2026-04-08",items:'[{"product":"VOCESTER KW-1 KNIFE GATE VALVE SIZE 3\"","quantity":"5"},{"product":"VOCESTER KW-1 KNIFE GATE VALVE SIZE 6\"","quantity":"4"},{"product":"VOCESTER KW-1 KNIFE GATE VALVE SIZE 8\"","quantity":"5"},{"product":"VOCESTER KW-1 KNIFE GATE VALVE SIZE 4\" FL.10K","quantity":"8"},{"product":"VOCESTER KW-1 CF8 SIZE 4\"","quantity":"6"},{"product":"VOCESTER KW-1 CF8 SIZE 6\"","quantity":"2"}]',linked_poi:"POI6904-0003"},
+  {pr_no:"PR6903-0035",customer_name:"WISCO SERVICE",fine_yn:"no",due_date:"2026-03-26",items:'[{"product":"Diaphragm Assembly - Viton Part no. SPV501","quantity":"1"}]',linked_poi:"POI6904-0004"},
+  {pr_no:"PR6904-0008",customer_name:"TPI POLENE",fine_yn:"no",due_date:"2026-04-08",items:'[{"product":"07 EL Positioner CW with Angle Retransmit and Din Plug Part no. 074-070EL10C0","quantity":"2"}]',linked_poi:"POI6904-0004"},
+  {pr_no:"PR6904-0013",customer_name:"AKWEL RAYONG",fine_yn:"no",due_date:"2026-04-08",items:'[{"product":"Seal Kit for Actuator Model : 10 Part no. SP056","quantity":"1"}]',linked_poi:"POI6904-0004"},
+  {pr_no:"PR6904-0015",customer_name:"A.E.C",fine_yn:"no",due_date:"2026-04-16",items:'[{"product":"VOCESTER MODEL: DCV DUAL PLATE CHECK VALVE PN16 SIZE DN250 (10\")","quantity":"1"}]',linked_poi:"POI6904-0006"},
+  {pr_no:"PR6904-0016",customer_name:"ไทยเบฟเวอเรจ",fine_yn:"no",due_date:"2026-04-16",items:'[{"product":"VOCESTER V680-N-5-600 GLOBE VALVE SIZE 3/4\"","quantity":"10"},{"product":"VOCESTER V680-N-5-600 GLOBE VALVE SIZE 1-1/2\"","quantity":"6"},{"product":"VOCESTER V680-N-5-600 GLOBE VALVE SIZE 2\"","quantity":"3"}]',linked_poi:"POI6904-0008"},
+  {pr_no:"PR6904-0005",customer_name:"VALVES-MART",fine_yn:"no",due_date:"2026-04-08",items:'[{"product":"YORK BUTTERFLY VALVE SIZE 2\"","quantity":"20"},{"product":"YORK BUTTERFLY VALVE SIZE 2.5\"","quantity":"50"},{"product":"YORK BUTTERFLY VALVE SIZE 3\"","quantity":"150"},{"product":"YORK BUTTERFLY VALVE SIZE 4\"","quantity":"150"},{"product":"YORK BUTTERFLY VALVE SIZE 6\"","quantity":"100"}]',linked_poi:"POI6904-0001 VM"},
+  {pr_no:"PR6901-0017",customer_name:"ไทยออยส์",fine_yn:"yes",due_date:"2026-05-15",items:'[{"product":"VOCESTER STRAINER SINGLE BASKET SIZE 6\" BW SCH.40","quantity":"1"}]',linked_poi:"POI6905-0003"},
+  {pr_no:"PR6902-0028",customer_name:"อัครา รีซอร์สเซส",fine_yn:"no",due_date:"2026-04-08",items:'[{"product":"DIAPHRAGM VALVE CON: THREADED NPT SIZE: 2\"","quantity":"2"}]',linked_poi:"POI6903-0001"},
+  {pr_no:"PR6903-0015",customer_name:"อัครา รีซอร์สเซส",fine_yn:"no",due_date:"2026-04-08",items:'[{"product":"DIAPHRAGM VALVE CON: FL.PN16#RF SIZE: 3","quantity":"1"}]',linked_poi:"POI6903-0001"},
+  {pr_no:"PR6902-0030",customer_name:"บุญเยี่ยมและสหาย",fine_yn:"no",due_date:"",items:'[{"product":"WEKSLER MODEL: BY4C 0-60PSI 100mm x 1/4\"NPT","quantity":"7"}]',linked_poi:"POI6903-0002"},
+  {pr_no:"PR6901-0020",customer_name:"อิเดมิตสึ อพอลโล (ประเทศไทย)",fine_yn:"no",due_date:"2026-03-18",items:'[{"product":"BALL VALVE FIRE SAFE 2PC SIZE: 3\"","quantity":"1"},{"product":"BALL VALVE FIRE SAFE 2PC SIZE: 3","quantity":"3"},{"product":"BALL VALVE FIRE SAFE 2PC SIZE: 4","quantity":"8"}]',linked_poi:"POI6901-0011"},
+  {pr_no:"PR6902-0025",customer_name:"อิเดมิตสึ อพอลโล (ประเทศไทย)",fine_yn:"no",due_date:"2026-03-24",items:'[{"product":"BALL VALVE FIRE SAFE 2PC SIZE: 3\"","quantity":"1"}]',linked_poi:"POI6901-0011"},
+  {pr_no:"PR6903-0038",customer_name:"อิเดมิตสึ อพอลโล (ประเทศไทย)",fine_yn:"no",due_date:"2026-05-15",items:'[{"product":"BALL VALVE FIRE SAFE 2PC SIZE: 3","quantity":"1"}]',linked_poi:"POI6901-0011"},
+  {pr_no:"PR6905-0026",customer_name:"บุญเยี่ยมและสหาย",fine_yn:"no",due_date:"2026-06-15",items:'[{"product":"PRESSURE GAUGE BAYONET 0-2bar 100mm x 1/4\"NPT","quantity":"5"},{"product":"PRESSURE GAUGE BAYONET 0-2bar 100mm x 1/4 FOR STOCK","quantity":"45"}]',linked_poi:"POI6905-0007"},
+];
+
+// Run migration automatically on startup — safe, skips existing
+(function runMigration() {
+  try {
+    let created = 0;
+    for (const p of MISSING_PRS) {
+      const exists = query("SELECT id FROM purchase_requests WHERE LOWER(pr_no)=LOWER(?)", [p.pr_no]);
+      if (exists.length > 0) continue;
+      run(`INSERT INTO purchase_requests(pr_no,open_date,customer_name,customer_po,po_value,fine_yn,fine_pct,due_date,sale_team,sale,quotation_no,ld_no,domestic,po_no,items,linked_poi)
+           VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+        [p.pr_no,'',p.customer_name,'','',p.fine_yn,'',p.due_date,'','','','','','',p.items,p.linked_poi]);
+      created++;
+    }
+    if (created > 0) { saveDB(); console.log(`✅ Migration: created ${created} missing PR records`); }
+    else { console.log('✅ Migration: all PRs already exist, nothing to do'); }
+  } catch(e) { console.error('Migration error:', e.message); }
+})();
+
+// Debug: see all prNumbers found in orders without creating anything
+app.get('/api/prs/backfill-preview', (req, res) => {
+  try {
+    const allOrders = query("SELECT id, items FROM orders");
+    const found = [];
+    for (const order of allOrders) {
+      let items = [];
+      try { items = JSON.parse(order.items || '[]'); } catch(e) { continue; }
+      for (const item of items) {
+        const prNo = (item.prNumber || '').trim();
+        if (!prNo) continue;
+        const existing = query("SELECT id FROM purchase_requests WHERE LOWER(pr_no)=LOWER(?)", [prNo]);
+        found.push({ orderId: order.id, prNo, customer: item.customer||'', alreadyExists: existing.length > 0 });
+      }
+    }
+    res.json({ total: found.length, items: found });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 app.post('/api/prs/backfill-from-orders', (req, res) => {
   try {
     const allOrders = query("SELECT * FROM orders");
