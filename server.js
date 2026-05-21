@@ -479,22 +479,7 @@ const MISSING_PRS = [
   {pr_no:"PR6905-0026",customer_name:"บุญเยี่ยมและสหาย",fine_yn:"no",due_date:"2026-06-15",items:'[{"product":"PRESSURE GAUGE BAYONET 0-2bar 100mm x 1/4\"NPT","quantity":"5"},{"product":"PRESSURE GAUGE BAYONET 0-2bar 100mm x 1/4 FOR STOCK","quantity":"45"}]',linked_poi:"POI6905-0007"},
 ];
 
-// Run migration automatically on startup — safe, skips existing
-(function runMigration() {
-  try {
-    let created = 0;
-    for (const p of MISSING_PRS) {
-      const exists = query("SELECT id FROM purchase_requests WHERE LOWER(pr_no)=LOWER(?)", [p.pr_no]);
-      if (exists.length > 0) continue;
-      run(`INSERT INTO purchase_requests(pr_no,open_date,customer_name,customer_po,po_value,fine_yn,fine_pct,due_date,sale_team,sale,quotation_no,ld_no,domestic,po_no,items,linked_poi)
-           VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
-        [p.pr_no,'',p.customer_name,'','',p.fine_yn,'',p.due_date,'','','','','','',p.items,p.linked_poi]);
-      created++;
-    }
-    if (created > 0) { saveDB(); console.log(`✅ Migration: created ${created} missing PR records`); }
-    else { console.log('✅ Migration: all PRs already exist, nothing to do'); }
-  } catch(e) { console.error('Migration error:', e.message); }
-})();
+// Migration runs after server starts (see app.listen block)
 
 // Debug: see all prNumbers found in orders without creating anything
 app.get('/api/prs/backfill-preview', (req, res) => {
@@ -804,5 +789,20 @@ initDB().then(() => {
     console.log(`\n  ✅ Wisco Order Tracker running!\n`);
     console.log(`  📊 Dashboard → http://localhost:${PORT}/dashboard.html`);
     console.log(`  ✏️  Edit      → http://localhost:${PORT}/edit.html\n`);
+
+    // Run migration now — DB is fully loaded
+    try {
+      let created = 0;
+      for (const p of MISSING_PRS) {
+        const exists = query("SELECT id FROM purchase_requests WHERE LOWER(pr_no)=LOWER(?)", [p.pr_no]);
+        if (exists.length > 0) continue;
+        run(`INSERT INTO purchase_requests(pr_no,open_date,customer_name,customer_po,po_value,fine_yn,fine_pct,due_date,sale_team,sale,quotation_no,ld_no,domestic,po_no,items,linked_poi)
+             VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+          [p.pr_no,'',p.customer_name,'','',p.fine_yn,'',p.due_date,'','','','','','',p.items,p.linked_poi]);
+        created++;
+      }
+      if (created > 0) { saveDB(); console.log(`  ✅ Migration: inserted ${created} missing PR records`); }
+      else { console.log('  ✅ Migration: all PRs already present'); }
+    } catch(e) { console.error('  ❌ Migration error:', e.message); }
   });
 });
