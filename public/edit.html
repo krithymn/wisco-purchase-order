@@ -1224,8 +1224,14 @@ function rPRTab(){
   if(badge){badge.style.display=pending.length?'inline':'none';badge.textContent=pending.length;}
   document.getElementById('pr-tab-count').textContent=`${pending.length} PR รอเปิด POI จากทั้งหมด ${(_prs||[]).length} PR`;
   document.getElementById('pr-tab-empty').style.display=pending.length?'none':'block';
-  document.getElementById('pr-tab-body').innerHTML=pending.map(p=>`<tr style="border-bottom:1px solid var(--bd2)">
-    <td style="padding:10px 14px;font-weight:700">${p.prNo}</td>
+  document.getElementById('pr-tab-body').innerHTML=pending.map(p=>{
+    const domesticBadge=p.domestic==='นปท.'
+      ?'<span style="font-size:10px;padding:1px 5px;border-radius:99px;background:#e0f2fe;color:#0550ae;border:1px solid #7dd3fc;font-weight:600;margin-left:4px">🏠 นปท.</span>'
+      :p.domestic==='ตปท.'
+      ?'<span style="font-size:10px;padding:1px 5px;border-radius:99px;background:#f0fdf4;color:#16a34a;border:1px solid #86efac;font-weight:600;margin-left:4px">✈️ ตปท.</span>'
+      :'';
+    return`<tr style="border-bottom:1px solid var(--bd2)">
+    <td style="padding:10px 14px;font-weight:700">${p.prNo}${domesticBadge}</td>
     <td style="padding:10px 14px;font-size:13px">${p.customerName||'—'}</td>
     <td style="padding:10px 14px;font-size:12px;color:var(--mu)">${p.customerPO||'—'}</td>
     <td style="padding:10px 14px;font-size:12px;color:${p.dueDate&&new Date(p.dueDate)<new Date()?'var(--late)':'var(--mu)'};font-weight:${p.dueDate&&new Date(p.dueDate)<new Date()?'600':'400'}">${p.dueDate||'—'}</td>
@@ -1233,7 +1239,7 @@ function rPRTab(){
     <td style="padding:10px 14px;font-size:12px">${p.sale||'—'}</td>
     <td style="padding:10px 14px"><span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:#fff8c5;color:#9a6700;border:1px solid #e3b341">⏳ รอเปิด POI</span></td>
     <td style="padding:10px 14px"><button class="btn btn-sm btn-primary" onclick="openNewFromPR(${p.id})">+ เปิด POI จาก PR นี้</button></td>
-  </tr>`).join('');
+  </tr>`;}).join('');
 }
 async function linkPRToExisting(orderId){
   const prId=document.getElementById('modal').getAttribute('data-pr-id');
