@@ -510,20 +510,16 @@ async function autoLinkAll(){
 }
 autoLinkAll(); // silently fix any unlinked PRs on page load
 
-// One-time backfill: create PR records for old order items that predate the admin system
-// Uses localStorage flag so it only runs once per browser
-if (!localStorage.getItem('wisco-pr-backfill-done')) {
-  fetch('/api/prs/backfill-from-orders', {method:'POST', headers:{'Content-Type':'application/json'}})
-    .then(r=>r.json())
-    .then(d=>{
-      if(d.ok){
-        localStorage.setItem('wisco-pr-backfill-done','1');
-        if(d.created>0){
-          loadPRs().then(()=>renderTable());
-        }
-      }
-    }).catch(()=>{});
-}
+// Backfill: create PR records for old order items that predate the admin system
+// Runs on every load but server skips existing PRs safely
+fetch('/api/prs/backfill-from-orders', {method:'POST', headers:{'Content-Type':'application/json'}})
+  .then(r=>r.json())
+  .then(d=>{
+    if(d.ok && d.created>0){
+      console.log('Backfill: created '+d.created+' PR records from old orders');
+      loadPRs().then(()=>renderTable());
+    }
+  }).catch(()=>{});
 }
 
 async function deletePR(id){
