@@ -555,7 +555,7 @@ app.post('/api/prs/backfill-from-orders', (req, res) => {
 
 app.get('/api/prs', (req, res) => {
   try {
-    const rows = query("SELECT * FROM purchase_requests ORDER BY created_at DESC");
+    const rows = query("SELECT * FROM purchase_requests ORDER BY pr_no DESC");
     // Build a map: prNumber -> [orderId, ...] from all order items
     const allOrders = query("SELECT id, items FROM orders");
     const prToOrders = {};
