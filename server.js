@@ -623,6 +623,60 @@ app.patch('/api/prs/:id/link', (req, res) => {
   } catch(e) { res.status(500).json({error:e.message}); }
 });
 
+// ── BACKFILL: create PR records from existing order items ────
+app.post('/api/prs/backfill-from-orders', (req, res) => {
+  try {
+    const allOrders = query("SELECT * FROM orders");
+    let created = 0;
+    let skipped = 0;
+
+    for (const order of allOrders) {
+      let items = [];
+      try { items = JSON.parse(order.items || '[]'); } catch(e) { continue; }
+
+      for (const item of items) {
+        const prNo = (item.prNumber || '').trim();
+        if (!prNo) continue;
+
+        // Check if PR record already exists
+        const existing = query("SELECT id FROM purchase_requests WHERE LOWER(pr_no)=LOWER(?)", [prNo]);
+        if (existing.length > 0) {
+          // Just make sure it's linked to this order
+          run("UPDATE purchase_requests SET linked_poi=? WHERE LOWER(pr_no)=LOWER(?) AND (linked_poi IS NULL OR linked_poi='')",
+            [order.id, prNo]);
+          skipped++;
+          continue;
+        }
+
+        // Create a new PR record from the order item data
+        run(`INSERT INTO purchase_requests(pr_no, open_date, customer_name, customer_po, po_value,
+             fine_yn, fine_pct, due_date, sale_team, sale, quotation_no, ld_no, domestic, po_no, items, linked_poi)
+             VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+          [
+            prNo,
+            order.open_date || '',
+            item.customer || '',
+            order.customer_po || '',
+            order.po_value || '',
+            item.fine === 'yes' ? 'yes' : 'no',
+            '',
+            item.sendDate || order.due_date || '',
+            order.sale_team || '',
+            order.sale || '',
+            '', '', '', '',
+            JSON.stringify((item.subItems || []).map(s => ({product: s.product||'', quantity: s.quantity||''}))),
+            order.id  // auto-link to this order
+          ]
+        );
+        created++;
+      }
+    }
+
+    saveDB();
+    res.json({ ok: true, created, skipped, message: `สร้าง PR ใหม่ ${created} รายการ, ข้าม ${skipped} รายการที่มีอยู่แล้ว` });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // ── BACKUP DOWNLOAD (protected by BACKUP_TOKEN env var) ──────
 const BACKUP_TOKEN = process.env.BACKUP_TOKEN || 'wisco-admin-2026';
 function checkToken(req, res) {
