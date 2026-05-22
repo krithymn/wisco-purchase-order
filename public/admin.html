@@ -118,6 +118,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--spec);bo
         <option value="linked">มี POI แล้ว</option>
         <option value="done">✅ POI เสร็จแล้ว</option>
         <option value="fine">มีค่าปรับ</option>
+        <option value="cancelled">🚫 ยกเลิกแล้ว</option>
       </select>
       <button class="btn btn-primary" onclick="openAddModal()">+ เพิ่ม PR ใหม่</button>
     </div>
@@ -359,6 +360,8 @@ function renderTable(){
     if(fs==='linked'&&(!linked||done))return false;
     if(fs==='done'&&!done)return false;
     if(fs==='fine'&&p.fineYN!=='yes')return false;
+    if(fs==='cancelled'&&!p.isCancelled)return false;
+    if(fs!==''&&fs!=='cancelled'&&p.isCancelled)return false;
     if(!q)return true;
     return[p.prNo,p.customerName,p.customerPO,p.sale,p.saleTeam,p.quotationNo,p.poNo,p.ldNo]
       .filter(Boolean).join(' ').toLowerCase().includes(q);
@@ -393,8 +396,11 @@ function renderTable(){
         return`<span style="font-size:12px;font-weight:600;color:${color}">${o.etaWisco}${diff<0?' (เลย '+Math.abs(diff)+' วัน)':diff<=7?' (อีก '+diff+' วัน)':''}</span>`;
       }).join('<br>');
     })();
-    return`<tr>
-    <td><strong>${hl(p.prNo,q)}</strong>${domesticBadge}</td>
+    const _cStyle=p.isCancelled?'opacity:0.55;background:rgba(100,116,139,0.05);':'';
+    const _cBadge=p.isCancelled?('<span style="font-size:10px;padding:1px 6px;border-radius:99px;background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1;font-weight:600;margin-left:5px">🚫 ยกเลิก'+(p.cancelReason?' — '+p.cancelReason:'')+'</span>'):'';
+    const _cTxt=p.isCancelled?'text-decoration:line-through;color:var(--mu);':'';
+    return`<tr style="${_cStyle}">
+    <td><strong style="${_cTxt}">${hl(p.prNo,q)}</strong>${domesticBadge}${_cBadge}</td>
     <td style="color:var(--mu)">${p.openDate||'—'}</td>
     <td>${hl(p.customerName,q)||'—'}</td>
     <td style="font-size:12px;color:var(--mu)">${hl(p.customerPO,q)||'—'}</td>
@@ -406,7 +412,9 @@ function renderTable(){
     <td>${etaCell}</td>
     <td><div style="display:flex;gap:4px">
       <button class="btn btn-sm" onclick="openDetail(${p.id})">ดู</button>
-      <button class="btn btn-sm" onclick="openEditModal(${p.id})">✏️</button>
+      ${p.isCancelled
+        ?('<button class="btn btn-sm" style="background:#e0f2fe;color:#0550ae;border-color:#7dd3fc" onclick="uncancelPR('+p.id+')">↩ เปิดใหม่</button>')
+        :('<button class="btn btn-sm" onclick="openEditModal('+p.id+')">✏️</button><button class="btn btn-sm" style="background:#f1f5f9;color:#64748b;border-color:#cbd5e1;margin-left:2px" onclick="cancelPR('+p.id+')">🚫 ยกเลิก</button>')}
       <button class="btn btn-sm btn-danger" onclick="deletePR(${p.id})">ลบ</button>
     </div></td>
   </tr>`;
@@ -522,6 +530,19 @@ fetch('/api/prs/backfill-from-orders', {method:'POST', headers:{'Content-Type':'
   }).catch(()=>{});
 }
 
+async function cancelPR(id){
+  const p=_prs.find(x=>x.id===id);
+  const reason=prompt('เหตุผลที่ยกเลิก PR '+(p&&p.prNo||'')+' (ไม่บังคับ):');
+  if(reason===null)return;
+  await fetch('/api/prs/'+id+'/cancel',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({cancel:true,reason:reason.trim()})});
+  await loadPRs(); renderTable();
+}
+async function uncancelPR(id){
+  const p=_prs.find(x=>x.id===id);
+  if(!confirm('เปิด PR '+(p&&p.prNo||'')+' ใหม่อีกครั้ง?'))return;
+  await fetch('/api/prs/'+id+'/cancel',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({cancel:false})});
+  await loadPRs(); renderTable();
+}
 async function deletePR(id){
   const p=_prs.find(x=>x.id===id);
   if(!confirm(`ลบ PR ${p?.prNo}?\nการดำเนินการนี้ไม่สามารถย้อนกลับได้`))return;

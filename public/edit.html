@@ -671,7 +671,15 @@ ${(()=>{
     const ss=it.shipStatus||{};
     return subs.map((s,si)=>`<tr style="${ss[si]?'opacity:.7':''}">
       ${si===0?`<td rowspan="${subs.length}" style="font-weight:600;vertical-align:top;border-right:1px solid var(--bd2)">${it.customer||'—'}</td>
-       <td rowspan="${subs.length}" style="color:var(--spec);vertical-align:top;border-right:1px solid var(--bd2)">${it.prNumber||'—'}</td>
+       <td rowspan="${subs.length}" style="vertical-align:top;border-right:1px solid var(--bd2)">${(()=>{
+         const prRec=_prs&&_prs.find?_prs.find(x=>(x.prNo||'').toLowerCase()===(it.prNumber||'').toLowerCase()):null;
+         if(!it.prNumber)return'—';
+         if(prRec&&prRec.isCancelled){
+           return '<span style="color:var(--mu);text-decoration:line-through">'+it.prNumber+'</span>'+
+                  '<br><span style="font-size:10px;padding:1px 6px;border-radius:4px;background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1;font-weight:600">🚫 ยกเลิกแล้ว'+(prRec.cancelReason?' — '+prRec.cancelReason:'')+'</span>';
+         }
+         return '<span style="color:var(--spec)">'+it.prNumber+'</span>';
+       })()}</td>
        <td rowspan="${subs.length}" style="font-size:11px;color:var(--mu);vertical-align:top">${it.sendDate||'—'}</td>
        <td rowspan="${subs.length}" style="vertical-align:top;font-size:12px;font-weight:600;color:${it.fine==='yes'?'var(--late)':it.fine==='no'?'var(--done)':'var(--mu)'}">${it.fine==='yes'?'⚠️ มีค่าปรับ':it.fine==='no'?'✅ ไม่มี':'—'}</td>`:''}
       <td>${s.product||'—'}</td>
