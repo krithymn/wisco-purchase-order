@@ -119,6 +119,8 @@ async function initDB() {
   try { db.run("ALTER TABLE orders ADD COLUMN eta_wisco TEXT DEFAULT ''"); } catch(e) { /* already exists */ }
   try { db.run("ALTER TABLE orders ADD COLUMN is_cancelled INTEGER DEFAULT 0"); } catch(e) { /* already exists */ }
   try { db.run("ALTER TABLE orders ADD COLUMN cancel_reason TEXT DEFAULT ''"); } catch(e) { /* already exists */ }
+  try { db.run("ALTER TABLE purchase_requests ADD COLUMN is_cancelled INTEGER DEFAULT 0"); } catch(e) { /* already exists */ }
+  try { db.run("ALTER TABLE purchase_requests ADD COLUMN cancel_reason TEXT DEFAULT ''"); } catch(e) { /* already exists */ }
   // Create purchase_requests table if not exists
   db.run(`CREATE TABLE IF NOT EXISTS purchase_requests (
     id            INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -609,7 +611,9 @@ app.get('/api/prs', (req, res) => {
         quotationNo: r.quotation_no, ldNo: r.ld_no, domestic: r.domestic,
         poNo: r.po_no, items: displayItems,
         linkedPOI: linkedPOI,
-        linkedPOIs: matchedOrders
+        linkedPOIs: matchedOrders,
+        isCancelled: !!r.is_cancelled,
+        cancelReason: r.cancel_reason||''
       };
     }));
   } catch(e) { res.status(500).json({error:e.message}); }
@@ -683,6 +687,17 @@ app.put('/api/prs/:id', (req, res) => {
       }
     }
 
+    saveDB();
+    res.json({ok:true});
+  } catch(e) { res.status(500).json({error:e.message}); }
+});
+
+app.patch('/api/prs/:id/cancel', (req, res) => {
+  try {
+    const cancel = req.body.cancel !== false;
+    const reason = req.body.reason || '';
+    run("UPDATE purchase_requests SET is_cancelled=?, cancel_reason=? WHERE id=?",
+      [cancel?1:0, reason, req.params.id]);
     saveDB();
     res.json({ok:true});
   } catch(e) { res.status(500).json({error:e.message}); }
