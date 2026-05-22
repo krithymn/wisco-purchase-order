@@ -203,6 +203,7 @@ input:focus,select:focus{outline:none;border-color:var(--ac);box-shadow:0 0 0 3p
   <button class="nav-tab active" onclick="swTab('orders',this)">📦 Active Orders</button>
   <button class="nav-tab" onclick="swTab('prs',this)">📋 PR รอเปิด POI <span id="pr-badge" style="display:none;background:var(--late);color:#fff;font-size:9px;font-weight:700;padding:1px 6px;border-radius:99px;margin-left:4px">0</span></button>
   <button class="nav-tab" onclick="swTab('archive',this)">🗄 Archive (เสร็จแล้ว)</button>
+  <button class="nav-tab" onclick="swTab('cancelled',this)">🚫 ยกเลิกแล้ว</button>
   <button class="nav-tab" onclick="swTab('config',this)">⚙️ ตั้งค่า</button>
 </div>
 
@@ -249,6 +250,26 @@ input:focus,select:focus{outline:none;border-color:var(--ac);box-shadow:0 0 0 3p
 </div>
 
 <!-- TAB: ARCHIVE -->
+<div id="tab-cancelled" style="padding:20px 24px;display:none">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+    <div>
+      <div style="font-size:18px;font-weight:700">🚫 Order ที่ยกเลิกแล้ว</div>
+      <div style="font-size:13px;color:var(--mu);margin-top:3px" id="cancelled-count"></div>
+    </div>
+  </div>
+  <table style="width:100%;border-collapse:collapse;background:var(--sur);border:1px solid var(--bd);border-radius:var(--r);overflow:hidden">
+    <thead style="background:var(--bg2)"><tr>
+      <th style="padding:10px 14px;font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase;text-align:left">POI Number</th>
+      <th style="padding:10px 14px;font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase;text-align:left">Supplier</th>
+      <th style="padding:10px 14px;font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase;text-align:left">ลูกค้า / PR Number</th>
+      <th style="padding:10px 14px;font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase;text-align:left">เหตุผลที่ยกเลิก</th>
+      <th style="padding:10px 14px;font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase;text-align:left">การดำเนินการ</th>
+    </tr></thead>
+    <tbody id="cancelled-body"></tbody>
+  </table>
+  <div id="cancelled-empty" style="display:none;padding:40px;text-align:center;font-size:14px;color:var(--mu)">ยังไม่มี Order ที่ถูกยกเลิก</div>
+</div>
+
 <div id="tab-archive" style="padding:20px 24px">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
     <div>
@@ -1311,9 +1332,11 @@ function _doSwTab(tab,el){
   document.getElementById('tab-orders').style.display=tab==='orders'?'block':'none';
   document.getElementById('tab-prs').style.display=tab==='prs'?'block':'none';
   document.getElementById('tab-archive').style.display=tab==='archive'?'block':'none';
+  document.getElementById('tab-cancelled').style.display=tab==='cancelled'?'block':'none';
   document.getElementById('tab-config').style.display=tab==='config'?'block':'none';
   if(tab==='config'){rTeam();rSaleTeamGrid();rSaleGrid();rCustGrid();rSupGrid();rStepsCfg();}
   if(tab==='archive'){rArchive();}
+  if(tab==='cancelled'){rCancelledTab();}
   if(tab==='prs'){rPRTab();}
 }
 function swTab(tab,el){
@@ -1324,7 +1347,7 @@ function swTab(tab,el){
 window.swTab=swTab;
 
 function rArchive(){
-  const done=_orders.filter(o=>o.completedSteps>=o.totalSteps||orderSt(o)==='done'||o.isCancelled)
+  const done=_orders.filter(o=>(o.completedSteps>=o.totalSteps||orderSt(o)==='done')&&!o.isCancelled)
     .sort((a,b)=>{const pa=(a.id||'').match(/POI(\d{4})-(\d+)/i);const pb=(b.id||'').match(/POI(\d{4})-(\d+)/i);
       const na=pa?parseInt(pa[1])*10000+parseInt(pa[2]):0;const nb=pb?parseInt(pb[1])*10000+parseInt(pb[2]):0;return nb-na;});
   document.getElementById('archive-count').textContent=`${done.length} Order เสร็จสมบูรณ์`;
@@ -1365,6 +1388,28 @@ function rArchive(){
     </tr>`;
   }).join('');
 }
+function rCancelledTab(){
+  const list=_orders.filter(o=>o.isCancelled)
+    .sort((a,b)=>{const pa=(a.id||'').match(/POI(\d{4})-(\d+)/i);const pb=(b.id||'').match(/POI(\d{4})-(\d+)/i);
+      const na=pa?parseInt(pa[1])*10000+parseInt(pa[2]):0;const nb=pb?parseInt(pb[1])*10000+parseInt(pb[2]):0;return nb-na;});
+  document.getElementById('cancelled-count').textContent=`${list.length} Order ถูกยกเลิก`;
+  document.getElementById('cancelled-empty').style.display=list.length?'none':'block';
+  document.getElementById('cancelled-body').innerHTML=list.map(o=>{
+    const items=o.items||[];
+    const custPR=items.map(it=>`${it.customer||'—'}${it.prNumber?' ('+it.prNumber+')':''}`).join(', ')||o.customer||'—';
+    return`<tr style="border-bottom:1px solid var(--bd2);opacity:0.8">
+      <td style="padding:10px 14px;font-weight:700;font-size:13px;color:var(--mu);text-decoration:line-through">${o.id}</td>
+      <td style="padding:10px 14px;font-size:13px;color:var(--mu)">${o.factory||'—'}</td>
+      <td style="padding:10px 14px;font-size:12px;color:var(--mu);max-width:220px">${custPR}</td>
+      <td style="padding:10px 14px;font-size:12px;color:#64748b">${o.cancelReason||'—'}</td>
+      <td style="padding:10px 14px;display:flex;gap:6px">
+        <button class="btn btn-sm btn-secondary" onclick="activePO='${o.id}';swTab('orders',document.querySelectorAll('.nav-tab')[0]);setTimeout(()=>openOrder('${o.id}'),100)">เปิด</button>
+        <button class="btn btn-sm" style="background:#e0f2fe;color:#0550ae;border-color:#7dd3fc" onclick="uncancelOrder('${o.id}')">↩ เปิดใหม่</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
 // ── Date formatting helpers (dd/mm/yyyy) ─────────────────────
 function fmtDate(el){
   let v=el.value.replace(/[^0-9]/g,'');

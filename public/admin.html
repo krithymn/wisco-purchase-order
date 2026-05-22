@@ -534,12 +534,20 @@ async function cancelPR(id){
   const p=_prs.find(x=>x.id===id);
   const reason=prompt('เหตุผลที่ยกเลิก PR '+(p&&p.prNo||'')+' (ไม่บังคับ):');
   if(reason===null)return;
+  // Instant UI update before server responds
+  const idx=_prs.findIndex(x=>x.id===id);
+  if(idx>=0){_prs[idx].isCancelled=true;_prs[idx].cancelReason=reason.trim();}
+  renderTable();
   await fetch('/api/prs/'+id+'/cancel',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({cancel:true,reason:reason.trim()})});
   await loadPRs(); renderTable();
 }
 async function uncancelPR(id){
   const p=_prs.find(x=>x.id===id);
   if(!confirm('เปิด PR '+(p&&p.prNo||'')+' ใหม่อีกครั้ง?'))return;
+  // Instant UI update
+  const idx=_prs.findIndex(x=>x.id===id);
+  if(idx>=0){_prs[idx].isCancelled=false;_prs[idx].cancelReason='';}
+  renderTable();
   await fetch('/api/prs/'+id+'/cancel',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({cancel:false})});
   await loadPRs(); renderTable();
 }
