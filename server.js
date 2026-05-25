@@ -85,6 +85,28 @@ async function initDB() {
       key   TEXT PRIMARY KEY,
       value TEXT
     );
+    CREATE TABLE IF NOT EXISTS quotations (
+      id              INTEGER PRIMARY KEY AUTOINCREMENT,
+      start_date      TEXT DEFAULT '',
+      quotation_type  TEXT DEFAULT '',
+      completed_date  TEXT DEFAULT '',
+      due_date        TEXT DEFAULT '',
+      ld_no           TEXT DEFAULT '',
+      quotation_no    TEXT DEFAULT '',
+      sale_team       TEXT DEFAULT '',
+      sale            TEXT DEFAULT '',
+      customer        TEXT DEFAULT '',
+      customer_type   TEXT DEFAULT '',
+      pr_no           TEXT DEFAULT '',
+      po_no           TEXT DEFAULT '',
+      product         TEXT DEFAULT '',
+      responsible     TEXT DEFAULT '',
+      progress_status TEXT DEFAULT 'ตรวจสอบข้อมูล',
+      status          TEXT DEFAULT 'PENDING',
+      offer_date      TEXT DEFAULT '',
+      total_offer     REAL DEFAULT 0.0,
+      created_at      TEXT DEFAULT (datetime('now','localtime'))
+    );
   `);
 
   const teamRow = query("SELECT value FROM config WHERE key='team'");
@@ -107,6 +129,20 @@ async function initDB() {
   // Always update steps to latest version (19 steps)
   db.run("INSERT OR REPLACE INTO config(key,value) VALUES('steps',?)",
     [JSON.stringify(DEFAULT_STEPS)]);
+  
+  // Seed Quotation Types & Customer Map configs
+  const qTypeRow = query("SELECT value FROM config WHERE key='quotationTypes'");
+  if (!qTypeRow.length) {
+    db.run("INSERT OR IGNORE INTO config(key,value) VALUES('quotationTypes',?)",
+      [JSON.stringify([
+        { name: "Proposal Standard", days: 3 },
+        { name: "Proposal Urgent", days: 1 }
+      ])]);
+  }
+  const cMapRow = query("SELECT value FROM config WHERE key='customerMap'");
+  if (!cMapRow.length) {
+    db.run("INSERT OR IGNORE INTO config(key,value) VALUES('customerMap',?)", [JSON.stringify({})]);
+  }
   // Migration: add mfg_steps column if it doesn't exist (for existing databases)
   try { db.run("ALTER TABLE order_steps ADD COLUMN mfg_steps TEXT DEFAULT '[]'"); } catch(e) { /* already exists */ }
   try { db.run("ALTER TABLE orders ADD COLUMN items TEXT DEFAULT '[]'"); } catch(e) { /* already exists */ }
@@ -162,6 +198,38 @@ function getSteps() {
   const r = query("SELECT value FROM config WHERE key='steps'");
   return r.length ? JSON.parse(r[0].value) : DEFAULT_STEPS;
 }
+
+function getStepName(o, i) {
+  const steps = getSteps();
+  if (!o.prepayment) return (steps[i] && steps[i].name) || 'Step ' + (i + 1);
+  if (i < 10) return (steps[i] && steps[i].name) || 'Step ' + (i + 1);
+  if (i === 10) return '💳 จ่ายเงินล่วงหน้า';
+  return (steps[i - 1] && steps[i - 1].name) || 'Step ' + i;
+}
+
+async function sendLineNotify(message) {
+  try {
+    const tokenRow = query("SELECT value FROM config WHERE key='lineToken'");
+    if (!tokenRow.length) return;
+    const token = tokenRow[0].value;
+    if (!token || token === 'undefined' || token.trim() === '') return;
+
+    const response = await fetch('https://notify-api.line.me/api/notify', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: new URLSearchParams({ message })
+    });
+    if (!response.ok) {
+      console.error('LINE Notify error status:', response.status);
+    }
+  } catch (err) {
+    console.error('LINE Notify request failed:', err.message);
+  }
+}
+
 
 function buildOrder(row) {
   const steps = getSteps();
@@ -268,7 +336,9 @@ app.post('/api/orders', (req, res) => {
     for (let i=0;i<total;i++) run("INSERT OR IGNORE INTO order_steps(order_id,step_index,planned_days) VALUES(?,?,?)",[id,i,0]);
     syncPRsFromOrderItems(id, req.body.items||[]);
     saveDB();
-    res.status(201).json(buildOrder(query("SELECT * FROM orders WHERE id=?",[id])[0]));
+    const createdOrder = buildOrder(query("SELECT * FROM orders WHERE id=?",[id])[0]);
+    sendLineNotify(`🆕 สร้าง Order ใหม่: ${id}\n🏭 Supplier: ${factory || '—'}\n👤 ลูกค้า: ${customer || '—'}\n📅 กำหนดส่ง: ${dueDate || '—'}`);
+    res.status(201).json(createdOrder);
   } catch(e) { res.status(500).json({error:e.message}); }
 });
 
@@ -309,7 +379,17 @@ app.patch('/api/orders/:id/steps/:si', (req, res) => {
     if (notes        !==undefined) run("UPDATE order_steps SET notes=?         WHERE order_id=? AND step_index=?",[notes,oid,si]);
     if (req.body.mfgSteps!==undefined) run("UPDATE order_steps SET mfg_steps=? WHERE order_id=? AND step_index=?",[JSON.stringify(req.body.mfgSteps),oid,si]);
     if (req.body.isSkipped!==undefined) run("UPDATE order_steps SET is_skipped=? WHERE order_id=? AND step_index=?",[req.body.isSkipped?1:0,oid,si]);
-    res.json(buildOrder(query("SELECT * FROM orders WHERE id=?",[oid])[0]));
+    const updatedOrder = buildOrder(query("SELECT * FROM orders WHERE id=?",[oid])[0]);
+    const sName = getStepName(updatedOrder, si);
+    const respName = responsible || updatedOrder.responsible[si] || '—';
+    if (doneDate && doneDate.trim() !== '') {
+      sendLineNotify(`✅ เสร็จสิ้นขั้นตอน [${sName}] สำหรับ Order: ${oid}\n👤 ผู้รับผิดชอบ: ${respName}\n📅 วันที่เสร็จ: ${doneDate}`);
+    } else if (isSpecial) {
+      sendLineNotify(`⚡ Special Case ในขั้นตอน [${sName}] สำหรับ Order: ${oid}\n👤 ผู้รับผิดชอบ: ${respName}\n💬 เหตุผล: ${specialReason || '—'}`);
+    } else if (req.body.isSkipped) {
+      sendLineNotify(`⏭️ ข้ามขั้นตอน [${sName}] สำหรับ Order: ${oid}`);
+    }
+    res.json(updatedOrder);
   } catch(e) { res.status(500).json({error:e.message}); }
 });
 
@@ -323,12 +403,15 @@ app.patch('/api/orders/:id/prepayment', (req, res) => {
 
 app.get('/api/config', (req, res) => {
   try {
-    const team       = query("SELECT value FROM config WHERE key='team'");
-    const steps      = query("SELECT value FROM config WHERE key='steps'");
-    const suppliers  = query("SELECT value FROM config WHERE key='suppliers'");
-    const customers  = query("SELECT value FROM config WHERE key='customers'");
-    const saleTeams  = query("SELECT value FROM config WHERE key='saleTeams'");
-    const sales      = query("SELECT value FROM config WHERE key='sales'");
+    const team           = query("SELECT value FROM config WHERE key='team'");
+    const steps          = query("SELECT value FROM config WHERE key='steps'");
+    const suppliers      = query("SELECT value FROM config WHERE key='suppliers'");
+    const customers      = query("SELECT value FROM config WHERE key='customers'");
+    const saleTeams      = query("SELECT value FROM config WHERE key='saleTeams'");
+    const sales          = query("SELECT value FROM config WHERE key='sales'");
+    const lineToken      = query("SELECT value FROM config WHERE key='lineToken'");
+    const quotationTypes = query("SELECT value FROM config WHERE key='quotationTypes'");
+    const customerMap    = query("SELECT value FROM config WHERE key='customerMap'");
     res.json({
       team:      team.length      ? JSON.parse(team[0].value)      : [],
       steps:     steps.length     ? JSON.parse(steps[0].value)     : DEFAULT_STEPS,
@@ -336,6 +419,9 @@ app.get('/api/config', (req, res) => {
       customers: customers.length ? JSON.parse(customers[0].value) : [],
       saleTeams: saleTeams.length ? JSON.parse(saleTeams[0].value) : [],
       sales:     sales.length     ? JSON.parse(sales[0].value)     : [],
+      lineToken: lineToken.length ? lineToken[0].value             : '',
+      quotationTypes: quotationTypes.length ? JSON.parse(quotationTypes[0].value) : [],
+      customerMap:    customerMap.length    ? JSON.parse(customerMap[0].value)    : {},
     });
   } catch(e) { res.status(500).json({error:e.message}); }
 });
@@ -368,6 +454,18 @@ app.put('/api/config/sales', (req, res) => {
   try { run("INSERT OR REPLACE INTO config(key,value) VALUES('sales',?)",[JSON.stringify(req.body.sales)]); res.json({ok:true}); }
   catch(e) { res.status(500).json({error:e.message}); }
 });
+app.put('/api/config/lineToken', (req, res) => {
+  try { run("INSERT OR REPLACE INTO config(key,value) VALUES('lineToken',?)",[req.body.lineToken || '']); res.json({ok:true}); }
+  catch(e) { res.status(500).json({error:e.message}); }
+});
+app.put('/api/config/quotationTypes', (req, res) => {
+  try { run("INSERT OR REPLACE INTO config(key,value) VALUES('quotationTypes',?)",[JSON.stringify(req.body.quotationTypes)]); res.json({ok:true}); }
+  catch(e) { res.status(500).json({error:e.message}); }
+});
+app.put('/api/config/customerMap', (req, res) => {
+  try { run("INSERT OR REPLACE INTO config(key,value) VALUES('customerMap',?)",[JSON.stringify(req.body.customerMap)]); res.json({ok:true}); }
+  catch(e) { res.status(500).json({error:e.message}); }
+});
 
 // ── CANCEL / UNCANCEL ORDER ──────────────────────────────────
 app.patch('/api/orders/:id/cancel', (req, res) => {
@@ -377,6 +475,11 @@ app.patch('/api/orders/:id/cancel', (req, res) => {
     run("UPDATE orders SET is_cancelled=?, cancel_reason=? WHERE id=?",
       [cancel?1:0, reason, req.params.id]);
     saveDB();
+    if (cancel) {
+      sendLineNotify(`🚫 ยกเลิก Order: ${req.params.id}\n💬 เหตุผล: ${reason || '—'}`);
+    } else {
+      sendLineNotify(`↩️ เปิดใช้งาน Order: ${req.params.id} อีกครั้ง`);
+    }
     res.json({ok:true});
   } catch(e) { res.status(500).json({error:e.message}); }
 });
@@ -759,6 +862,177 @@ app.patch('/api/prs/:id/link', (req, res) => {
 
     saveDB();
     res.json({ok:true});
+  } catch(e) { res.status(500).json({error:e.message}); }
+});
+
+// ── QUOTATION MANAGEMENT SYNC & ROUTES ────────────────────────
+function syncPRFromQuotation(qId) {
+  try {
+    const qRow = query("SELECT * FROM quotations WHERE id=?", [qId]);
+    if (!qRow.length) return;
+    const q = qRow[0];
+    if (q.status !== 'WIN' || !q.pr_no) return;
+
+    // Check if PR already exists in purchase_requests
+    const exists = query("SELECT id FROM purchase_requests WHERE LOWER(pr_no)=LOWER(?)", [q.pr_no]);
+    if (exists.length > 0) {
+      run("UPDATE purchase_requests SET customer_name=?, customer_po=?, po_value=?, sale_team=?, sale=?, quotation_no=?, ld_no=?, po_no=? WHERE LOWER(pr_no)=LOWER(?)",
+        [q.customer || '', q.po_no || '', q.total_offer ? q.total_offer + ' บาท' : '', q.sale_team || '', q.sale || '', q.quotation_no || '', q.ld_no || '', q.po_no || '', q.pr_no.toLowerCase()]);
+      return;
+    }
+
+    // Create a new PR record from Quotation data
+    const items = JSON.stringify([{ product: q.product || '', quantity: '1' }]);
+    run(`INSERT INTO purchase_requests(pr_no, open_date, customer_name, customer_po, po_value, fine_yn, fine_pct, due_date, sale_team, sale, quotation_no, ld_no, domestic, po_no, items)
+         VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+      [
+        q.pr_no,
+        q.start_date ? q.start_date.split('T')[0] : '',
+        q.customer || '',
+        q.po_no || '',
+        q.total_offer ? q.total_offer + ' บาท' : '',
+        'no', '',
+        q.due_date || '',
+        q.sale_team || '',
+        q.sale || '',
+        q.quotation_no || '',
+        q.ld_no || '',
+        '', // domestic
+        q.po_no || '',
+        items
+      ]
+    );
+    console.log(`Auto-created PR ${q.pr_no} from won Quotation ${q.quotation_no}`);
+  } catch(e) { console.error('syncPRFromQuotation error:', e.message); }
+}
+
+app.get('/api/quotations', (req, res) => {
+  try {
+    res.json(query("SELECT * FROM quotations ORDER BY created_at DESC"));
+  } catch(e) { res.status(500).json({error:e.message}); }
+});
+
+app.post('/api/quotations', (req, res) => {
+  try {
+    const {startDate, quotationType, completedDate, dueDate, ldNo, quotationNo, saleTeam, sale, customer, customerType, prNo, poNo, product, responsible, progressStatus, status, offerDate, totalOffer} = req.body;
+    if (!quotationNo) return res.status(400).json({error:'Quotation No. required'});
+    const dup = query("SELECT id FROM quotations WHERE LOWER(quotation_no)=LOWER(?)", [quotationNo]);
+    if (dup.length) return res.status(409).json({error:'Quotation No. already exists'});
+
+    run(`INSERT INTO quotations(start_date, quotation_type, completed_date, due_date, ld_no, quotation_no, sale_team, sale, customer, customer_type, pr_no, po_no, product, responsible, progress_status, status, offer_date, total_offer)
+         VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+      [startDate||'', quotationType||'', completedDate||'', dueDate||'', ldNo||'', quotationNo, saleTeam||'', sale||'', customer||'', customerType||'', prNo||'', poNo||'', product||'', responsible||'', progressStatus||'ตรวจสอบข้อมูล', status||'PENDING', offerDate||'', parseFloat(totalOffer)||0.0]);
+    
+    const inserted = query("SELECT * FROM quotations WHERE quotation_no=?", [quotationNo])[0];
+    if (inserted && inserted.status === 'WIN') {
+      syncPRFromQuotation(inserted.id);
+    }
+    res.status(201).json(inserted);
+  } catch(e) { res.status(500).json({error:e.message}); }
+});
+
+app.put('/api/quotations/:id', (req, res) => {
+  try {
+    const {startDate, quotationType, completedDate, dueDate, ldNo, quotationNo, saleTeam, sale, customer, customerType, prNo, poNo, product, responsible, progressStatus, status, offerDate, totalOffer} = req.body;
+    run(`UPDATE quotations SET start_date=?, quotation_type=?, completed_date=?, due_date=?, ld_no=?, quotation_no=?, sale_team=?, sale=?, customer=?, customer_type=?, pr_no=?, po_no=?, product=?, responsible=?, progress_status=?, status=?, offer_date=?, total_offer=? WHERE id=?`,
+      [startDate||'', quotationType||'', completedDate||'', dueDate||'', ldNo||'', quotationNo||'', saleTeam||'', sale||'', customer||'', customerType||'', prNo||'', poNo||'', product||'', responsible||'', progressStatus||'ตรวจสอบข้อมูล', status||'PENDING', offerDate||'', parseFloat(totalOffer)||0.0, req.params.id]);
+    
+    if (status === 'WIN') {
+      syncPRFromQuotation(req.params.id);
+    }
+    res.json({ok:true});
+  } catch(e) { res.status(500).json({error:e.message}); }
+});
+
+app.patch('/api/quotations/:id/progress', (req, res) => {
+  try {
+    const {progressStatus, completedDate, responsible, offerDate} = req.body;
+    if (progressStatus !== undefined) run("UPDATE quotations SET progress_status=? WHERE id=?", [progressStatus, req.params.id]);
+    if (completedDate !== undefined) run("UPDATE quotations SET completed_date=? WHERE id=?", [completedDate, req.params.id]);
+    if (responsible !== undefined) run("UPDATE quotations SET responsible=? WHERE id=?", [responsible, req.params.id]);
+    if (offerDate !== undefined) run("UPDATE quotations SET offer_date=? WHERE id=?", [offerDate, req.params.id]);
+    res.json({ok:true});
+  } catch(e) { res.status(500).json({error:e.message}); }
+});
+
+app.patch('/api/quotations/:id/status', (req, res) => {
+  try {
+    const {status, prNo, poNo} = req.body;
+    if (status !== undefined) run("UPDATE quotations SET status=? WHERE id=?", [status, req.params.id]);
+    if (prNo !== undefined) run("UPDATE quotations SET pr_no=? WHERE id=?", [prNo, req.params.id]);
+    if (poNo !== undefined) run("UPDATE quotations SET po_no=? WHERE id=?", [poNo, req.params.id]);
+    
+    const qRow = query("SELECT status FROM quotations WHERE id=?", [req.params.id]);
+    if (qRow.length && qRow[0].status === 'WIN') {
+      syncPRFromQuotation(req.params.id);
+    }
+    res.json({ok:true});
+  } catch(e) { res.status(500).json({error:e.message}); }
+});
+
+app.delete('/api/quotations/:id', (req, res) => {
+  try {
+    run("DELETE FROM quotations WHERE id=?", [req.params.id]);
+    res.json({ok:true});
+  } catch(e) { res.status(500).json({error:e.message}); }
+});
+
+app.get('/api/export-quotations-csv', (req, res) => {
+  try {
+    const list = query("SELECT * FROM quotations ORDER BY created_at DESC");
+    let csv = '\ufeff'; // UTF-8 BOM
+    csv += 'ID,Start Date,Quotation Type,Completed Date,Due Date,LD No.,Quotation No.,Sale Team,Sale,Customer,Customer Type,PR No.,PO No.,Product,Responsible,Progress Status,Status,Offer Date,Total Offer (Baht)\n';
+    for (const q of list) {
+      const escape = (val) => `"${(val || '').toString().replace(/"/g, '""')}"`;
+      csv += `${q.id},${escape(q.start_date)},${escape(q.quotation_type)},${escape(q.completed_date)},${escape(q.due_date)},${escape(q.ld_no)},${escape(q.quotation_no)},${escape(q.sale_team)},${escape(q.sale)},${escape(q.customer)},${escape(q.customer_type)},${escape(q.pr_no)},${escape(q.po_no)},${escape(q.product)},${escape(q.responsible)},${escape(q.progress_status)},${escape(q.status)},${escape(q.offer_date)},${q.total_offer}\n`;
+    }
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="wisco_quotations.csv"');
+    res.send(csv);
+  } catch(e) { res.status(500).json({error:e.message}); }
+});
+
+// ── CSV EXPORT ───────────────────────────────────────────────
+app.get('/api/export-orders-csv', (req, res) => {
+  try {
+    const orders = query("SELECT * FROM orders ORDER BY created_at DESC").map(buildOrder);
+    let csv = '\ufeff'; // UTF-8 BOM
+    csv += 'POI Number,Supplier,Customer(s),Start Date,Due Date,Prepayment,Prepayment Status,Progress %,Current Step,Responsible,ETA Wisco,Items\n';
+    for (const o of orders) {
+      const customers = o.items.map(it => it.customer).filter(Boolean).join('; ');
+      const itemsStr = o.items.flatMap(it => (it.subItems || []).map(si => `${si.product} (${si.quantity})`)).join('; ');
+      const pct = Math.round((o.completedSteps / o.totalSteps) * 100);
+      const si = Math.min(o.completedSteps, o.totalSteps - 1);
+      const curStep = o.completedSteps >= o.totalSteps ? 'เสร็จสมบูรณ์' : getStepName(o, si);
+      const resp = o.completedSteps >= o.totalSteps ? '' : o.responsible[si] || '';
+      
+      const escape = (val) => `"${(val || '').toString().replace(/"/g, '""')}"`;
+      
+      csv += `${escape(o.id)},${escape(o.factory)},${escape(customers)},${escape(o.startDate)},${escape(o.dueDate)},${o.prepayment ? 'Yes' : 'No'},${o.prepaymentDone ? 'Done' : 'Pending'},${pct}%,${escape(curStep)},${escape(resp)},${escape(o.etaWisco)},${escape(itemsStr)}\n`;
+    }
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="wisco_orders.csv"');
+    res.send(csv);
+  } catch(e) { res.status(500).json({error:e.message}); }
+});
+
+app.get('/api/export-prs-csv', (req, res) => {
+  try {
+    const prs = query("SELECT * FROM purchase_requests ORDER BY pr_no DESC");
+    let csv = '\ufeff'; // UTF-8 BOM
+    csv += 'PR Number,Open Date,Customer,Customer PO,Due Date,PO Value,Fine,Fine %,Sale,Linked POI,Items\n';
+    for (const p of prs) {
+      let itemsArr = [];
+      try { itemsArr = JSON.parse(p.items || '[]'); } catch(e) {}
+      const itemsStr = itemsArr.map(i => `${i.product} (${i.quantity})`).join('; ');
+      
+      const escape = (val) => `"${(val || '').toString().replace(/"/g, '""')}"`;
+      
+      csv += `${escape(p.pr_no)},${escape(p.open_date)},${escape(p.customer_name)},${escape(p.customer_po)},${escape(p.due_date)},${escape(p.po_value)},${p.fine_yn === 'yes' ? 'Yes' : 'No'},${escape(p.fine_pct)},${escape(p.sale)},${escape(p.linked_poi)},${escape(itemsStr)}\n`;
+    }
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="wisco_purchase_requests.csv"');
+    res.send(csv);
   } catch(e) { res.status(500).json({error:e.message}); }
 });
 
