@@ -373,22 +373,6 @@ input:focus,select:focus{outline:none;border-color:var(--ac);box-shadow:0 0 0 3p
       </div>
     </div>
 
-    <!-- CUSTOMER TYPES (CUSTOMER MAP) -->
-    <div style="margin-bottom:28px">
-      <div class="cfg-title">🏢 จับคู่ชื่อลูกค้ากับประเภท (Customer Type Map)</div>
-      <p style="font-size:12px;color:var(--mu);margin-bottom:12px">ระบบจะหาประเภทลูกค้า (End-user, Trading, EPC) โดยเทียบชื่อลูกค้าจากกฎการแมปเหล่านี้อัตโนมัติ</p>
-      <div id="cmap-grid"></div>
-      <div style="display:flex;gap:8px;margin-top:8px">
-        <input id="new-cmap-key" placeholder="คำในชื่อลูกค้า เช่น อัครา" style="flex:2;font-size:13px;padding:7px 10px;border:1px solid var(--bd);border-radius:var(--r);font-family:'Sarabun',sans-serif">
-        <select id="new-cmap-val" style="flex:1;font-size:13px;padding:7px 10px;border:1px solid var(--bd);border-radius:var(--r);font-family:'Sarabun',sans-serif">
-          <option value="End-user">End-user</option>
-          <option value="Trading">Trading</option>
-          <option value="EPC">EPC</option>
-        </select>
-        <button class="btn btn-primary" onclick="addCMapRule()">+ เพิ่ม</button>
-      </div>
-    </div>
-
 
     <!-- BACKUP & EXPORT -->
     <div style="margin-top:28px">
@@ -1447,7 +1431,7 @@ function _doSwTab(tab,el){
   document.getElementById('tab-cancelled').style.display=tab==='cancelled'?'block':'none';
   document.getElementById('tab-config').style.display=tab==='config'?'block':'none';
   if(tab==='config'){
-    rTeam();rSaleTeamGrid();rSaleGrid();rCustGrid();rSupGrid();rStepsCfg();rQTypesGrid();rCMapGrid();
+    rTeam();rSaleTeamGrid();rSaleGrid();rCustGrid();rSupGrid();rStepsCfg();rQTypesGrid();
     document.getElementById('cfg-line-token').value=_lineToken||'';
   }
   if(tab==='archive'){rArchive();}
@@ -1558,7 +1542,7 @@ function getDateField(id){
   return toISO(el.value);
 }
 async function init(){
-  await loadAll();rSide();rPRTab();rTeam();rSaleTeamGrid();rSaleGrid();rCustGrid();rSupGrid();rStepsCfg();rQTypesGrid();rCMapGrid();
+  await loadAll();rSide();rPRTab();rTeam();rSaleTeamGrid();rSaleGrid();rCustGrid();rSupGrid();rStepsCfg();rQTypesGrid();
   // Auto-refresh PRs every 30 seconds
   setInterval(async()=>{
     const freshPrs=await fetch('/api/prs').then(r=>r.json()).catch(()=>[]);

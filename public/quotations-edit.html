@@ -197,8 +197,12 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--spec)}
             </div>
           </div>
           <div class="fg">
-            <label>ประเภทลูกค้า (Auto)</label>
-            <input id="f-cust-type" readonly placeholder="คำนวณจากกฎแมป" style="background:var(--s3);color:var(--mu)">
+            <label>ประเภทลูกค้า (Customer Type) <span class="req">*</span></label>
+            <select id="f-cust-type" required>
+              <option value="End-user">End-user</option>
+              <option value="Trading">Trading</option>
+              <option value="EPC">EPC</option>
+            </select>
           </div>
           <div class="fg">
             <label>Sale Team <span class="req">*</span></label>
@@ -257,15 +261,6 @@ function addBusinessDays(startDateStr, days) {
   return date.toISOString().split('T')[0];
 }
 
-function matchCustomerType(name) {
-  if (!name) return 'End-user';
-  const val = name.toLowerCase();
-  for (const [key, type] of Object.entries(_config.customerMap || {})) {
-    if (val.includes(key.toLowerCase())) return type;
-  }
-  return 'End-user';
-}
-
 async function loadData() {
   const [quotes, cfg] = await Promise.all([
     fetch('/api/quotations').then(r => r.json()),
@@ -301,7 +296,6 @@ function hideCustDrop() {
 }
 function selectCust(name) {
   document.getElementById('f-cust').value = name;
-  document.getElementById('f-cust-type').value = matchCustomerType(name);
   hideCustDrop();
 }
 
