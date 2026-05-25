@@ -184,6 +184,22 @@ main{display:grid;grid-template-columns:280px 1fr 280px;overflow:hidden;height:c
       <button class="view-btn" id="btn-view-self" onclick="changeView('self')">งานของฉัน (My Work)</button>
     </div>
   </div>
+  <!-- User Profile Panel -->
+  <div id="self-user-panel" style="padding:0 12px 12px; display:none;">
+    <div id="self-user-display" style="display:flex; align-items:center; justify-content:space-between; background:var(--s2); border:1px solid var(--bd2); border-radius:8px; padding:8px 12px; font-size:12px;">
+      <span id="self-username" style="font-weight:600; color:var(--spec);">👤 ...</span>
+      <button class="btn-change-user" onclick="clearUser()" style="background:none; border:none; color:var(--mu); cursor:pointer; font-size:11px; font-family:'Sarabun',sans-serif;">🔄 เปลี่ยน</button>
+    </div>
+    <div id="self-user-select-wrap" style="display:none; background:var(--s2); border:1px solid var(--bd2); border-radius:8px; padding:10px; flex-direction:column; gap:8px;">
+      <label style="font-size:11px; color:var(--mu); font-weight:600;">เลือกชื่อผู้รับผิดชอบ:</label>
+      <div style="display:flex; gap:6px;">
+        <select id="self-user-select" style="flex:1; background:var(--s1); border:1px solid var(--bd); border-radius:6px; color:var(--tx); font-size:12px; padding:6px 8px; font-family:'Sarabun',sans-serif;">
+          <!-- Options loaded from config -->
+        </select>
+        <button onclick="saveUserSelection()" style="background:var(--spec); border:none; color:#000; font-size:11px; font-weight:700; padding:6px 12px; border-radius:6px; cursor:pointer; font-family:'Sarabun',sans-serif;">ตกลง</button>
+      </div>
+    </div>
+  </div>
   <div class="checklist-title" id="chk-title" style="display:none">📋 งานค้างของฉัน</div>
   <div class="checklist-list" id="chk-list" style="display:none"></div>
 </div>
@@ -571,24 +587,53 @@ function changeView(view) {
   document.getElementById('btn-view-org').classList.toggle('active', view === 'org');
   document.getElementById('btn-view-self').classList.toggle('active', view === 'self');
   
+  const panel = document.getElementById('self-user-panel');
   if (view === 'self') {
-    // If not selected yet, prompt for proposal team username
+    panel.style.display = 'block';
+    
     let user = localStorage.getItem('proposal_user');
     if (!user) {
+      document.getElementById('self-user-display').style.display = 'none';
+      document.getElementById('self-user-select-wrap').style.display = 'flex';
+      
+      const sel = document.getElementById('self-user-select');
       const allUsers = _config.team || [];
-      const choice = prompt(`กรุณาระบุชื่อผู้รับผิดชอบงานของคุณ:\n\n${allUsers.join('\n')}`);
-      if (choice) {
-        localStorage.setItem('proposal_user', choice.trim());
-      } else {
-        changeView('org');
-        return;
-      }
+      sel.innerHTML = allUsers.map(u => `<option value="${u}">${u}</option>`).join('');
+      
+      // Clear outputs when selecting user
+      document.getElementById('cards').innerHTML = `<div class="empty"><div style="font-size:13px">กรุณาเลือกผู้ใช้งานด้านซ้ายเพื่อดูงานของคุณ</div></div>`;
+      document.getElementById('kpis').innerHTML = '';
+      document.getElementById('chk-list').innerHTML = '';
+    } else {
+      document.getElementById('self-username').textContent = '👤 ' + user;
+      document.getElementById('self-user-display').style.display = 'flex';
+      document.getElementById('self-user-select-wrap').style.display = 'none';
+      
+      renderKPIs();
+      renderCards();
+      renderChecklist();
+      renderMetrics();
     }
+  } else {
+    panel.style.display = 'none';
+    renderKPIs();
+    renderCards();
+    renderChecklist();
+    renderMetrics();
   }
-  
-  renderKPIs();
-  renderCards();
-  renderChecklist();
+}
+
+function saveUserSelection() {
+  const choice = document.getElementById('self-user-select').value;
+  if (choice) {
+    localStorage.setItem('proposal_user', choice);
+    changeView('self');
+  }
+}
+
+function clearUser() {
+  localStorage.removeItem('proposal_user');
+  changeView('self');
 }
 
 function togSection(id){
