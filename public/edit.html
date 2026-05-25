@@ -196,6 +196,7 @@ input:focus,select:focus{outline:none;border-color:var(--ac);box-shadow:0 0 0 3p
   <div style="display:flex;gap:8px">
     <a href="dashboard.html" target="_blank"><button class="btn btn-secondary">📊 Dashboard</button></a>
     <a href="history.html" target="_blank"><button class="btn btn-secondary">🔍 ค้นหา / History</button></a>
+    <a href="/api/export-orders-csv" download><button class="btn btn-success">📥 ส่งออก Excel (CSV)</button></a>
     <button class="btn btn-primary" onclick="openNew()">+ เพิ่ม Order ใหม่</button>
   </div>
 </header>
@@ -341,14 +342,53 @@ input:focus,select:focus{outline:none;border-color:var(--ac);box-shadow:0 0 0 3p
         <button class="btn btn-primary" onclick="addSupplier()">+ เพิ่ม</button>
       </div>
     </div>
+    <!-- LINE NOTIFY -->
+    <div style="margin-bottom:28px">
+      <div class="cfg-title">💬 LINE Notify Token</div>
+      <p style="font-size:12px;color:var(--mu);margin-bottom:8px">ใช้เพื่อส่งข้อความแจ้งเตือนความคืบหน้า Order เข้ากลุ่ม LINE</p>
+      <div style="display:flex;gap:8px">
+        <input id="cfg-line-token" type="password" placeholder="ใส่ LINE Notify Token ของคุณ..." style="flex:1;font-size:13px;padding:7px 10px;border:1px solid var(--bd);border-radius:var(--r);font-family:'Sarabun',sans-serif">
+        <button class="btn btn-primary" onclick="saveLineToken()">บันทึก Token</button>
+      </div>
+      <span id="line-token-saved" style="font-size:12px;color:var(--done);margin-top:6px;display:none">✓ บันทึก Token แล้ว</span>
+    </div>
     <!-- STEPS -->
-    <div>
+    <div style="margin-bottom:28px">
       <div class="cfg-title">⏱ กำหนดเวลามาตรฐานต่อขั้นตอน (วัน)</div>
       <p style="font-size:12px;color:var(--mu);margin-bottom:12px">เวลาปกติของแต่ละขั้นตอน — ถ้า Order มีการกำหนดเวลาที่ต่างออกไปจะแสดงเป็น ⚡ Special Case</p>
       <div id="steps-cfg" style="display:grid;grid-template-columns:1fr 1fr;gap:6px"></div>
       <button class="btn btn-primary" style="margin-top:12px" onclick="saveCfgSteps()">บันทึกการตั้งค่า</button>
       <span id="cfg-saved" style="font-size:12px;color:var(--done);margin-left:10px;display:none">✓ บันทึกแล้ว</span>
     </div>
+
+    <!-- QUOTATION TYPES -->
+    <div style="margin-bottom:28px">
+      <div class="cfg-title">📋 ประเภทใบเสนอราคา & ระยะเวลา (Quotation Types)</div>
+      <p style="font-size:12px;color:var(--mu);margin-bottom:12px">ใช้ในการคำนวณวันส่งใบเสนอราคาโดยอัตโนมัติ (ไม่รวมวันเสาร์-อาทิตย์)</p>
+      <div id="qtype-grid"></div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <input id="new-qtype-name" placeholder="ชื่อประเภท เช่น Proposal Standard" style="flex:2;font-size:13px;padding:7px 10px;border:1px solid var(--bd);border-radius:var(--r);font-family:'Sarabun',sans-serif">
+        <input id="new-qtype-days" type="number" min="0" placeholder="วัน" style="width:70px;font-size:13px;padding:7px 10px;border:1px solid var(--bd);border-radius:var(--r);font-family:'Sarabun',sans-serif">
+        <button class="btn btn-primary" onclick="addQType()">+ เพิ่ม</button>
+      </div>
+    </div>
+
+    <!-- CUSTOMER TYPES (CUSTOMER MAP) -->
+    <div style="margin-bottom:28px">
+      <div class="cfg-title">🏢 จับคู่ชื่อลูกค้ากับประเภท (Customer Type Map)</div>
+      <p style="font-size:12px;color:var(--mu);margin-bottom:12px">ระบบจะหาประเภทลูกค้า (End-user, Trading, EPC) โดยเทียบชื่อลูกค้าจากกฎการแมปเหล่านี้อัตโนมัติ</p>
+      <div id="cmap-grid"></div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <input id="new-cmap-key" placeholder="คำในชื่อลูกค้า เช่น อัครา" style="flex:2;font-size:13px;padding:7px 10px;border:1px solid var(--bd);border-radius:var(--r);font-family:'Sarabun',sans-serif">
+        <select id="new-cmap-val" style="flex:1;font-size:13px;padding:7px 10px;border:1px solid var(--bd);border-radius:var(--r);font-family:'Sarabun',sans-serif">
+          <option value="End-user">End-user</option>
+          <option value="Trading">Trading</option>
+          <option value="EPC">EPC</option>
+        </select>
+        <button class="btn btn-primary" onclick="addCMapRule()">+ เพิ่ม</button>
+      </div>
+    </div>
+
 
     <!-- BACKUP & EXPORT -->
     <div style="margin-top:28px">
@@ -447,7 +487,7 @@ const NOTIFY_SUB=['ใบแจ้งสินค้าเข้า','Cer.','Dra
 // Manufacturing step is index 11 (เริ่มผลิต) without prepayment, 12 with prepayment
 // แจ้งบัญชี is index 10 (without prepay), 11 (with prepay)
 function getMfgStepIndex(o){ return o.prepayment ? 12 : 11; }
-let _orders=[],_prs=[],_team=[],_steps=[],_suppliers=[],_customers=[],_saleTeams=[],_sales=[],_active=null,_editId=null,_sfilt='',_pwUnlocked=false,_pwShow=false;
+let _orders=[],_prs=[],_team=[],_steps=[],_suppliers=[],_customers=[],_saleTeams=[],_sales=[],_lineToken='',_quotationTypes=[],_customerMap={},_active=null,_editId=null,_sfilt='',_pwUnlocked=false,_pwShow=false;
 
 async function get(p){const r=await fetch(API+p);return r.json()}
 async function post(p,b){const r=await fetch(API+p,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)});return r.json()}
@@ -472,6 +512,9 @@ async function loadAll(){
   });
   _team=cfg.team||[]; _steps=cfg.steps||[]; _suppliers=cfg.suppliers||[]; _customers=cfg.customers||[];
   _saleTeams=cfg.saleTeams||[]; _sales=cfg.sales||[];
+  _lineToken=cfg.lineToken||'';
+  _quotationTypes=cfg.quotationTypes||[];
+  _customerMap=cfg.customerMap||{};
 }
 
 // ── Step name + default days ─────────────────────────────────
@@ -1232,6 +1275,69 @@ async function saveCfgSteps(){
   await put('/api/config/steps',{steps:_steps});
   const el=document.getElementById('cfg-saved');el.style.display='inline';setTimeout(()=>el.style.display='none',2000);
 }
+async function saveLineToken() {
+  const token = document.getElementById('cfg-line-token').value.trim();
+  const res = await put('/api/config/lineToken', { lineToken: token });
+  if (res.ok) {
+    _lineToken = token;
+    const indicator = document.getElementById('line-token-saved');
+    indicator.style.display = 'inline';
+    setTimeout(() => { indicator.style.display = 'none'; }, 2000);
+  } else {
+    alert('เกิดข้อผิดพลาดในการบันทึก Token');
+  }
+}
+
+// ── Config: Quotation Types ────────────────────────────────────
+function rQTypesGrid() {
+  document.getElementById('qtype-grid').innerHTML = (_quotationTypes || []).map((q, i) => `
+    <div class="cfg-row">
+      <div class="cfg-row-main">📋 <b>${q.name}</b> (Lead time: ${q.days} วัน)</div>
+      <button class="cfg-del" onclick="delQType(${i})">×</button>
+    </div>`).join('');
+}
+async function addQType() {
+  const name = document.getElementById('new-qtype-name').value.trim();
+  const days = parseInt(document.getElementById('new-qtype-days').value);
+  if (!name || isNaN(days)) { alert('กรุณาระบุชื่อและระยะเวลาวัน'); return; }
+  if (_quotationTypes.some(q => q.name.toLowerCase() === name.toLowerCase())) { alert('มีชื่อประเภทนี้อยู่แล้ว'); return; }
+  _quotationTypes.push({ name, days });
+  await put('/api/config/quotationTypes', { quotationTypes: _quotationTypes });
+  document.getElementById('new-qtype-name').value = '';
+  document.getElementById('new-qtype-days').value = '';
+  rQTypesGrid();
+}
+async function delQType(i) {
+  if (!confirm('ต้องการลบประเภทใบเสนอราคานี้?')) return;
+  _quotationTypes.splice(i, 1);
+  await put('/api/config/quotationTypes', { quotationTypes: _quotationTypes });
+  rQTypesGrid();
+}
+
+// ── Config: Customer Type Map ──────────────────────────────────
+function rCMapGrid() {
+  document.getElementById('cmap-grid').innerHTML = Object.entries(_customerMap || {}).map(([key, val]) => `
+    <div class="cfg-row">
+      <div class="cfg-row-main">🏢 ถ้าชื่อลูกค้ามีคำว่า <b>"${key}"</b> ➔ ประเภท <b>${val}</b></div>
+      <button class="cfg-del" onclick="delCMapRule('${key.replace(/'/g, "\\'")}')">×</button>
+    </div>`).join('');
+}
+async function addCMapRule() {
+  const key = document.getElementById('new-cmap-key').value.trim();
+  const val = document.getElementById('new-cmap-val').value;
+  if (!key) { alert('กรุณาระบุคำในชื่อลูกค้า'); return; }
+  _customerMap[key] = val;
+  await put('/api/config/customerMap', { customerMap: _customerMap });
+  document.getElementById('new-cmap-key').value = '';
+  rCMapGrid();
+}
+async function delCMapRule(key) {
+  if (!confirm(`ต้องการลบกฎสำหรับ "${key}"?`)) return;
+  delete _customerMap[key];
+  await put('/api/config/customerMap', { customerMap: _customerMap });
+  rCMapGrid();
+}
+
 
 // ── Tab switching ─────────────────────────────────────────────
 function chkPW(){
@@ -1340,7 +1446,10 @@ function _doSwTab(tab,el){
   document.getElementById('tab-archive').style.display=tab==='archive'?'block':'none';
   document.getElementById('tab-cancelled').style.display=tab==='cancelled'?'block':'none';
   document.getElementById('tab-config').style.display=tab==='config'?'block':'none';
-  if(tab==='config'){rTeam();rSaleTeamGrid();rSaleGrid();rCustGrid();rSupGrid();rStepsCfg();}
+  if(tab==='config'){
+    rTeam();rSaleTeamGrid();rSaleGrid();rCustGrid();rSupGrid();rStepsCfg();rQTypesGrid();rCMapGrid();
+    document.getElementById('cfg-line-token').value=_lineToken||'';
+  }
   if(tab==='archive'){rArchive();}
   if(tab==='cancelled'){rCancelledTab();}
   if(tab==='prs'){rPRTab();}
@@ -1449,7 +1558,7 @@ function getDateField(id){
   return toISO(el.value);
 }
 async function init(){
-  await loadAll();rSide();rPRTab();rTeam();rSaleTeamGrid();rSaleGrid();rCustGrid();rSupGrid();rStepsCfg();
+  await loadAll();rSide();rPRTab();rTeam();rSaleTeamGrid();rSaleGrid();rCustGrid();rSupGrid();rStepsCfg();rQTypesGrid();rCMapGrid();
   // Auto-refresh PRs every 30 seconds
   setInterval(async()=>{
     const freshPrs=await fetch('/api/prs').then(r=>r.json()).catch(()=>[]);

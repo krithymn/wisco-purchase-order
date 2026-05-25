@@ -289,6 +289,7 @@ main{display:grid;grid-template-columns:280px 1fr 260px;overflow:hidden;height:c
   .sdots{flex-wrap:wrap}
 }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
 <div id="app">
@@ -332,6 +333,25 @@ main{display:grid;grid-template-columns:280px 1fr 260px;overflow:hidden;height:c
 
 <!-- RIGHT PANEL: new sections -->
 <div class="section-panel" id="right-panel">
+  <!-- CHARTS summary -->
+  <div class="section-block">
+    <div class="section-head" onclick="togSection('charts')">
+      <span>📊 สถิติ & สรุปภาพรวม</span>
+      <div style="display:flex;align-items:center;gap:6px">
+        <span class="section-toggle" id="charts-toggle">▼</span>
+      </div>
+    </div>
+    <div class="section-content" id="charts-content" style="padding:10px 14px;">
+      <div style="background:var(--s2); border:1px solid var(--bd2); border-radius:8px; padding:10px; margin-bottom:12px;">
+        <div style="font-size:10px; color:var(--mu); font-weight:700; margin-bottom:8px; text-transform:uppercase;">สัดส่วนสถานะ Order</div>
+        <canvas id="statusChart" style="max-height:160px;"></canvas>
+      </div>
+      <div style="background:var(--s2); border:1px solid var(--bd2); border-radius:8px; padding:10px;">
+        <div style="font-size:10px; color:var(--mu); font-weight:700; margin-bottom:8px; text-transform:uppercase;">จำนวน Order ตาม Supplier (Top 5)</div>
+        <canvas id="supplierChart" style="max-height:160px;"></canvas>
+      </div>
+    </div>
+  </div>
   <!-- SUP summary -->
   <div class="section-block">
     <div class="section-head" onclick="togSection('sup')">
@@ -746,6 +766,92 @@ function renderRightPanel(ps){
     </div>`;
   }).join('')
   :'<div style="padding:12px 14px;font-size:12px;color:var(--mu)">ไม่มี Order ที่กำลังจัดส่ง</div>';
+
+  updateCharts(ps);
+}
+
+let statusChartInstance = null;
+let supplierChartInstance = null;
+
+function updateCharts(ps) {
+  try {
+    // 1. Status Chart
+    const cnt = { done: 0, late: 0, progress: 0, pending: 0, spec: 0, cancelled: 0 };
+    ps.forEach(o => { const s = orderSt(o); cnt[s] = (cnt[s] || 0) + 1; });
+
+    const statusCtx = document.getElementById('statusChart').getContext('2d');
+    if (statusChartInstance) {
+      statusChartInstance.destroy();
+    }
+    statusChartInstance = new Chart(statusCtx, {
+      type: 'doughnut',
+      data: {
+        labels: ['เสร็จแล้ว', 'เลยกำหนด', 'กำลังดำเนินการ', 'ยังไม่เริ่ม', 'Special Case', 'ยกเลิกแล้ว'],
+        datasets: [{
+          data: [cnt.done, cnt.late, cnt.progress, cnt.pending, cnt.spec, cnt.cancelled],
+          backgroundColor: ['#22c55e', '#ef4444', '#3a7bd5', '#eab308', '#a78bfa', '#64748b'],
+          borderWidth: 1,
+          borderColor: '#13161f'
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: {
+            display: true,
+            position: 'bottom',
+            labels: { color: '#7080a0', font: { size: 9, family: 'Sarabun' }, boxWidth: 8, padding: 4 }
+          }
+        }
+      }
+    });
+
+    // 2. Supplier Chart
+    const supMap = {};
+    ps.forEach(o => {
+      if (!o.factory || orderSt(o) === 'done' || orderSt(o) === 'cancelled') return;
+      supMap[o.factory] = (supMap[o.factory] || 0) + 1;
+    });
+    const sortedSups = Object.entries(supMap).sort((a, b) => b[1] - a[1]).slice(0, 5);
+    const supLabels = sortedSups.map(x => x[0]);
+    const supData = sortedSups.map(x => x[1]);
+
+    const supplierCtx = document.getElementById('supplierChart').getContext('2d');
+    if (supplierChartInstance) {
+      supplierChartInstance.destroy();
+    }
+    supplierChartInstance = new Chart(supplierCtx, {
+      type: 'bar',
+      data: {
+        labels: supLabels.length ? supLabels : ['ไม่มีข้อมูล'],
+        datasets: [{
+          label: 'Active Orders',
+          data: supData.length ? supData : [0],
+          backgroundColor: 'rgba(58, 123, 213, 0.75)',
+          borderColor: '#3a7bd5',
+          borderWidth: 1,
+          borderRadius: 4
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        scales: {
+          x: {
+            grid: { color: '#1c1f2e' },
+            ticks: { color: '#7080a0', font: { size: 8 } }
+          },
+          y: {
+            grid: { display: false },
+            ticks: { color: '#e8eaf2', font: { size: 9, family: 'Sarabun' } }
+          }
+        },
+        plugins: {
+          legend: { display: false }
+        }
+      }
+    });
+  } catch(e) { console.error('updateCharts error:', e); }
 }
 
 function togSection(id){
@@ -753,25 +859,25 @@ function togSection(id){
   const toggle=document.getElementById(id+'-toggle');
   const isOpen=content.classList.contains('open');
   content.classList.toggle('open',!isOpen);
-  toggle.classList.toggle('open',!isOpen);
-  // Save state to localStorage
+  if (toggle) toggle.classList.toggle('open',!isOpen);
   try {
     const states=JSON.parse(localStorage.getItem('wisco-sections')||'{}');
     states[id]=!isOpen;
     localStorage.setItem('wisco-sections',JSON.stringify(states));
   } catch(e){}
 }
-// Auto-open sections that have items after render, but respect user's saved preferences
+
 function autoOpenSections(){
   let states={};
   try { states=JSON.parse(localStorage.getItem('wisco-sections')||'{}'); } catch(e){}
-  ['sup','due','eta','mfg','ship'].forEach(id=>{
+  ['charts','sup','due','eta','mfg','ship'].forEach(id=>{
     const badge=document.getElementById(id+'-badge');
-    const hasItems=badge&&parseInt(badge.textContent)>0;
-    // If user has a saved preference, use it; otherwise open if has items
-    const shouldOpen = id in states ? states[id] : hasItems;
-    document.getElementById(id+'-content').classList.toggle('open', shouldOpen);
-    document.getElementById(id+'-toggle').classList.toggle('open', shouldOpen);
+    const hasItems=badge?parseInt(badge.textContent)>0:false;
+    const shouldOpen = id in states ? states[id] : (id === 'charts' ? true : hasItems);
+    const content = document.getElementById(id+'-content');
+    const toggle = document.getElementById(id+'-toggle');
+    if (content) content.classList.toggle('open', shouldOpen);
+    if (toggle) toggle.classList.toggle('open', shouldOpen);
   });
 }
 function setF(f,el){_flt=f;document.querySelectorAll('.fchip').forEach(c=>c.classList.remove('active'));el.classList.add('active');render()}

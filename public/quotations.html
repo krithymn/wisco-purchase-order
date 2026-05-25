@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quotation Dashboard — Wisco</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700;800;900&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#08090e;--s1:#0e1018;--s2:#13161f;--s3:#181c28;--s4:#1e2330;
+  --bd:#1e2438;--bd2:#141826;
+  --tx:#e8eaf2;--mu:#7080a0;
+  --red:#d42030;--red2:#e84050;--red3:#ff6070;
+  --silver:#9aaac0;--silver2:#c0ccd8;
+  --blue:#3a5a8a;--blue2:#4a72b0;
+  
+  --done:#22c55e;--late:#ef4444;--prog:#3a7bd5;--pend:#eab308;--warn:#f97316;--spec:#a78bfa;--canc:#64748b;
+  --done-dim:rgba(34,197,94,.1);--late-dim:rgba(239,68,68,.1);--prog-dim:rgba(58,123,213,.12);--pend-dim:rgba(234,179,8,.1);
+  --done-bd:rgba(34,197,94,.3);--late-bd:rgba(239,68,68,.3);--prog-bd:rgba(58,123,213,.35);
+}
+html,body{height:100%;background:var(--bg);color:var(--tx);font-family:'Sarabun','Inter',sans-serif;overflow:hidden}
+#app{display:grid;grid-template-rows:60px 1fr;height:100vh}
+header{background:linear-gradient(90deg,#08090e 0%,#0e1018 50%,#08090e 100%);border-bottom:1px solid #1e2438;display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:relative}
+header::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,#a78bfa,#3a7bd5,#9aaac0,#d42030,transparent)}
+.logo{display:flex;align-items:center;gap:12px}
+.logo-name{font-size:18px;font-weight:800;font-family:'Inter',sans-serif}
+.logo-name span{color:var(--spec)}
+.live-pill{display:flex;align-items:center;gap:6px;background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.3);border-radius:99px;padding:4px 12px;font-size:11px;font-weight:600;color:var(--spec);text-transform:uppercase;letter-spacing:.5px}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--done);animation:blink 1.5s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+main{display:grid;grid-template-columns:280px 1fr 280px;overflow:hidden;height:calc(100vh - 60px)}
+@media(max-width:1024px){main{grid-template-columns:1fr;overflow:visible;height:auto}}
+
+/* LEFT */
+.left{background:var(--s1);border-right:1px solid var(--bd);display:flex;flex-direction:column;overflow:hidden}
+.kpi-strip{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--bd);flex-shrink:0}
+.kpi{background:var(--s2);padding:16px 14px;position:relative;overflow:hidden}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.kpi.k-total::before{background:linear-gradient(90deg,var(--spec),var(--blue2))}
+.kpi.k-win::before{background:var(--done)}
+.kpi.k-pending::before{background:var(--pend)}
+.kpi.k-overdue::before{background:var(--late)}
+.kpi-n{font-size:36px;font-weight:800;font-family:'Inter',sans-serif;line-height:1;letter-spacing:-1px}
+.kpi-l{font-size:11px;color:var(--mu);margin-top:4px;text-transform:uppercase;letter-spacing:.8px;font-weight:600}
+.kpi-glow{position:absolute;right:-10px;bottom:-10px;width:60px;height:60px;border-radius:50%;opacity:.2}
+.kpi.k-total .kpi-glow{background:var(--spec);box-shadow:0 0 20px var(--spec)}
+.kpi.k-win .kpi-glow{background:var(--done);box-shadow:0 0 30px var(--done)}
+.kpi.k-pending .kpi-glow{background:var(--pend);box-shadow:0 0 30px var(--pend)}
+.kpi.k-overdue .kpi-glow{background:var(--late);box-shadow:0 0 30px var(--late)}
+
+.view-selector{display:flex;background:var(--s3);border-bottom:1px solid var(--bd);padding:4px}
+.view-btn{flex:1;background:transparent;border:none;color:var(--mu);font-size:12px;font-weight:600;padding:8px;border-radius:6px;cursor:pointer;font-family:'Sarabun',sans-serif;transition:all .1s}
+.view-btn.active{background:var(--s1);color:#fff;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+
+.checklist-title{padding:12px 16px 4px;font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:1px}
+.checklist-list{flex:1;overflow-y:auto;padding:8px 12px}
+.chk-item{background:var(--s2);border:1px solid var(--bd2);border-radius:8px;padding:10px 12px;margin-bottom:8px;cursor:pointer;transition:all .1s}
+.chk-item:hover{border-color:var(--spec)}
+.chk-id{font-size:12px;font-weight:700;color:var(--spec);font-family:'Inter',sans-serif}
+.chk-cust{font-size:12px;font-weight:500;margin-top:2px}
+.chk-due{font-size:10px;color:var(--mu);margin-top:4px}
+
+/* MIDDLE (CARDS) */
+.middle{display:flex;flex-direction:column;overflow:hidden;background:var(--bg)}
+.filter-bar{background:var(--s1);border-bottom:1px solid var(--bd);padding:12px 20px;display:flex;align-items:center;gap:8px;flex-shrink:0;overflow-x:auto}
+.fchip{font-size:12px;padding:6px 14px;border-radius:99px;border:1px solid var(--bd);background:transparent;color:var(--mu);cursor:pointer;font-family:'Sarabun',sans-serif;transition:all .15s;font-weight:500;white-space:nowrap}
+.fchip:hover{border-color:var(--tx);color:var(--tx)}
+.fchip.active{color:#fff;border-color:transparent}
+.fchip.active.f-all{background:linear-gradient(90deg,var(--spec),var(--blue2));box-shadow:0 0 12px rgba(167,139,250,.3)}
+.fchip.active.f-win{background:var(--done);box-shadow:0 0 12px rgba(34,197,94,.3)}
+.fchip.active.f-pending{background:var(--pend);box-shadow:0 0 12px rgba(234,179,8,.3)}
+.fchip.active.f-lost{background:var(--late);box-shadow:0 0 12px rgba(239,68,68,.3)}
+.fchip.active.f-hold{background:var(--canc);box-shadow:0 0 12px rgba(100,116,139,.3)}
+.fchip.active.f-overdue{background:linear-gradient(90deg,var(--late),var(--warn));box-shadow:0 0 12px rgba(239,68,68,.4)}
+
+.cards{flex:1;overflow-y:auto;padding:16px 20px;display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:14px;align-content:start}
+.empty{grid-column:1/-1;display:flex;flex-direction:column;align-items:center;justify-content:center;height:300px;color:var(--mu)}
+
+.qcard{background:var(--s1);border:1px solid var(--bd);border-radius:12px;overflow:hidden;cursor:pointer;transition:all .2s;position:relative}
+.qcard:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(0,0,0,.4)}
+.qcard::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.qcard.st-WIN::before{background:var(--done)}
+.qcard.st-PENDING::before{background:var(--pend)}
+.qcard.st-LOST::before{background:var(--late)}
+.qcard.st-HOLD::before{background:var(--canc)}
+
+.ct{padding:14px 16px 10px;border-bottom:1px solid var(--bd2)}
+.ct-hdr{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.ct-id{font-size:15px;font-weight:800;font-family:'Inter',sans-serif;letter-spacing:.3px}
+.ct-cust{font-size:12px;color:var(--mu);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.badge{font-size:9px;font-weight:700;padding:3px 8px;border-radius:4px;text-transform:uppercase}
+.b-win{background:var(--done-dim);color:var(--done);border:1px solid var(--done-bd)}
+.b-pending{background:var(--pend-dim);color:var(--pend);border:1px solid rgba(234,179,8,.3)}
+.b-lost{background:var(--late-dim);color:var(--late);border:1px solid var(--late-bd)}
+.b-hold{background:rgba(100,116,139,.1);color:var(--canc);border:1px solid rgba(100,116,139,.3)}
+
+.cp{padding:12px 16px 10px;border-bottom:1px solid var(--bd2)}
+.cp-hdr{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
+.cp-title{font-size:11px;color:var(--mu);text-transform:uppercase}
+.cp-status{font-size:12px;font-weight:600}
+.pbar{height:6px;background:var(--s3);border-radius:99px;overflow:hidden;margin-bottom:6px}
+.pbar-fill{height:100%;border-radius:99px;transition:width .4s}
+.pb-win{background:var(--done)}
+.pb-pending{background:var(--pend)}
+.pb-lost{background:var(--late)}
+.pb-hold{background:var(--canc)}
+
+.nodes{display:flex;justify-content:space-between;position:relative;padding:0 2px}
+.node{width:8px;height:8px;border-radius:50%;background:var(--s3);border:1px solid var(--bd)}
+.node.active{background:var(--spec);border-color:var(--spec);box-shadow:0 0 8px var(--spec)}
+.node.done{background:var(--done);border-color:var(--done)}
+
+.cb{padding:10px 16px;display:grid;grid-template-columns:1fr 1fr;gap:6px;background:rgba(255,255,255,.01)}
+.cbl{font-size:10px;color:var(--mu);text-transform:uppercase;margin-bottom:2px}
+.cbv{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cbv.overdue{color:var(--late)}
+.cbv.days-left{color:var(--done)}
+
+/* RIGHT PANEL */
+.right{background:var(--s1);border-left:1px solid var(--bd);overflow-y:auto;display:flex;flex-direction:column}
+.section-block{border-bottom:1px solid var(--bd)}
+.section-head{padding:12px 16px 10px;font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:1px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none}
+.section-head:hover{background:var(--s2)}
+.section-toggle{font-size:10px;color:var(--mu);transition:transform .2s}
+.section-toggle.open{transform:rotate(180deg)}
+.section-content{display:none;padding:12px 16px}
+.section-content.open{display:block}
+
+.sup-row{padding:6px 0;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--bd2)}
+.sup-row:last-child{border-bottom:none}
+.sup-lbl{font-size:12px;font-weight:500}
+.sup-val{font-size:12px;font-weight:700;font-family:'Inter',sans-serif}
+.sup-val.v-win{color:var(--done)}
+
+/* MODAL */
+.ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:100;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.ov.open{display:flex}
+.modal{background:var(--s2);border:1px solid var(--bd);border-radius:14px;width:600px;max-width:96vw;max-height:88vh;display:flex;flex-direction:column;box-shadow:0 32px 80px rgba(0,0,0,.7)}
+.mh{display:flex;align-items:flex-start;justify-content:space-between;padding:20px 24px;border-bottom:1px solid var(--bd);background:linear-gradient(135deg,#0e1018,#131926);border-radius:14px 14px 0 0;border-top:2px solid var(--spec)}
+.mid{font-size:20px;font-weight:800;font-family:'Inter',sans-serif}
+.mc{background:var(--s3);border:1px solid var(--bd);color:var(--mu);font-size:14px;cursor:pointer;padding:4px 10px;border-radius:6px}.mc:hover{color:var(--tx)}
+.mb{overflow-y:auto;padding:20px 24px}
+
+.mmi{background:var(--s1);border:1px solid var(--bd);border-radius:8px;padding:10px 12px;margin-bottom:10px}
+.mmil{font-size:10px;color:var(--mu);text-transform:uppercase;margin-bottom:3px}
+.mmiv{font-size:13px;font-weight:600}
+
+.tli{display:grid;grid-template-columns:32px 1fr auto;gap:12px;align-items:start;padding:10px 0;border-bottom:1px solid var(--bd2)}
+.tli:last-child{border-bottom:none}
+.tln{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
+.tn-done{background:rgba(34,197,94,.15);color:var(--done);border:1px solid rgba(34,197,94,.3)}
+.tn-act{background:rgba(167,139,250,.15);color:var(--spec);border:1px solid rgba(167,139,250,.3)}
+.tn-wait{background:var(--s3);color:var(--mu);border:1px solid var(--bd)}
+.tl-name{font-size:14px;font-weight:600;padding-top:6px}
+.tl-person{font-size:12px;color:var(--mu);margin-top:2px}
+.tl-right{text-align:right;padding-top:6px;font-size:11px;color:var(--mu)}
+
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:var(--bd);border-radius:99px}
+</style>
+</head>
+<body>
+<div id="app">
+<header>
+  <div class="logo">
+    <img src="logo.png" style="height:36px;width:auto;object-fit:contain" alt="Wisco">
+    <div class="logo-name" style="margin-left:4px;color:var(--silver2)">Quotation <span style="color:var(--spec)">Dashboard</span></div>
+  </div>
+  <div style="display:flex;align-items:center;gap:14px">
+    <div style="display:flex;align-items:center;gap:8px">
+      <a href="dashboard.html" style="font-size:12px;color:var(--silver2);text-decoration:none;padding:4px 10px;border:1px solid var(--bd);border-radius:99px;background:rgba(255,255,255,.05)" target="_blank">📊 PO Dashboard</a>
+      <a href="quotations-edit.html" style="font-size:12px;color:#fff;text-decoration:none;padding:4px 12px;border:1px solid var(--spec);border-radius:99px;background:rgba(167,139,250,.15)" target="_blank">✏️ Manage Quotes</a>
+      <div class="live-pill"><div class="live-dot"></div>Live</div>
+    </div>
+  </div>
+</header>
+<main>
+<div class="left">
+  <div class="kpi-strip" id="kpis"></div>
+  <div style="padding:10px 12px;">
+    <div class="view-selector">
+      <button class="view-btn active" id="btn-view-org" onclick="changeView('org')">ภาพรวม (Overview)</button>
+      <button class="view-btn" id="btn-view-self" onclick="changeView('self')">งานของฉัน (My Work)</button>
+    </div>
+  </div>
+  <div class="checklist-title" id="chk-title" style="display:none">📋 งานค้างของฉัน</div>
+  <div class="checklist-list" id="chk-list" style="display:none"></div>
+</div>
+<div class="middle">
+  <div class="filter-bar">
+    <button class="fchip active f-all" onclick="setF('all',this)">ทั้งหมด</button>
+    <button class="fchip f-pending" onclick="setF('PENDING',this)">🟡 รอเสนอราคา</button>
+    <button class="fchip f-win" onclick="setF('WIN',this)">🟢 งานที่ชนะ (WIN)</button>
+    <button class="fchip f-lost" onclick="setF('LOST',this)">🔴 ไม่สำเร็จ (LOST)</button>
+    <button class="fchip f-hold" onclick="setF('HOLD',this)">⚪ พักงาน (HOLD)</button>
+    <button class="fchip f-overdue" onclick="setF('overdue',this)">🚨 เลยกำหนดส่ง</button>
+  </div>
+  <div class="cards" id="cards"></div>
+</div>
+<div class="right">
+  <!-- Charts Summary -->
+  <div class="section-block">
+    <div class="section-head" onclick="togSection('charts')">
+      <span>📊 สถิติอัตราส่วน</span>
+      <span class="section-toggle" id="charts-toggle">▼</span>
+    </div>
+    <div class="section-content" id="charts-content">
+      <div style="background:var(--s2); border:1px solid var(--bd2); border-radius:8px; padding:10px; margin-bottom:12px;">
+        <div style="font-size:10px; color:var(--mu); font-weight:700; margin-bottom:8px; text-transform:uppercase;">อัตราส่วนสถานะ WIN / PENDING</div>
+        <canvas id="ratioChart" style="max-height:140px;"></canvas>
+      </div>
+    </div>
+  </div>
+  <!-- Performance Metrics -->
+  <div class="section-block">
+    <div class="section-head" onclick="togSection('metrics')">
+      <span>📈 ตัวชี้วัดผลงาน (KPI Metrics)</span>
+      <span class="section-toggle" id="metrics-toggle">▼</span>
+    </div>
+    <div class="section-content" id="metrics-content">
+      <div id="performance-metrics"></div>
+    </div>
+  </div>
+  <!-- Individual Stats -->
+  <div class="section-block">
+    <div class="section-head" onclick="togSection('individual')">
+      <span>🧑‍💼 ผลงาน Proposal</span>
+      <span class="section-toggle" id="individual-toggle">▼</span>
+    </div>
+    <div class="section-content" id="individual-content"><div id="list-individual"></div></div>
+  </div>
+  <!-- Sale Team Stats -->
+  <div class="section-block">
+    <div class="section-head" onclick="togSection('saleteam')">
+      <span>👔 สรุปตามทีม Sales</span>
+      <span class="section-toggle" id="saleteam-toggle">▼</span>
+    </div>
+    <div class="section-content" id="saleteam-content"><div id="list-saleteam"></div></div>
+  </div>
+  <!-- Due soon -->
+  <div class="section-block">
+    <div class="section-head" onclick="togSection('due')">
+      <span>⏰ ใกล้กำหนดส่งมอบ (5 วัน)</span>
+      <span class="section-toggle" id="due-toggle">▼</span>
+    </div>
+    <div class="section-content" id="due-content"><div id="list-due"></div></div>
+  </div>
+</div>
+</main>
+</div>
+
+<!-- DETAIL MODAL -->
+<div class="ov" id="modal" onclick="if(event.target===this)closeM()">
+  <div class="modal">
+    <div class="mh"><div><div class="mid" id="m-id"></div><div id="m-badges" style="margin-top:8px;display:flex;gap:8px"></div></div><button class="mc" onclick="closeM()">✕ ปิด</button></div>
+    <div class="mb" id="m-body"></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+const PROGRESS_STEPS = ["ตรวจสอบข้อมูล", "รอราคาเมืองนอก / เคลียเสปค", "ตรวจสอบเสปค ดำเนินการภายใน", "Quotation Submitted"];
+let _quotations = [], _config = {}, _flt = 'all', _view = 'org';
+let ratioChartInstance = null;
+
+async function loadAll(){
+  const [quotes, cfg] = await Promise.all([
+    fetch('/api/quotations').then(r => r.json()),
+    fetch('/api/config').then(r => r.json())
+  ]);
+  _quotations = quotes;
+  _config = cfg;
+}
+
+function calculateLeadTime(q) {
+  if (!q.start_date || !q.due_date) return null;
+  const start = new Date(q.start_date);
+  const due = new Date(q.due_date);
+  const now = new Date();
+  
+  const diffTime = due - now;
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  return diffDays;
+}
+
+function getProgressPercent(statusText) {
+  const idx = PROGRESS_STEPS.indexOf(statusText);
+  if (idx < 0) return 0;
+  return Math.round(((idx + 1) / PROGRESS_STEPS.length) * 100);
+}
+
+function renderKPIs() {
+  const visible = getFilteredList();
+  const win = visible.filter(q => q.status === 'WIN').length;
+  const pending = visible.filter(q => q.status === 'PENDING').length;
+  const overdue = visible.filter(q => q.status === 'PENDING' && calculateLeadTime(q) < 0).length;
+  
+  document.getElementById('kpis').innerHTML = `
+    <div class="kpi k-total"><div class="kpi-n">${visible.length}</div><div class="kpi-l">Quotation ทั้งหมด</div><div class="kpi-glow"></div></div>
+    <div class="kpi k-win"><div class="kpi-n" style="color:var(--done)">${win}</div><div class="kpi-l">ชนะ (WIN)</div><div class="kpi-glow"></div></div>
+    <div class="kpi k-pending"><div class="kpi-n" style="color:var(--pend)">${pending}</div><div class="kpi-l">รอเสนอราคา</div><div class="kpi-glow"></div></div>
+    <div class="kpi k-overdue"><div class="kpi-n" style="color:var(--late)">${overdue}</div><div class="kpi-l">เลยกำหนดส่ง</div><div class="kpi-glow"></div></div>
+  `;
+}
+
+function getFilteredList() {
+  let list = _quotations;
+  if (_view === 'self') {
+    // Show only quotes assigned to current user logged in
+    const currentUser = localStorage.getItem('proposal_user') || '';
+    list = list.filter(q => q.responsible === currentUser);
+  }
+  
+  if (_flt === 'overdue') {
+    return list.filter(q => q.status === 'PENDING' && calculateLeadTime(q) < 0);
+  } else if (_flt !== 'all') {
+    return list.filter(q => q.status === _flt);
+  }
+  return list;
+}
+
+function renderCards() {
+  const list = getFilteredList();
+  const container = document.getElementById('cards');
+  
+  if (!list.length) {
+    container.innerHTML = `<div class="empty"><div class="empty-icon">📭</div><div style="font-size:14px">ไม่มีข้อมูลใบเสนอราคา</div></div>`;
+    return;
+  }
+  
+  container.innerHTML = list.map(q => {
+    const days = calculateLeadTime(q);
+    let dueHtml = '—';
+    if (days !== null) {
+      if (q.status !== 'PENDING') {
+        dueHtml = `<span class="cbv done">${q.status}</span>`;
+      } else if (days < 0) {
+        dueHtml = `<span class="cbv overdue">เลยกำหนด ${Math.abs(days)} วัน</span>`;
+      } else {
+        dueHtml = `<span class="cbv days-left">เหลือ ${days} วัน</span>`;
+      }
+    }
+    
+    const pct = getProgressPercent(q.progress_status);
+    const curIdx = PROGRESS_STEPS.indexOf(q.progress_status);
+    const nodes = PROGRESS_STEPS.map((step, idx) => {
+      let cls = '';
+      if (idx < curIdx) cls = 'done';
+      else if (idx === curIdx) cls = 'active';
+      return `<div class="node ${cls}" title="${step}"></div>`;
+    }).join('');
+    
+    const price = q.total_offer ? parseFloat(q.total_offer).toLocaleString('th-TH') + ' บาท' : '—';
+    
+    return `
+      <div class="qcard st-${q.status}" onclick="openDetail(${q.id})">
+        <div class="ct">
+          <div class="ct-hdr">
+            <span class="ct-id">${q.quotation_no}</span>
+            <span class="badge b-${q.status.toLowerCase()}">${q.status}</span>
+          </div>
+          <div class="ct-cust">🏭 ${q.customer}</div>
+          <div style="font-size:11px; color:var(--mu); margin-top:2px;">Product: ${q.product || '—'}</div>
+        </div>
+        <div class="cp">
+          <div class="cp-hdr">
+            <span class="cp-title">ความคืบหน้า</span>
+            <span class="cp-status" style="color:var(--spec)">${q.progress_status} (${pct}%)</span>
+          </div>
+          <div class="pbar"><div class="pbar-fill pb-${q.status}" style="width:${pct}%"></div></div>
+          <div class="nodes">${nodes}</div>
+        </div>
+        <div class="cb">
+          <div><div class="cbl">ผู้รับผิดชอบ</div><div class="cbv">${q.responsible.split('-')[0] || '—'}</div></div>
+          <div><div class="cbl">กำหนดส่ง</div><div>${dueHtml}</div></div>
+          <div style="grid-column: span 2; margin-top:4px;"><div class="cbl">มูลค่าที่เสนอ</div><div class="cbv" style="color:var(--silver2)">${price}</div></div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderSidebars() {
+  const active = _quotations.filter(q => q.status === 'PENDING');
+  
+  // 1. Individual performance
+  const users = {};
+  _quotations.forEach(q => {
+    if (!q.responsible) return;
+    if (!users[q.responsible]) users[q.responsible] = { total: 0, win: 0, pending: 0 };
+    users[q.responsible].total++;
+    if (q.status === 'WIN') users[q.responsible].win++;
+    if (q.status === 'PENDING') users[q.responsible].pending++;
+  });
+  
+  const indHtml = Object.entries(users).map(([name, data]) => {
+    const rate = data.total ? Math.round((data.win / (data.total - data.pending || 1)) * 100) : 0;
+    return `
+      <div class="sup-row">
+        <span class="sup-lbl">👤 ${name.split('-')[0]}</span>
+        <span class="sup-val">${data.total} งาน <span style="color:var(--done)">(${rate}% Win)</span></span>
+      </div>
+    `;
+  }).join('');
+  document.getElementById('list-individual').innerHTML = indHtml || '<div style="font-size:11px;color:var(--mu)">ไม่มีข้อมูล</div>';
+
+  // 2. Sale Team stats
+  const saleTeams = {};
+  _quotations.forEach(q => {
+    if (!q.sale_team) return;
+    if (!saleTeams[q.sale_team]) saleTeams[q.sale_team] = { total: 0, value: 0 };
+    saleTeams[q.sale_team].total++;
+    saleTeams[q.sale_team].value += parseFloat(q.total_offer) || 0;
+  });
+  
+  const saleHtml = Object.entries(saleTeams).map(([team, data]) => `
+    <div class="sup-row">
+      <span class="sup-lbl">👔 ${team}</span>
+      <span class="sup-val">${data.total} ใบ <span style="color:var(--mu)">(${Math.round(data.value/1000).toLocaleString()}k ฿)</span></span>
+    </div>
+  `).join('');
+  document.getElementById('list-saleteam').innerHTML = saleHtml || '<div style="font-size:11px;color:var(--mu)">ไม่มีข้อมูล</div>';
+
+  // 3. Due soon (within 5 days, pending)
+  const dueSoon = active.filter(q => {
+    const d = calculateLeadTime(q);
+    return d !== null && d >= 0 && d <= 5;
+  }).sort((a,b) => calculateLeadTime(a) - calculateLeadTime(b));
+  
+  const dueHtml = dueSoon.map(q => `
+    <div class="sup-row" onclick="openDetail(${q.id})" style="cursor:pointer;">
+      <span class="sup-lbl" style="color:var(--warn)">⏰ ${q.quotation_no}</span>
+      <span class="sup-val">อีก ${calculateLeadTime(q)} วัน</span>
+    </div>
+  `).join('');
+  document.getElementById('list-due').innerHTML = dueHtml || '<div style="font-size:11px;color:var(--mu)">ไม่มีรายการด่วน</div>';
+}
+
+function renderCharts() {
+  const win = _quotations.filter(q => q.status === 'WIN').length;
+  const pending = _quotations.filter(q => q.status === 'PENDING').length;
+  const lost = _quotations.filter(q => q.status === 'LOST').length;
+  const hold = _quotations.filter(q => q.status === 'HOLD').length;
+  
+  const ctx = document.getElementById('ratioChart').getContext('2d');
+  if (ratioChartInstance) ratioChartInstance.destroy();
+  
+  ratioChartInstance = new Chart(ctx, {
+    type: 'pie',
+    data: {
+      labels: ['WIN', 'PENDING', 'LOST', 'HOLD'],
+      datasets: [{
+        data: [win, pending, lost, hold],
+        backgroundColor: ['#22c55e', '#eab308', '#ef4444', '#64748b'],
+        borderWidth: 1,
+        borderColor: '#13161f'
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: {
+          display: true,
+          position: 'right',
+          labels: { color: '#7080a0', font: { size: 9, family: 'Sarabun' }, boxWidth: 8 }
+        }
+      }
+    }
+  });
+}
+
+function renderChecklist() {
+  if (_view !== 'self') {
+    document.getElementById('chk-title').style.display = 'none';
+    document.getElementById('chk-list').style.display = 'none';
+    return;
+  }
+  
+  const currentUser = localStorage.getItem('proposal_user') || '';
+  const myPending = _quotations.filter(q => q.responsible === currentUser && q.status === 'PENDING');
+  
+  document.getElementById('chk-title').style.display = 'block';
+  document.getElementById('chk-list').style.display = 'block';
+  
+  if (!myPending.length) {
+    document.getElementById('chk-list').innerHTML = `<div style="font-size:12px;color:var(--mu);padding:10px;text-align:center">ไม่มีงานค้าง</div>`;
+    return;
+  }
+  
+  document.getElementById('chk-list').innerHTML = myPending.map(q => {
+    const days = calculateLeadTime(q);
+    const dueStr = days < 0 ? `🚨 เลยกำหนด ${Math.abs(days)} วัน` : `⏰ อีก ${days} วัน`;
+    return `
+      <div class="chk-item" onclick="openDetail(${q.id})">
+        <div class="chk-id">${q.quotation_no}</div>
+        <div class="chk-cust">${q.customer}</div>
+        <div class="chk-due" style="color:${days < 0 ? 'var(--late)' : 'var(--warn)'}">${dueStr}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function openDetail(id) {
+  const q = _quotations.find(x => x.id === id);
+  if (!q) return;
+  
+  document.getElementById('m-id').textContent = q.quotation_no;
+  document.getElementById('m-badges').innerHTML = `
+    <span class="badge b-${q.status.toLowerCase()}">${q.status}</span>
+    <span class="badge" style="background:var(--s3);color:var(--silver2)">Type: ${q.quotation_type}</span>
+    <span class="badge" style="background:var(--s3);color:var(--spec)">Customer Type: ${q.customer_type}</span>
+  `;
+  
+  const progressPercent = getProgressPercent(q.progress_status);
+  const curIdx = PROGRESS_STEPS.indexOf(q.progress_status);
+  
+  const timelineHtml = PROGRESS_STEPS.map((step, idx) => {
+    let cls = 'tn-wait', lbl = idx + 1;
+    if (idx < curIdx) { cls = 'tn-done'; lbl = '✓'; }
+    else if (idx === curIdx) { cls = 'tn-act'; }
+    
+    let dateStr = '';
+    if (idx === PROGRESS_STEPS.length - 1 && q.completed_date) {
+      dateStr = `📅 วันเสร็จ: ${q.completed_date}`;
+    }
+    
+    return `
+      <div class="tli">
+        <div class="tln ${cls}">${lbl}</div>
+        <div>
+          <div class="tl-name">${step}</div>
+          <div class="tl-person">👤 ผู้รับผิดชอบ: ${q.responsible || '—'}</div>
+        </div>
+        <div class="tl-right">${dateStr}</div>
+      </div>
+    `;
+  }).join('');
+
+  document.getElementById('m-body').innerHTML = `
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px;">
+      <div class="mmi"><div class="mmil">ลูกค้า</div><div class="mmiv">${q.customer}</div></div>
+      <div class="mmi"><div class="mmil">ประเภทลูกค้า</div><div class="mmiv">${q.customer_type}</div></div>
+      <div class="mmi"><div class="mmil">วันที่เปิดใบเสนอราคา</div><div class="mmiv">${q.start_date || '—'}</div></div>
+      <div class="mmi"><div class="mmil">กำหนดส่งลูกค้า</div><div class="mmiv" style="color:var(--warn)">${q.due_date || '—'}</div></div>
+      <div class="mmi"><div class="mmil">Quotation No.</div><div class="mmiv">${q.quotation_no}</div></div>
+      <div class="mmi"><div class="mmil">LD No.</div><div class="mmiv">${q.ld_no || '—'}</div></div>
+      <div class="mmi"><div class="mmil">Sale / Sale Team</div><div class="mmiv">${q.sale} · ${q.sale_team}</div></div>
+      <div class="mmi"><div class="mmil">PR / PO (เมื่อชนะ)</div><div class="mmiv">${q.pr_no ? `PR: ${q.pr_no}` : ''} ${q.po_no ? `| PO: ${q.po_no}` : ''} ${(!q.pr_no && !q.po_no) ? '—' : ''}</div></div>
+      <div class="mmi" style="grid-column: span 2;"><div class="mmil">รายละเอียดสินค้า</div><div class="mmiv">${q.product || '—'}</div></div>
+      <div class="mmi" style="grid-column: span 2;"><div class="mmil">ยอดรวมที่เสนอราคา</div><div class="mmiv" style="font-size:16px;color:var(--spec)">${q.total_offer ? parseFloat(q.total_offer).toLocaleString('th-TH') + ' บาท' : '—'}</div></div>
+    </div>
+    <div style="font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase;margin-bottom:10px;">ความคืบหน้าของงาน</div>
+    <div>${timelineHtml}</div>
+  `;
+  
+  document.getElementById('modal').classList.add('open');
+}
+
+function closeM(){document.getElementById('modal').classList.remove('open')}
+
+function setF(f,el){
+  _flt=f;
+  document.querySelectorAll('.fchip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  renderCards();
+}
+
+function changeView(view) {
+  _view = view;
+  document.getElementById('btn-view-org').classList.toggle('active', view === 'org');
+  document.getElementById('btn-view-self').classList.toggle('active', view === 'self');
+  
+  if (view === 'self') {
+    // If not selected yet, prompt for proposal team username
+    let user = localStorage.getItem('proposal_user');
+    if (!user) {
+      const allUsers = _config.team || [];
+      const choice = prompt(`กรุณาระบุชื่อผู้รับผิดชอบงานของคุณ:\n\n${allUsers.join('\n')}`);
+      if (choice) {
+        localStorage.setItem('proposal_user', choice.trim());
+      } else {
+        changeView('org');
+        return;
+      }
+    }
+  }
+  
+  renderKPIs();
+  renderCards();
+  renderChecklist();
+}
+
+function togSection(id){
+  const content=document.getElementById(id+'-content');
+  const toggle=document.getElementById(id+'-toggle');
+  const isOpen=content.classList.contains('open');
+  content.classList.toggle('open',!isOpen);
+  toggle.classList.toggle('open',!isOpen);
+  try {
+    const states=JSON.parse(localStorage.getItem('wisco-q-sections')||'{}');
+    states[id]=!isOpen;
+    localStorage.setItem('wisco-q-sections',JSON.stringify(states));
+  } catch(e){}
+}
+
+function renderMetrics() {
+  const list = getFilteredList();
+  
+  const totalReceived = list.length;
+  const submittedList = list.filter(q => q.progress_status === 'Quotation Submitted' || q.status !== 'PENDING');
+  const totalSubmitted = submittedList.length;
+  
+  let onTime = 0;
+  let late = 0;
+  let totalOfferedVal = 0;
+  let totalWonVal = 0;
+  
+  submittedList.forEach(q => {
+    totalOfferedVal += parseFloat(q.total_offer) || 0;
+    
+    // Check on-time vs late
+    const compDate = q.completed_date || q.offer_date || '';
+    if (compDate && q.due_date) {
+      if (new Date(compDate) <= new Date(q.due_date)) {
+        onTime++;
+      } else {
+        late++;
+      }
+    } else {
+      onTime++; // fallback default
+    }
+  });
+  
+  list.forEach(q => {
+    if (q.status === 'WIN') {
+      totalWonVal += parseFloat(q.total_offer) || 0;
+    }
+  });
+  
+  document.getElementById('performance-metrics').innerHTML = `
+    <div style="display:flex; flex-direction:column; gap:8px;">
+      <div class="sup-row"><span class="sup-lbl">📋 จำนวนงานที่ได้รับทั้งหมด</span><span class="sup-val">${totalReceived} งาน</span></div>
+      <div class="sup-row"><span class="sup-lbl">📤 งานที่เสนอราคาแล้ว</span><span class="sup-val" style="color:var(--spec)">${totalSubmitted} งาน</span></div>
+      <div class="sup-row"><span class="sup-lbl">⏱️ เสนอราคาได้ทันกำหนด</span><span class="sup-val" style="color:var(--done)">${onTime} งาน</span></div>
+      <div class="sup-row"><span class="sup-lbl">🚨 เสนอราคาไม่ทันกำหนด</span><span class="sup-val" style="color:var(--late)">${late} งาน</span></div>
+      <div class="sup-row"><span class="sup-lbl">💰 ยอดรวมที่เสนอราคา</span><span class="sup-val" style="color:var(--blue)">${totalOfferedVal.toLocaleString('th-TH')} ฿</span></div>
+      <div class="sup-row"><span class="sup-lbl">🟢 ยอด PO ที่ได้รับ (WIN)</span><span class="sup-val v-win">${totalWonVal.toLocaleString('th-TH')} ฿</span></div>
+    </div>
+  `;
+}
+
+function autoOpenSections(){
+  let states={};
+  try { states=JSON.parse(localStorage.getItem('wisco-q-sections')||'{}'); } catch(e){}
+  ['charts','metrics','individual','saleteam','due'].forEach(id=>{
+    const shouldOpen = id in states ? states[id] : true;
+    const content = document.getElementById(id+'-content');
+    const toggle = document.getElementById(id+'-toggle');
+    if (content) content.classList.toggle('open', shouldOpen);
+    if (toggle) toggle.classList.toggle('open', shouldOpen);
+  });
+}
+
+async function refresh(){
+  await loadAll();
+  renderKPIs();
+  renderCards();
+  renderSidebars();
+  renderCharts();
+  renderChecklist();
+  renderMetrics();
+}
+
+// Init
+autoOpenSections();
+refresh();
+setInterval(refresh, 20000);
+</script>
+</body>
+</html>
