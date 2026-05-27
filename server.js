@@ -2,7 +2,6 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
-const initSqlJs = require('sql.js');
 
 const app = express();
 const PORT = process.env.PORT || 80;
@@ -37,11 +36,25 @@ const DEFAULT_STEPS = [
 ];
 
 async function initDB() {
-  const SQL = await initSqlJs();
-  if (fs.existsSync(DB_PATH)) {
-    db = new SQL.Database(fs.readFileSync(DB_PATH));
-  } else {
-    db = new SQL.Database();
+  const dbDir = path.dirname(DB_PATH);
+  if (!fs.existsSync(dbDir)) {
+    fs.mkdirSync(dbDir, { recursive: true });
+  }
+
+  try {
+    const Database = require('better-sqlite3');
+    db = new Database(DB_PATH);
+    db.run = function(sql, params = []) {
+      if (params && params.length > 0) {
+        return this.prepare(sql).run(params);
+      } else {
+        return this.exec(sql);
+      }
+    };
+  } catch (err) {
+    console.error(`\n  ❌ ERROR: Failed to open SQLite database at ${DB_PATH}`);
+    console.error(`  Details: ${err.message}`);
+    process.exit(1);
   }
 
   db.run(`
@@ -184,15 +197,24 @@ async function initDB() {
 }
 
 function saveDB() {
-  fs.writeFileSync(DB_PATH, Buffer.from(db.export()));
+  // No-op: better-sqlite3 writes directly to disk on run/exec
 }
 function query(sql, params=[]) {
-  const res = db.exec(sql, params);
-  if (!res.length) return [];
-  const {columns, values} = res[0];
-  return values.map(row => { const o={}; columns.forEach((c,i)=>o[c]=row[i]); return o; });
+  try {
+    return db.prepare(sql).all(params);
+  } catch (err) {
+    console.error(`Query failed: ${sql}`, err);
+    throw err;
+  }
 }
-function run(sql, params=[]) { db.run(sql, params); saveDB(); }
+function run(sql, params=[]) {
+  try {
+    db.run(sql, params);
+  } catch (err) {
+    console.error(`Run failed: ${sql}`, err);
+    throw err;
+  }
+}
 
 function getSteps() {
   const r = query("SELECT value FROM config WHERE key='steps'");
@@ -1050,8 +1072,7 @@ function checkToken(req, res) {
 app.get('/api/backup', (req, res) => {
   if (!checkToken(req, res)) return;
   try {
-    const data = db.export();
-    const buf = Buffer.from(data);
+    const buf = fs.readFileSync(DB_PATH);
     const date = new Date().toISOString().split('T')[0];
     res.setHeader('Content-Type', 'application/octet-stream');
     res.setHeader('Content-Disposition', `attachment; filename="wisco_orders_backup_${date}.db"`);
