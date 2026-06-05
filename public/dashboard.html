@@ -91,7 +91,218 @@ main{display:grid;grid-template-columns:280px 1fr 260px;overflow:hidden;height:c
 .fchip.active.f-canc{background:var(--canc);color:#fff !important}
 .chip-n{font-size:10px;background:rgba(255,255,255,.15);border-radius:99px;padding:1px 7px;margin-left:4px;font-weight:700}
 /* CARDS */
-.cards{flex:1;overflow-y:auto;padding:16px 20px;display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px;align-content:start}
+.cards{flex:1;overflow-y:auto;padding:16px 20px}
+.cards.grid-mode{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px;align-content:start}
+.cards.list-mode{display:block}
+
+/* CONTROLS BAR */
+.controls-bar {
+  background: var(--s2);
+  border-bottom: 1px solid var(--bd);
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+.type-selector {
+  display: flex;
+  background: var(--s3);
+  padding: 3px;
+  border-radius: 8px;
+  border: 1px solid var(--bd);
+}
+.type-btn {
+  background: transparent;
+  border: none;
+  color: var(--mu);
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+}
+.type-btn:hover {
+  color: var(--tx);
+}
+.type-btn.active {
+  background: var(--s4);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  border: 1px solid rgba(255,255,255,0.05);
+}
+.search-wrap {
+  position: relative;
+  flex: 1;
+  max-width: 400px;
+  min-width: 200px;
+  display: flex;
+  align-items: center;
+}
+.search-icon {
+  position: absolute;
+  left: 12px;
+  color: var(--mu);
+  font-size: 12px;
+  pointer-events: none;
+}
+#search-input {
+  width: 100%;
+  background: var(--s3);
+  border: 1px solid var(--bd);
+  border-radius: 8px;
+  padding: 8px 12px 8px 32px;
+  color: var(--tx);
+  font-size: 13px;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+#search-input:focus {
+  outline: none;
+  border-color: var(--blue2);
+  box-shadow: 0 0 0 3px rgba(74, 114, 176, 0.15);
+  background: var(--s4);
+}
+#search-clear-btn {
+  position: absolute;
+  right: 10px;
+  background: transparent;
+  border: none;
+  color: var(--mu);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 4px;
+}
+#search-clear-btn:hover {
+  color: var(--tx);
+}
+.view-selector {
+  display: flex;
+  background: var(--s3);
+  padding: 3px;
+  border-radius: 8px;
+  border: 1px solid var(--bd);
+  gap: 2px;
+}
+.view-btn {
+  background: transparent;
+  border: none;
+  color: var(--mu);
+  width: 32px;
+  height: 30px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.view-btn:hover {
+  color: var(--tx);
+}
+.view-btn.active {
+  background: var(--s4);
+  color: var(--red2);
+  border: 1px solid rgba(255,255,255,0.05);
+}
+
+/* LIST VIEW TABLE */
+.list-table-container {
+  width: 100%;
+  overflow-x: auto;
+}
+.list-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  background: var(--s1);
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--bd);
+}
+.list-table th {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--mu);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  padding: 12px 16px;
+  background: var(--s2);
+  border-bottom: 1px solid var(--bd);
+}
+.list-table td {
+  padding: 12px 16px;
+  font-size: 13px;
+  border-bottom: 1px solid var(--bd2);
+  vertical-align: middle;
+  color: var(--tx);
+}
+.list-table tr {
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.list-table tr:hover {
+  background: var(--s3);
+}
+.list-table tr:last-child td {
+  border-bottom: none;
+}
+
+/* PAGINATION */
+.pagination-bar {
+  background: var(--s1);
+  border-top: 1px solid var(--bd);
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  gap: 12px;
+}
+.pg-info {
+  font-size: 12px;
+  color: var(--mu);
+}
+.pg-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.pg-btn {
+  background: var(--s2);
+  border: 1px solid var(--bd);
+  color: var(--mu);
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.pg-btn:hover:not(:disabled) {
+  border-color: var(--tx);
+  color: var(--tx);
+  background: var(--s3);
+}
+.pg-btn.active {
+  background: var(--red);
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 0 8px rgba(212,32,48,.3);
+}
+.pg-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 .empty{grid-column:1/-1;display:flex;flex-direction:column;align-items:center;justify-content:center;height:300px;color:var(--mu)}
 .empty-icon{font-size:48px;opacity:.3;margin-bottom:10px}
 /* ORDER CARD */
@@ -261,7 +472,27 @@ main{display:grid;grid-template-columns:280px 1fr 260px;overflow:hidden;height:c
   .fchip{font-size:11px;padding:5px 10px;white-space:nowrap;flex-shrink:0}
 
   /* cards — single column */
-  .cards{grid-template-columns:1fr;padding:10px 12px;gap:10px}
+  .cards.grid-mode{grid-template-columns:1fr;gap:10px}
+  .cards{padding:10px 12px}
+  .controls-bar {
+    padding: 10px 12px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .search-wrap {
+    max-width: none;
+    width: 100%;
+  }
+  .view-selector {
+    display: none;
+  }
+  .pagination-bar {
+    padding: 10px 12px;
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+  }
   .ocard{border-radius:10px}
   .ct{padding:12px 14px 10px}
   .ct-id{font-size:14px}
@@ -328,7 +559,28 @@ main{display:grid;grid-template-columns:280px 1fr 260px;overflow:hidden;height:c
     <button class="fchip f-pend" onclick="setF('pending',this)">⚪ ยังไม่เริ่ม</button>
     <button class="fchip f-canc" onclick="setF('cancelled',this)">🚫 ยกเลิกแล้ว</button>
   </div>
-  <div class="cards" id="cards"></div>
+  <div class="controls-bar">
+    <div class="type-selector">
+      <button class="type-btn active" id="type-all" onclick="setTypeFilter('all')">ทั้งหมด</button>
+      <button class="type-btn" id="type-poi" onclick="setTypeFilter('poi')">ตปท. (POI)</button>
+      <button class="type-btn" id="type-po" onclick="setTypeFilter('po')">ในประเทศ (PO)</button>
+    </div>
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="search-input" placeholder="ค้นหา Order ID, Supplier, ลูกค้า, สินค้า..." oninput="setSearchQuery(this.value)">
+      <button id="search-clear-btn" style="display:none" onclick="clearSearch()">✕</button>
+    </div>
+    <div class="view-selector">
+      <button class="view-btn active" id="view-grid" onclick="setViewMode('grid')" title="แสดงแบบบล็อก">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+      </button>
+      <button class="view-btn" id="view-list" onclick="setViewMode('list')" title="แสดงแบบตาราง">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+      </button>
+    </div>
+  </div>
+  <div class="cards grid-mode" id="cards"></div>
+  <div class="pagination-bar" id="pagination"></div>
 </div>
 
 <!-- RIGHT PANEL: new sections -->
@@ -423,6 +675,11 @@ const API='';
 const MFG_STEPS=['Design','Die-casting','Mechanical processing','Assembly','Testing','Quality','Packing'];
 function getMfgStepIndex(o){ return o.prepayment ? 12 : 11; }
 let _flt='all',_orders=[],_steps=[];
+let _orderTypeFilter='all';
+let _viewMode='grid';
+let _searchQuery='';
+let _currentPage=1;
+const _pageSize=15;
 
 async function loadAll(){
   const [orders,cfg,prs]=await Promise.all([fetch(API+'/api/orders').then(r=>r.json()),fetch(API+'/api/config').then(r=>r.json()),fetch(API+'/api/prs').then(r=>r.json()).catch(()=>[])]);
@@ -492,6 +749,7 @@ function orderSt(o){
     if(ss==='skipped')continue;
     if(ss==='late')return'late';
     break; // only check first non-skipped step
+    break;
   }
   if(orderHasSpecial(o))return'spec';
   if(o.completedSteps===0)return'pending';
@@ -502,13 +760,21 @@ function bfcls(s){return{done:'bf-done',late:'bf-late',progress:'bf-prog',pendin
 function sbadge(s){const m={done:['sb-done','✅ เสร็จแล้ว'],late:['sb-late','🔴 เลยกำหนด'],progress:['sb-prog','🔵 กำลังดำเนินการ'],pending:['sb-pend','⚪ ยังไม่เริ่ม'],spec:['sb-spec','⚡ Special Case'],cancelled:['sb-canc','🚫 ยกเลิกแล้ว']};const[c,l]=m[s]||m.pending;return`<span class="sbadge ${c}">${l}</span>`}
 
 function render(){
-  const ps=_orders;
-  const cnt={done:0,late:0,progress:0,pending:0,spec:0,cancelled:0};
-  ps.forEach(o=>{ const s=orderSt(o); cnt[s]=(cnt[s]||0)+1; });
-  const total=ps.length;
+  let baseOrders = _orders;
+  let basePrs = window._prs || [];
+  if (_orderTypeFilter === 'poi') {
+    baseOrders = _orders.filter(o => o.id.toLowerCase().startsWith('poi'));
+    basePrs = (window._prs || []).filter(p => p.domestic === 'ตปท.');
+  } else if (_orderTypeFilter === 'po') {
+    baseOrders = _orders.filter(o => !o.id.toLowerCase().startsWith('poi'));
+    basePrs = (window._prs || []).filter(p => p.domestic !== 'ตปท.');
+  }
 
-  // PR badge
-  const pendingPRs=(window._prs||[]).filter(p=>!p.linkedPOI);
+  const cnt={done:0,late:0,progress:0,pending:0,spec:0,cancelled:0};
+  baseOrders.forEach(o=>{ const s=orderSt(o); cnt[s]=(cnt[s]||0)+1; });
+  const total=baseOrders.length;
+
+  const pendingPRs=basePrs.filter(p=>!p.linkedPOI);
   const prKpi=document.getElementById('pr-pending-kpi');
   const prN=document.getElementById('pr-pending-n');
   if(prKpi) prKpi.style.display=pendingPRs.length?'flex':'none';
@@ -519,22 +785,20 @@ function render(){
     <div class="kpi k-late"><div class="kpi-n" style="color:var(--late)">${cnt.late}</div><div class="kpi-l">เลยกำหนด</div><div class="kpi-glow"></div></div>
     <div class="kpi k-spec"><div class="kpi-n" style="color:var(--spec)">${cnt.spec}</div><div class="kpi-l">Special Case</div><div class="kpi-glow"></div></div>`;
 
-  const doneTasks=ps.reduce((a,o)=>a+o.completedSteps,0);
-  const totalTasks=ps.reduce((a,o)=>a+o.totalSteps,0);
+  const doneTasks=baseOrders.reduce((a,o)=>a+o.completedSteps,0);
+  const totalTasks=baseOrders.reduce((a,o)=>a+o.totalSteps,0);
   document.getElementById('stat').innerHTML=`
     <div class="sc"><div class="sc-dot" style="background:var(--prog)"></div><span class="sc-lbl">กำลังดำเนินการ</span><span class="sc-val" style="color:var(--prog)">${cnt.progress}</span></div>
     <div class="sc"><div class="sc-dot" style="background:var(--pend)"></div><span class="sc-lbl">ยังไม่เริ่ม</span><span class="sc-val" style="color:var(--pend)">${cnt.pending}</span></div>
     <div class="sc"><div class="sc-dot" style="background:var(--done)"></div><span class="sc-lbl">Task เสร็จ</span><span class="sc-val" style="color:var(--done)">${doneTasks}</span></div>
     <div class="sc"><div class="sc-dot" style="background:var(--mu)"></div><span class="sc-lbl">Task ทั้งหมด</span><span class="sc-val">${totalTasks}</span></div>`;
 
-  // Alerts — collect late orders and ALL special reasons per order
   const lateItems=[], specOrders=[];
-  ps.forEach(o=>{
+  baseOrders.forEach(o=>{
     if(o.isCancelled)return;
     const si=o.completedSteps; if(si>=o.totalSteps)return;
     const s=stepSt(o,si); const person=(o.responsible||[])[si]||'—'; const name=getStepName(o,si);
     if(s==='late') lateItems.push({o,si,name,person});
-    // collect all special steps (not just current) for sidebar display
     if(orderHasSpecial(o)&&s!=='late'){
       const specSteps=[];
       for(let i=0;i<o.totalSteps;i++){
@@ -564,10 +828,9 @@ function render(){
   }).join('');
   if(!ah) ah='<div style="padding:24px 16px;text-align:center;font-size:13px;color:#4a5978">✅ ไม่มีงานเลยกำหนดหรือ Special</div>';
   document.getElementById('alist').innerHTML=ah;
-  renderRightPanel(ps);
+  renderRightPanel(baseOrders);
   autoOpenSections();
 
-  // Filter chips
   const fkeys=['all','late','spec','progress','done','pending','cancelled'];
   const flbls=['ทั้งหมด','🔴 เลยกำหนด','⚡ Special Case','🔵 กำลังดำเนินการ','🟢 เสร็จแล้ว','⚪ ยังไม่เริ่ม','🚫 ยกเลิกแล้ว'];
   document.querySelectorAll('.fchip').forEach((c,i)=>{
@@ -575,88 +838,285 @@ function render(){
     c.innerHTML=`${flbls[i]}<span class="chip-n">${n}</span>`;
   });
 
-  // Cards
-  // Add pending PRs as virtual "ยังไม่เริ่ม" cards when filter is 'all' or 'pending'
-  const pendingPRCards=(window._prs||[]).filter(p=>!p.linkedPOI).map(p=>({
+  let filtered = baseOrders.filter(o => {
+    if (_flt !== 'all' && orderSt(o) !== _flt) return false;
+    if (_searchQuery) {
+      const query = _searchQuery.toLowerCase();
+      const matchesId = o.id.toLowerCase().includes(query);
+      const matchesFactory = (o.factory || '').toLowerCase().includes(query);
+      const matchesCustomer = (o.items || []).some(it => (it.customer || '').toLowerCase().includes(query)) || (o.customer || '').toLowerCase().includes(query);
+      const matchesProduct = (o.items || []).some(it => (it.subItems || []).some(s => (s.product || '').toLowerCase().includes(query))) || (o.product || '').toLowerCase().includes(query);
+      if (!matchesId && !matchesFactory && !matchesCustomer && !matchesProduct) return false;
+    }
+    return true;
+  });
+
+  const pendingPRCards = pendingPRs.map(p=>({
     _isPR:true, id:'PR:'+p.prNo, prNo:p.prNo, factory:'', customerName:p.customerName,
     dueDate:p.dueDate, fineYN:p.fineYN, finePct:p.finePct, sale:p.sale,
     completedSteps:0, totalSteps:1
-  }));
-  const filtered=_flt==='pending'
-    ?[...ps.filter(o=>orderSt(o)===_flt),...pendingPRCards]
-    :ps.filter(o=>_flt==='all'||orderSt(o)===_flt);
-  const ca=document.getElementById('cards');
-  const totalVisible=filtered.length+(_flt==='pending'?0:0);
-  if(!filtered.length&&(_flt!=='pending'||!pendingPRCards.length)){ca.innerHTML='<div class="empty"><div class="empty-icon">📭</div><div style="font-size:14px">ไม่มีข้อมูลที่ตรงกับตัวกรอง</div></div>';return}
-  // Render PR pending cards separately first
-  const prHtml=(_flt==='pending')?pendingPRCards.map(p=>`<div class="ocard" style="border-left:3px solid #9a6700">
-    <div class="ct">
-      <div class="ct-id" style="color:#9a6700">📋 ${p.prNo}<span style="font-size:9px;font-weight:700;padding:1px 6px;border-radius:99px;background:#fff8c5;color:#9a6700;border:1px solid #e3b341;margin-left:6px">รอเปิด POI</span></div>
-      <div class="ct-fac">👤 ${p.customerName||'—'} ${p.fineYN==='yes'?'<span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:99px;background:var(--late-bg);color:var(--late);border:1px solid var(--late-bd);margin-left:4px">⚠️ FINE</span>':''}</div>
-      ${p.dueDate?`<div style="font-size:11px;color:var(--mu);margin-top:2px">📅 กำหนดส่ง: ${p.dueDate}</div>`:''}
-      ${p.sale?`<div style="font-size:11px;color:var(--mu)">Sale: ${p.sale}</div>`:''}
-    </div>
-    <div style="padding:8px 12px;background:rgba(154,103,0,.06);font-size:11px;color:#9a6700;border-top:1px solid rgba(154,103,0,.15)">⏳ ยังไม่มี POI — รอทีม Purchasing</div>
-  </div>`).join(''):'';
-
-  const orderHtml=filtered.filter(o=>!o._isPR).map(o=>{
-    const s=orderSt(o);const si=Math.min(o.completedSteps,o.totalSteps-1);
-    const pct=Math.round((o.completedSteps/o.totalSteps)*100);
-    const curStep=o.completedSteps>=o.totalSteps?'เสร็จสมบูรณ์':getStepName(o,si);
-    const person=(o.responsible||[])[si]||'—';
-    const isMfgActive=si===getMfgStepIndex(o)&&o.completedSteps<o.totalSteps;
-    const mfgCardArr=isMfgActive&&o.mfgSteps&&o.mfgSteps[si]?o.mfgSteps[si]:[];
-    const mfgCardDone=mfgCardArr.filter(Boolean).length;
-    const mfgCardPct=Math.round(mfgCardDone/MFG_STEPS.length*100);
-    const isSpec=o.isSpecial&&o.isSpecial[si];const defDays=getDefDays(o,si);const pDays=(o.plannedDays||[])[si]||0;
-    const dots=Array.from({length:o.totalSteps},(_,i)=>{
-      let c='sd-wait';if(i<o.completedSteps)c='sd-done';else if(i===si){c=s==='late'?'sd-late':s==='spec'?'sd-spec':'sd-prog';}
-      return`<div class="sd ${c}"></div>`;
-    }).join('');
-    const ppFlag=o.prepayment?`<span class="pp-flag">${o.prepaymentDone?'✅':'💳'} prepay</span>`:'';
-    const dueColor=s==='late'?'v-late':s==='spec'?'v-spec':s==='done'?'v-done':'';
-    // Collect all special reasons across all steps
-    const allSpecReasons=[];
-    for(let j=0;j<o.totalSteps;j++){
-      if(isStepSpecial(o,j)){
-        const def=getDefDays(o,j); const pd=(o.plannedDays[j]&&o.plannedDays[j]>0)?o.plannedDays[j]:def;
-        const r=o.specialReason[j]||'';
-        allSpecReasons.push({name:getStepName(o,j),pDays:pd,defDays:def,reason:r,done:j<o.completedSteps});
-      }
+  })).filter(p => {
+    if (_searchQuery) {
+      const query = _searchQuery.toLowerCase();
+      const matchesId = p.id.toLowerCase().includes(query);
+      const matchesCustomer = (p.customerName || '').toLowerCase().includes(query);
+      if (!matchesId && !matchesCustomer) return false;
     }
-    const specReasonHTML=allSpecReasons.length?`<div class="card-spec-reasons">${allSpecReasons.map(r=>`<div class="card-spec-tag"><span class="sr-step">${r.name}:</span> ${r.reason||('⚡ '+r.pDays+'วัน / ปกติ '+r.defDays+'วัน')}${r.done?' <span style="color:var(--done)">✓</span>':''}</div>`).join('')}</div>`:'';
-    return`<div class="ocard st-${s}" onclick="openM('${o.id}')">
-      <div class="ct">
-        <div class="ct-main">
-          <div class="ct-id">${o.id}${ppFlag}${o.isPartial?'<span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:99px;background:#fff7ed;color:#92400e;border:1px solid #f59e0b;margin-left:6px">📦 PARTIAL</span>':''}</div>
-          <div class="ct-fac">🏭 ${o.factory||'—'}${(o.items||[]).some(it=>it.fine==='yes')?'<span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:99px;background:var(--late-dim);color:var(--late);border:1px solid var(--late-bd);margin-left:5px">⚠️ FINE</span>':''}</div>
-          <div style="font-size:11px;color:var(--mu);margin-top:2px">${(o.items&&o.items.length?o.items:[{customer:o.customer}]).slice(0,2).map(it=>it.customer).filter(Boolean).join(' · ')}${o.items&&o.items.length>2?` +${o.items.length-2} more`:''}</div>
-          <div style="display:flex;gap:10px;font-size:10px;color:var(--mu);margin-top:3px">${o.poOpenDate?`<span>📋 ${o.poOpenDate}</span>`:''} ${o.dueDate?`<span>📦 ${o.dueDate}</span>`:''}</div>
-        </div>
-        ${sbadge(s)}
+    return true;
+  });
+
+  let combinedList = [];
+  if (_flt === 'pending') {
+    combinedList = [...pendingPRCards, ...filtered];
+  } else {
+    combinedList = filtered;
+  }
+
+  const ca=document.getElementById('cards');
+  const totalItems = combinedList.length;
+  
+  if (!totalItems) {
+    ca.innerHTML='<div class="empty"><div class="empty-icon">📭</div><div style="font-size:14px">ไม่มีข้อมูลที่ตรงกับตัวกรอง</div></div>';
+    renderPagination(0);
+    return;
+  }
+
+  const totalPages = Math.ceil(totalItems / _pageSize) || 1;
+  if (_currentPage > totalPages) _currentPage = totalPages;
+  const startIndex = (_currentPage - 1) * _pageSize;
+  const pageItems = combinedList.slice(startIndex, startIndex + _pageSize);
+
+  if (_viewMode === 'grid') {
+    const html = pageItems.map(item => {
+      if (item._isPR) {
+        return `<div class="ocard" style="border-left:3px solid #9a6700">
+          <div class="ct">
+            <div class="ct-id" style="color:#9a6700">📋 ${item.prNo}<span style="font-size:9px;font-weight:700;padding:1px 6px;border-radius:99px;background:#fff8c5;color:#9a6700;border:1px solid #e3b341;margin-left:6px">รอเปิด POI</span></div>
+            <div class="ct-fac">👤 ${item.customerName||'—'} ${item.fineYN==='yes'?'<span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:99px;background:var(--late-bg);color:var(--late);border:1px solid var(--late-bd);margin-left:4px">⚠️ FINE</span>':''}</div>
+            ${item.dueDate?`<div style="font-size:11px;color:var(--mu);margin-top:2px">📅 กำหนดส่ง: ${item.dueDate}</div>`:''}
+            ${item.sale?`<div style="font-size:11px;color:var(--mu)">Sale: ${item.sale}</div>`:''}
+          </div>
+          <div style="padding:8px 12px;background:rgba(154,103,0,.06);font-size:11px;color:#9a6700;border-top:1px solid rgba(154,103,0,.15)">⏳ ยังไม่มี POI — รอทีม Purchasing</div>
+        </div>`;
+      } else {
+        const o = item;
+        const s=orderSt(o);const si=Math.min(o.completedSteps,o.totalSteps-1);
+        const pct=Math.round((o.completedSteps/o.totalSteps)*100);
+        const curStep=o.completedSteps>=o.totalSteps?'เสร็จสมบูรณ์':getStepName(o,si);
+        const person=(o.responsible||[])[si]||'—';
+        const isMfgActive=si===getMfgStepIndex(o)&&o.completedSteps<o.totalSteps;
+        const mfgCardArr=isMfgActive&&o.mfgSteps&&o.mfgSteps[si]?o.mfgSteps[si]:[];
+        const mfgCardDone=mfgCardArr.filter(Boolean).length;
+        const mfgCardPct=Math.round(mfgCardDone/MFG_STEPS.length*100);
+        const isSpec=o.isSpecial&&o.isSpecial[si];const defDays=getDefDays(o,si);const pDays=(o.plannedDays||[])[si]||0;
+        const dots=Array.from({length:o.totalSteps},(_,i)=>{
+          let c='sd-wait';if(i<o.completedSteps)c='sd-done';else if(i===si){c=s==='late'?'sd-late':s==='spec'?'sd-spec':'sd-prog';}
+          return`<div class="sd ${c}"></div>`;
+        }).join('');
+        const ppFlag=o.prepayment?`<span class="pp-flag">${o.prepaymentDone?'✅':'💳'} prepay</span>`:'';
+        const dueColor=s==='late'?'v-late':s==='spec'?'v-spec':s==='done'?'v-done':'';
+        
+        const allSpecReasons=[];
+        for(let j=0;j<o.totalSteps;j++){
+          if(isStepSpecial(o,j)){
+            const def=getDefDays(o,j); const pd=(o.plannedDays[j]&&o.plannedDays[j]>0)?o.plannedDays[j]:def;
+            const r=o.specialReason[j]||'';
+            allSpecReasons.push({name:getStepName(o,j),pDays:pd,defDays:def,reason:r,done:j<o.completedSteps});
+          }
+        }
+        const specReasonHTML=allSpecReasons.length?`<div class="card-spec-reasons">${allSpecReasons.map(r=>`<div class="card-spec-tag"><span class="sr-step">${r.name}:</span> ${r.reason||('⚡ '+r.pDays+'วัน / ปกติ '+r.defDays+'วัน')}${r.done?' <span style="color:var(--done)">✓</span>':''}</div>`).join('')}</div>`:'';
+        return`<div class="ocard st-${s}" onclick="openM('${o.id}')">
+          <div class="ct">
+            <div class="ct-main">
+              <div class="ct-id">${o.id}${ppFlag}${o.isPartial?'<span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:99px;background:#fff7ed;color:#92400e;border:1px solid #f59e0b;margin-left:6px">📦 PARTIAL</span>':''}</div>
+              <div class="ct-fac">🏭 ${o.factory||'—'}${(o.items||[]).some(it=>it.fine==='yes')?'<span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:99px;background:var(--late-dim);color:var(--late);border:1px solid var(--late-bd);margin-left:5px">⚠️ FINE</span>':''}</div>
+              <div style="font-size:11px;color:var(--mu);margin-top:2px">${(o.items&&o.items.length?o.items:[{customer:o.customer}]).slice(0,2).map(it=>it.customer).filter(Boolean).join(' · ')}${o.items&&o.items.length>2?` +${o.items.length-2} more`:''}</div>
+              <div style="display:flex;gap:10px;font-size:10px;color:var(--mu);margin-top:3px">${o.poOpenDate?`<span>📋 ${o.poOpenDate}</span>`:''} ${o.dueDate?`<span>📦 ${o.dueDate}</span>`:''}</div>
+            </div>
+            ${sbadge(s)}
+          </div>
+          <div class="cp">
+            <div class="cp-hdr">
+              <div><span class="cp-pct" style="color:${fcol(s)}">${pct}%</span><span class="cp-frac">${o.completedSteps}/${o.totalSteps} ขั้นตอน</span></div>
+              <div class="cp-step">${o.completedSteps>=o.totalSteps?'':getStepName(o,si)}</div>
+            </div>
+            <div class="bar"><div class="bar-fill ${bfcls(s)}" style="width:${pct}%"></div></div>
+            <div class="sdots">${dots}</div>
+            ${isMfgActive?`<div style="margin-top:8px;padding:8px 10px;background:rgba(255,255,255,.03);border:1px solid var(--bd2);border-radius:6px">
+              <div style="font-size:10px;color:var(--mu);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">🔧 Manufacturing ${mfgCardDone}/${MFG_STEPS.length}</div>
+              <div style="display:flex;flex-wrap:wrap;gap:4px">${MFG_STEPS.map((s,mi)=>`<span style="font-size:10px;padding:2px 7px;border-radius:99px;${mfgCardArr[mi]?'background:rgba(76,175,125,.15);color:var(--done);text-decoration:line-through':'background:var(--s3);color:var(--mu)'}">${s}</span>`).join('')}</div>
+              <div style="display:flex;align-items:center;gap:6px;margin-top:6px"><div style="flex:1;height:3px;background:var(--s3);border-radius:99px;overflow:hidden"><div style="height:100%;width:${mfgCardPct}%;background:var(--done);border-radius:99px"></div></div><span style="font-size:10px;color:var(--mu)">${mfgCardPct}%</span></div>
+            </div>`:''}
+            ${specReasonHTML}
+          </div>
+          <div class="cb">
+            <div class="cbi"><div class="cbl">ผู้รับผิดชอบ</div><div class="cbv">${o.completedSteps>=o.totalSteps?'—':person.split('-')[0]||person}</div></div>
+            <div class="cbi"><div class="cbl">วันส่งมอบ</div><div class="cbv ${dueColor}">${o.dueDate||'—'}</div></div>
+            <div class="cbi"><div class="cbl">Special Cases</div><div class="cbv v-spec">${allSpecReasons.length?allSpecReasons.length+' ขั้นตอน':'—'}</div></div>
+          </div>
+        </div>`;
+      }
+    }).join('');
+    ca.innerHTML = html;
+  } else if (_viewMode === 'list') {
+    const rows = pageItems.map(item => {
+      if (item._isPR) {
+        return `<tr style="border-left: 3px solid #9a6700; cursor: default;">
+          <td style="font-weight: 700; color: #9a6700">📋 ${item.prNo} <span style="font-size: 9px; font-weight: 700; padding: 1px 6px; border-radius: 99px; background: #fff8c5; color: #9a6700; border: 1px solid #e3b341; margin-left: 6px">รอเปิด POI</span></td>
+          <td>—</td>
+          <td>${item.customerName || '—'}</td>
+          <td><span class="sbadge" style="background: rgba(154, 103, 0, 0.1); color: #9a6700; border: 1px solid rgba(154, 103, 0, 0.3)">⏳ รอเปิด POI</span></td>
+          <td>
+            <div style="display: flex; align-items: center; gap: 8px; min-width: 100px;">
+              <span style="font-size: 12px; font-weight: 700; color: #9a6700; min-width: 32px;">0%</span>
+              <div style="flex: 1; height: 6px; background: var(--s3); border-radius: 99px; overflow: hidden; max-width: 60px;">
+                <div style="height: 100%; width: 0%; background: #9a6700; border-radius: 99px;"></div>
+              </div>
+              <span style="font-size: 11px; color: var(--mu);">0/1</span>
+            </div>
+          </td>
+          <td>
+            <div>
+              <div style="font-weight: 500;">รอเปิด POI</div>
+              <div style="font-size: 11px; color: var(--mu);">👤 Purchasing</div>
+            </div>
+          </td>
+          <td><span style="color: var(--mu)">${item.dueDate || '—'}</span></td>
+        </tr>`;
+      } else {
+        const o = item;
+        const s=orderSt(o);const si=Math.min(o.completedSteps,o.totalSteps-1);
+        const pct=Math.round((o.completedSteps/o.totalSteps)*100);
+        const curStep=o.completedSteps>=o.totalSteps?'เสร็จสมบูรณ์':getStepName(o,si);
+        const person=(o.responsible||[])[si]||'—';
+        const ppFlag=o.prepayment?`<span class="pp-flag" style="margin-left:4px; margin-top:2px;">prepay</span>`:'';
+        const partialFlag=o.isPartial?'<span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:99px;background:#fff7ed;color:#92400e;border:1px solid #f59e0b;margin-left:4px">PARTIAL</span>':'';
+        const dueColor=s==='late'?'v-late':s==='spec'?'v-spec':s==='done'?'v-done':'';
+        
+        return `<tr onclick="openM('${o.id}')">
+          <td style="font-weight: 800; font-family: 'Inter', sans-serif;">
+            <div style="display:flex; align-items:center; flex-wrap:wrap; gap:2px">
+              ${o.id}${ppFlag}${partialFlag}
+            </div>
+          </td>
+          <td>🏭 ${o.factory || '—'}</td>
+          <td>${(o.items || []).map(it => it.customer).filter(Boolean).join(' · ') || o.customer || '—'}</td>
+          <td>${sbadge(s)}</td>
+          <td>
+            <div style="display: flex; align-items: center; gap: 8px; min-width: 100px;">
+              <span style="font-size: 12px; font-weight: 700; color: ${fcol(s)}; min-width: 32px;">${pct}%</span>
+              <div style="flex: 1; height: 6px; background: var(--s3); border-radius: 99px; overflow: hidden; max-width: 60px;">
+                <div class="bar-fill ${bfcls(s)}" style="width: ${pct}%"></div>
+              </div>
+              <span style="font-size: 11px; color: var(--mu); white-space: nowrap;">${o.completedSteps}/${o.totalSteps}</span>
+            </div>
+          </td>
+          <td>
+            <div>
+              <div style="font-weight: 500;">${curStep}</div>
+              <div style="font-size: 11px; color: var(--mu);">👤 ${person.split('-')[0] || person}</div>
+            </div>
+          </td>
+          <td><span class="${dueColor}" style="font-weight: 600;">${o.dueDate || '—'}</span></td>
+        </tr>`;
+      }
+    }).join('');
+
+    ca.innerHTML = `
+      <div class="list-table-container">
+        <table class="list-table">
+          <thead>
+            <tr>
+              <th>Order ID</th>
+              <th>Supplier</th>
+              <th>ลูกค้า</th>
+              <th>สถานะ</th>
+              <th>ความคืบหน้า</th>
+              <th>ขั้นตอนล่าสุด</th>
+              <th>กำหนดส่ง</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows}
+          </tbody>
+        </table>
       </div>
-      <div class="cp">
-        <div class="cp-hdr">
-          <div><span class="cp-pct" style="color:${fcol(s)}">${pct}%</span><span class="cp-frac">${o.completedSteps}/${o.totalSteps} ขั้นตอน</span></div>
-          <div class="cp-step">${o.completedSteps>=o.totalSteps?'':getStepName(o,si)}</div>
-        </div>
-        <div class="bar"><div class="bar-fill ${bfcls(s)}" style="width:${pct}%"></div></div>
-        <div class="sdots">${dots}</div>
-        ${isMfgActive?`<div style="margin-top:8px;padding:8px 10px;background:rgba(255,255,255,.03);border:1px solid var(--bd2);border-radius:6px">
-          <div style="font-size:10px;color:var(--mu);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">🔧 Manufacturing ${mfgCardDone}/${MFG_STEPS.length}</div>
-          <div style="display:flex;flex-wrap:wrap;gap:4px">${MFG_STEPS.map((s,mi)=>`<span style="font-size:10px;padding:2px 7px;border-radius:99px;${mfgCardArr[mi]?'background:rgba(76,175,125,.15);color:var(--done);text-decoration:line-through':'background:var(--s3);color:var(--mu)'}">${s}</span>`).join('')}</div>
-          <div style="display:flex;align-items:center;gap:6px;margin-top:6px"><div style="flex:1;height:3px;background:var(--s3);border-radius:99px;overflow:hidden"><div style="height:100%;width:${mfgCardPct}%;background:var(--done);border-radius:99px"></div></div><span style="font-size:10px;color:var(--mu)">${mfgCardPct}%</span></div>
-        </div>`:''}
-        ${specReasonHTML}
-      </div>
-      <div class="cb">
-        <div class="cbi"><div class="cbl">ผู้รับผิดชอบ</div><div class="cbv">${o.completedSteps>=o.totalSteps?'—':person.split('-')[0]||person}</div></div>
-        <div class="cbi"><div class="cbl">วันส่งมอบ</div><div class="cbv ${dueColor}">${o.dueDate||'—'}</div></div>
-        <div class="cbi"><div class="cbl">Special Cases</div><div class="cbv v-spec">${allSpecReasons.length?allSpecReasons.length+' ขั้นตอน':'—'}</div></div>
-      </div>
-    </div>`;
-  }).join('');
-  ca.innerHTML=prHtml+orderHtml;
+    `;
+  }
+
+  renderPagination(totalItems);
+}
+
+function renderPagination(totalItems) {
+  const totalPages = Math.ceil(totalItems / _pageSize) || 1;
+  const start = totalItems > 0 ? (_currentPage - 1) * _pageSize + 1 : 0;
+  const end = Math.min(_currentPage * _pageSize, totalItems);
+  
+  const info = `แสดง ${start}-${end} จาก ${totalItems} รายการ`;
+
+  let buttonsHtml = '';
+  buttonsHtml += `<button class="pg-btn" onclick="changePage(1)" ${_currentPage === 1 ? 'disabled' : ''}>«</button>`;
+  buttonsHtml += `<button class="pg-btn" onclick="changePage(${_currentPage - 1})" ${_currentPage === 1 ? 'disabled' : ''}>‹</button>`;
+
+  const startPage = Math.max(1, _currentPage - 2);
+  const endPage = Math.min(totalPages, _currentPage + 2);
+
+  for (let i = startPage; i <= endPage; i++) {
+    buttonsHtml += `<button class="pg-btn ${i === _currentPage ? 'active' : ''}" onclick="changePage(${i})">${i}</button>`;
+  }
+
+  buttonsHtml += `<button class="pg-btn" onclick="changePage(${_currentPage + 1})" ${_currentPage === totalPages ? 'disabled' : ''}>›</button>`;
+  buttonsHtml += `<button class="pg-btn" onclick="changePage(${totalPages})" ${_currentPage === totalPages ? 'disabled' : ''}>»</button>`;
+
+  document.getElementById('pagination').innerHTML = `
+    <div class="pg-info">${info}</div>
+    <div class="pg-controls">${buttonsHtml}</div>
+  `;
+}
+
+function changePage(page) {
+  _currentPage = page;
+  render();
+}
+
+function setTypeFilter(type) {
+  _orderTypeFilter = type;
+  _currentPage = 1;
+  document.querySelectorAll('.type-btn').forEach(btn => btn.classList.remove('active'));
+  document.getElementById('type-' + type).classList.add('active');
+  render();
+}
+
+function setViewMode(mode) {
+  _viewMode = mode;
+  document.querySelectorAll('.view-btn').forEach(btn => btn.classList.remove('active'));
+  document.getElementById('view-' + mode).classList.add('active');
+  
+  const cardsContainer = document.getElementById('cards');
+  if (mode === 'grid') {
+    cardsContainer.classList.remove('list-mode');
+    cardsContainer.classList.add('grid-mode');
+  } else {
+    cardsContainer.classList.remove('grid-mode');
+    cardsContainer.classList.add('list-mode');
+  }
+  render();
+}
+
+function setSearchQuery(val) {
+  _searchQuery = val;
+  _currentPage = 1;
+  const clearBtn = document.getElementById('search-clear-btn');
+  if (clearBtn) {
+    clearBtn.style.display = val ? 'block' : 'none';
+  }
+  render();
+}
+
+function clearSearch() {
+  const input = document.getElementById('search-input');
+  if (input) input.value = '';
+  setSearchQuery('');
 }
 
 function renderRightPanel(ps){
@@ -880,7 +1340,7 @@ function autoOpenSections(){
     if (toggle) toggle.classList.toggle('open', shouldOpen);
   });
 }
-function setF(f,el){_flt=f;document.querySelectorAll('.fchip').forEach(c=>c.classList.remove('active'));el.classList.add('active');render()}
+function setF(f,el){_flt=f;_currentPage=1;document.querySelectorAll('.fchip').forEach(c=>c.classList.remove('active'));el.classList.add('active');render()}
 
 function openM(id){
   const o=_orders.find(x=>x.id===id);if(!o)return;

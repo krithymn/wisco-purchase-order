@@ -388,16 +388,6 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--ac);box-
         <button class="btn btn-primary" onclick="addSupplier()">+ เพิ่ม</button>
       </div>
     </div>
-    <!-- LINE NOTIFY -->
-    <div style="margin-bottom:28px">
-      <div class="cfg-title">💬 LINE Notify Token</div>
-      <p style="font-size:12px;color:var(--mu);margin-bottom:8px">ใช้เพื่อส่งข้อความแจ้งเตือนความคืบหน้า Order เข้ากลุ่ม LINE</p>
-      <div style="display:flex;gap:8px">
-        <input id="cfg-line-token" type="password" placeholder="ใส่ LINE Notify Token ของคุณ..." style="flex:1;font-size:13px;padding:7px 10px;border:1px solid var(--bd);border-radius:var(--r);font-family:'Sarabun',sans-serif">
-        <button class="btn btn-primary" onclick="saveLineToken()">บันทึก Token</button>
-      </div>
-      <span id="line-token-saved" style="font-size:12px;color:var(--done);margin-top:6px;display:none">✓ บันทึก Token แล้ว</span>
-    </div>
     <!-- STEPS -->
     <div style="margin-bottom:28px">
       <div class="cfg-title">⏱ กำหนดเวลามาตรฐานต่อขั้นตอน (วัน)</div>
@@ -517,7 +507,7 @@ const NOTIFY_SUB=['ใบแจ้งสินค้าเข้า','Cer.','Dra
 // Manufacturing step is index 11 (เริ่มผลิต) without prepayment, 12 with prepayment
 // แจ้งบัญชี is index 10 (without prepay), 11 (with prepay)
 function getMfgStepIndex(o){ return o.prepayment ? 12 : 11; }
-let _orders=[],_prs=[],_team=[],_steps=[],_suppliers=[],_customers=[],_saleTeams=[],_sales=[],_lineToken='',_quotationTypes=[],_customerMap={},_active=null,_editId=null,_sfilt='',_pwUnlocked=false,_pwShow=false,_orderType='poi';
+let _orders=[],_prs=[],_team=[],_steps=[],_suppliers=[],_customers=[],_saleTeams=[],_sales=[],_quotationTypes=[],_customerMap={},_active=null,_editId=null,_sfilt='',_pwUnlocked=false,_pwShow=false,_orderType='poi';
 
 async function get(p){const r=await fetch(API+p);return r.json()}
 async function post(p,b){const r=await fetch(API+p,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)});return r.json()}
@@ -542,7 +532,6 @@ async function loadAll(){
   });
   _team=cfg.team||[]; _steps=cfg.steps||[]; _suppliers=cfg.suppliers||[]; _customers=cfg.customers||[];
   _saleTeams=cfg.saleTeams||[]; _sales=cfg.sales||[];
-  _lineToken=cfg.lineToken||'';
   _quotationTypes=cfg.quotationTypes||[];
   _customerMap=cfg.customerMap||{};
 }
@@ -1324,18 +1313,7 @@ async function saveCfgSteps(){
   await put('/api/config/steps',{steps:_steps});
   const el=document.getElementById('cfg-saved');el.style.display='inline';setTimeout(()=>el.style.display='none',2000);
 }
-async function saveLineToken() {
-  const token = document.getElementById('cfg-line-token').value.trim();
-  const res = await put('/api/config/lineToken', { lineToken: token });
-  if (res.ok) {
-    _lineToken = token;
-    const indicator = document.getElementById('line-token-saved');
-    indicator.style.display = 'inline';
-    setTimeout(() => { indicator.style.display = 'none'; }, 2000);
-  } else {
-    alert('เกิดข้อผิดพลาดในการบันทึก Token');
-  }
-}
+
 
 // ── Config: Quotation Types ────────────────────────────────────
 function rQTypesGrid() {
@@ -1545,7 +1523,6 @@ function _doSwTab(tab,el){
 
   if(tab==='config'){
     rTeam();rSaleTeamGrid();rSaleGrid();rCustGrid();rSupGrid();rStepsCfg();rQTypesGrid();
-    document.getElementById('cfg-line-token').value=_lineToken||'';
   }
   if(tab==='archive'){rArchive();}
   if(tab==='cancelled'){rCancelledTab();}
