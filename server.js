@@ -229,29 +229,6 @@ function getStepName(o, i) {
   return (steps[i - 1] && steps[i - 1].name) || 'Step ' + i;
 }
 
-async function sendLineNotify(message) {
-  try {
-    const tokenRow = query("SELECT value FROM config WHERE key='lineToken'");
-    if (!tokenRow.length) return;
-    const token = tokenRow[0].value;
-    if (!token || token === 'undefined' || token.trim() === '') return;
-
-    const response = await fetch('https://notify-api.line.me/api/notify', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/x-www-form-urlencoded'
-      },
-      body: new URLSearchParams({ message })
-    });
-    if (!response.ok) {
-      console.error('LINE Notify error status:', response.status);
-    }
-  } catch (err) {
-    console.error('LINE Notify request failed:', err.message);
-  }
-}
-
 
 function buildOrder(row) {
   const steps = getSteps();
@@ -359,7 +336,6 @@ app.post('/api/orders', (req, res) => {
     syncPRsFromOrderItems(id, req.body.items||[]);
     saveDB();
     const createdOrder = buildOrder(query("SELECT * FROM orders WHERE id=?",[id])[0]);
-    sendLineNotify(`🆕 สร้าง Order ใหม่: ${id}\n🏭 Supplier: ${factory || '—'}\n👤 ลูกค้า: ${customer || '—'}\n📅 กำหนดส่ง: ${dueDate || '—'}`);
     res.status(201).json(createdOrder);
   } catch(e) { res.status(500).json({error:e.message}); }
 });
@@ -402,15 +378,6 @@ app.patch('/api/orders/:id/steps/:si', (req, res) => {
     if (req.body.mfgSteps!==undefined) run("UPDATE order_steps SET mfg_steps=? WHERE order_id=? AND step_index=?",[JSON.stringify(req.body.mfgSteps),oid,si]);
     if (req.body.isSkipped!==undefined) run("UPDATE order_steps SET is_skipped=? WHERE order_id=? AND step_index=?",[req.body.isSkipped?1:0,oid,si]);
     const updatedOrder = buildOrder(query("SELECT * FROM orders WHERE id=?",[oid])[0]);
-    const sName = getStepName(updatedOrder, si);
-    const respName = responsible || updatedOrder.responsible[si] || '—';
-    if (doneDate && doneDate.trim() !== '') {
-      sendLineNotify(`✅ เสร็จสิ้นขั้นตอน [${sName}] สำหรับ Order: ${oid}\n👤 ผู้รับผิดชอบ: ${respName}\n📅 วันที่เสร็จ: ${doneDate}`);
-    } else if (isSpecial) {
-      sendLineNotify(`⚡ Special Case ในขั้นตอน [${sName}] สำหรับ Order: ${oid}\n👤 ผู้รับผิดชอบ: ${respName}\n💬 เหตุผล: ${specialReason || '—'}`);
-    } else if (req.body.isSkipped) {
-      sendLineNotify(`⏭️ ข้ามขั้นตอน [${sName}] สำหรับ Order: ${oid}`);
-    }
     res.json(updatedOrder);
   } catch(e) { res.status(500).json({error:e.message}); }
 });
@@ -431,7 +398,6 @@ app.get('/api/config', (req, res) => {
     const customers      = query("SELECT value FROM config WHERE key='customers'");
     const saleTeams      = query("SELECT value FROM config WHERE key='saleTeams'");
     const sales          = query("SELECT value FROM config WHERE key='sales'");
-    const lineToken      = query("SELECT value FROM config WHERE key='lineToken'");
     const quotationTypes = query("SELECT value FROM config WHERE key='quotationTypes'");
     const customerMap    = query("SELECT value FROM config WHERE key='customerMap'");
     res.json({
@@ -441,7 +407,6 @@ app.get('/api/config', (req, res) => {
       customers: customers.length ? JSON.parse(customers[0].value) : [],
       saleTeams: saleTeams.length ? JSON.parse(saleTeams[0].value) : [],
       sales:     sales.length     ? JSON.parse(sales[0].value)     : [],
-      lineToken: lineToken.length ? lineToken[0].value             : '',
       quotationTypes: quotationTypes.length ? JSON.parse(quotationTypes[0].value) : [],
       customerMap:    customerMap.length    ? JSON.parse(customerMap[0].value)    : {},
     });
@@ -476,10 +441,6 @@ app.put('/api/config/sales', (req, res) => {
   try { run("INSERT OR REPLACE INTO config(key,value) VALUES('sales',?)",[JSON.stringify(req.body.sales)]); res.json({ok:true}); }
   catch(e) { res.status(500).json({error:e.message}); }
 });
-app.put('/api/config/lineToken', (req, res) => {
-  try { run("INSERT OR REPLACE INTO config(key,value) VALUES('lineToken',?)",[req.body.lineToken || '']); res.json({ok:true}); }
-  catch(e) { res.status(500).json({error:e.message}); }
-});
 app.put('/api/config/quotationTypes', (req, res) => {
   try { run("INSERT OR REPLACE INTO config(key,value) VALUES('quotationTypes',?)",[JSON.stringify(req.body.quotationTypes)]); res.json({ok:true}); }
   catch(e) { res.status(500).json({error:e.message}); }
@@ -497,11 +458,6 @@ app.patch('/api/orders/:id/cancel', (req, res) => {
     run("UPDATE orders SET is_cancelled=?, cancel_reason=? WHERE id=?",
       [cancel?1:0, reason, req.params.id]);
     saveDB();
-    if (cancel) {
-      sendLineNotify(`🚫 ยกเลิก Order: ${req.params.id}\n💬 เหตุผล: ${reason || '—'}`);
-    } else {
-      sendLineNotify(`↩️ เปิดใช้งาน Order: ${req.params.id} อีกครั้ง`);
-    }
     res.json({ok:true});
   } catch(e) { res.status(500).json({error:e.message}); }
 });
