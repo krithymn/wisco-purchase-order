@@ -679,20 +679,59 @@ async function schedulePlan(e) {
 async function syncExcel() {
     const btn = document.querySelector('.btn-sync');
     if (btn) btn.disabled = true;
-    showToast('กำลังดำเนินการซิงค์ลูกค้าใหม่จาก Mworks Excel... โปรดรอสักครู่', 'success');
     
     try {
-        const res = await fetch('/api/cmb-sync', { method: 'POST' });
-        const data = await res.json();
+        const useLocal = confirm("คุณต้องการเลือกไฟล์ Excel (.xlsx) จากเครื่องของคุณเพื่ออัปโหลดและซิงค์ใช่หรือไม่?\n\n(กด 'ตกลง' เพื่อเลือกไฟล์ใหม่จากเครื่องคอมพิวเตอร์ของคุณ หรือกด 'ยกเลิก' เพื่อให้ระบบใช้ไฟล์ Excel ที่อยู่บนเซิร์ฟเวอร์อยู่แล้ว)");
         
-        if (!res.ok) throw new Error(data.error || 'Sync failed');
-        
-        showToast('ซิงค์และบันทึกฐานลูกค้าสำเร็จ!', 'success');
-        refreshAll();
+        if (useLocal) {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.xlsx';
+            input.onchange = async (e) => {
+                const file = e.target.files[0];
+                if (!file) {
+                    if (btn) btn.disabled = false;
+                    return;
+                }
+                
+                showToast('กำลังอัปโหลดและซิงค์ข้อมูลลูกค้าจากไฟล์... โปรดรอสักครู่', 'success');
+                if (btn) btn.disabled = true;
+                
+                try {
+                    const res = await fetch('/api/cmb-sync', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/octet-stream'
+                        },
+                        body: file
+                    });
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.error || 'Sync failed');
+                    
+                    showToast('อัปโหลดและซิงค์ข้อมูลลูกค้าสำเร็จ! (พบข้อมูล ' + data.message + ')', 'success');
+                    refreshAll();
+                } catch (err) {
+                    console.error(err);
+                    showToast('ซิงค์ข้อมูลล้มเหลว: ' + err.message, 'error');
+                } finally {
+                    if (btn) btn.disabled = false;
+                }
+            };
+            input.click();
+        } else {
+            showToast('กำลังซิงค์ลูกค้าใหม่จากไฟล์ Excel บนเซิร์ฟเวอร์... โปรดรอสักครู่', 'success');
+            const res = await fetch('/api/cmb-sync', { method: 'POST' });
+            const data = await res.json();
+            
+            if (!res.ok) throw new Error(data.error || 'Sync failed');
+            
+            showToast('ซิงค์ฐานลูกค้าสำเร็จ! (พบข้อมูล ' + data.message + ')', 'success');
+            refreshAll();
+            if (btn) btn.disabled = false;
+        }
     } catch (err) {
         console.error(err);
         showToast('ซิงค์ข้อมูลล้มเหลว: ' + err.message, 'error');
-    } finally {
         if (btn) btn.disabled = false;
     }
 }
