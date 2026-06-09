@@ -607,6 +607,7 @@ const NOTIFY_SUB=['ใบแจ้งสินค้าเข้า','Cer.','Dra
 // Manufacturing step is index 11 (เริ่มผลิต) without prepayment, 12 with prepayment
 // แจ้งบัญชี is index 10 (without prepay), 11 (with prepay)
 function getMfgStepIndex(o){ return o.prepayment ? 12 : 11; }
+function esc(str){if(!str)return '';return String(str).replace(/"/g,'&quot;');}
 let _orders=[],_prs=[],_team=[],_steps=[],_suppliers=[],_customers=[],_saleTeams=[],_sales=[],_quotationTypes=[],_customerMap={},_active=null,_editId=null,_sfilt='',_pwUnlocked=false,_pwShow=false,_orderType='poi';
 
 async function get(p){const r=await fetch(API+p);return r.json()}
@@ -889,7 +890,7 @@ ${(()=>{
       ${o.isPartial?`<td>
         <div style="display:flex;flex-direction:column;gap:4px">
           <span class="ship-tag ${ss[si]?'received':'pending'}" onclick="togShipItem('${id}',${idx},${si},${!ss[si]})">${ss[si]?'✅ รับแล้ว':'⏳ รอรับ'}</span>
-          <input class="ship-note-input" placeholder="Note เช่น ส่งรอบ 1" value="${ss['note_'+si]||''}" onchange="updShipNote('${id}',${idx},${si},this.value)">
+          <input class="ship-note-input" placeholder="Note เช่น ส่งรอบ 1" value="${esc(ss['note_'+si])}" onchange="updShipNote('${id}',${idx},${si},this.value)">
         </div>
       </td>`:''}
     </tr>`);
@@ -1137,15 +1138,15 @@ function renderItemsList(items){
     const subs=(it.subItems&&it.subItems.length)?it.subItems:[{product:it.product||'',quantity:it.quantity||''}];
     const subRows=subs.map((s,j)=>`
       <div class="sub-item-row" id="sub-${i}-${j}">
-        <input placeholder="สินค้า / Valve" value="${s.product||''}" onchange="updSub(${i},${j},'product',this.value)">
-        <input placeholder="จำนวน" value="${s.quantity||''}" onchange="updSub(${i},${j},'quantity',this.value)">
+        <input placeholder="สินค้า / Valve" value="${esc(s.product)}" onchange="updSub(${i},${j},'product',this.value)">
+        <input placeholder="จำนวน" value="${esc(s.quantity)}" onchange="updSub(${i},${j},'quantity',this.value)">
         <button class="sub-item-del" onclick="removeSub(${i},${j})" title="ลบ">×</button>
       </div>`).join('');
     const custListId=`cust-drop-${i}`;
     return`<div class="item-row" id="item-row-${i}">
       <div class="item-row-top">
         <div style="flex:1;position:relative">
-          <input placeholder="ชื่อลูกค้า (พิมพ์หรือเลือก)" value="${it.customer||''}" 
+          <input placeholder="ชื่อลูกค้า (พิมพ์หรือเลือก)" value="${esc(it.customer)}" 
             onchange="updItem(${i},'customer',this.value)"
             oninput="showCustDrop(${i},this.value)"
             onfocus="showCustDrop(${i},this.value)"
@@ -1153,7 +1154,7 @@ function renderItemsList(items){
             style="font-weight:600;font-size:13px;padding:4px 7px;border:1px solid var(--bd);border-radius:4px;background:var(--sur);font-family:'Sarabun',sans-serif;width:100%">
           <div id="${custListId}" class="sup-dropdown"></div>
         </div>
-        <input placeholder="PR Number" value="${it.prNumber||''}" onchange="updItem(${i},'prNumber',this.value)">
+        <input placeholder="PR Number" value="${esc(it.prNumber)}" onchange="updItem(${i},'prNumber',this.value)">
         <button class="item-del" onclick="removeItemRow(${i})" title="ลบลูกค้า">×</button>
       </div>
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap">
