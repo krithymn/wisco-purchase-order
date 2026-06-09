@@ -143,6 +143,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--spec);bo
     <button id="dtab-all"   onclick="setDTab('all')"   style="padding:8px 20px;font-size:13px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:3px solid var(--spec);color:var(--spec);margin-bottom:-2px;font-family:'Sarabun',sans-serif">🌐 ทั้งหมด</button>
     <button id="dtab-dom"   onclick="setDTab('นปท.')"  style="padding:8px 20px;font-size:13px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;color:var(--mu);margin-bottom:-2px;font-family:'Sarabun',sans-serif">🏠 ในประเทศ (นปท.)</button>
     <button id="dtab-intl"  onclick="setDTab('ตปท.')"  style="padding:8px 20px;font-size:13px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;color:var(--mu);margin-bottom:-2px;font-family:'Sarabun',sans-serif">✈️ ต่างประเทศ (ตปท.)</button>
+    <button id="dtab-finished" onclick="setDTab('finished')" style="padding:8px 20px;font-size:13px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;color:var(--mu);margin-bottom:-2px;font-family:'Sarabun',sans-serif">✅ PR เสร็จสิ้น</button>
   </div>
 
   <div class="table-wrap">
@@ -155,6 +156,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--spec);bo
         <th>กำหนดส่ง</th>
         <th>มูลค่า PO</th>
         <th>ค่าปรับ</th>
+        <th>ทีม Sales</th>
         <th>Sale</th>
         <th>สถานะ POI</th>
         <th>📦 ETA Wisco</th>
@@ -347,10 +349,10 @@ function hl(t,q){if(!q||!t)return t||'';return String(t).replace(new RegExp('('+
 let _dTab='all';
 function setDTab(val){
   _dTab=val;
-  ['all','dom','intl'].forEach(k=>{
+  ['all','dom','intl','finished'].forEach(k=>{
     const btn=document.getElementById('dtab-'+k);
     if(!btn)return;
-    const active=(k==='all'&&val==='all')||(k==='dom'&&val==='นปท.')||(k==='intl'&&val==='ตปท.');
+    const active=(k==='all'&&val==='all')||(k==='dom'&&val==='นปท.')||(k==='intl'&&val==='ตปท.')||(k==='finished'&&val==='finished');
     btn.style.borderBottomColor=active?'var(--spec)':'transparent';
     btn.style.color=active?'var(--spec)':'var(--mu)';
   });
@@ -364,13 +366,21 @@ function renderTable(){
   const q=(document.getElementById('q').value||'').trim().toLowerCase();
   const fs=document.getElementById('f-status').value;
   let list=_prs.filter(p=>{
-    // domestic tab filter
-    if(_dTab==='นปท.'&&p.domestic!=='นปท.')return false;
-    if(_dTab==='ตปท.'&&p.domestic!=='ตปท.')return false;
-    // status filter
     const ids=p.linkedPOIs&&p.linkedPOIs.length?p.linkedPOIs:(p.linkedPOI?[p.linkedPOI]:[]);
     const linked=ids.length>0;
-    const done=ids.some(id=>isOrderDone(_orders.find(x=>x.id===id)));
+    const done=linked && ids.some(id=>isOrderDone(_orders.find(x=>x.id===id)));
+
+    // partition finished vs active PRs
+    if (_dTab === 'finished') {
+      if (!done) return false;
+    } else {
+      if (done) return false;
+      // domestic tab filter
+      if(_dTab==='นปท.'&&p.domestic!=='นปท.')return false;
+      if(_dTab==='ตปท.'&&p.domestic!=='ตปท.')return false;
+    }
+
+    // status filter
     if(fs==='pending'&&linked)return false;
     if(fs==='linked'&&(!linked||done))return false;
     if(fs==='done'&&!done)return false;
@@ -422,6 +432,7 @@ function renderTable(){
     <td style="color:${isPastDue(p.dueDate)?'var(--late)':'var(--mu)'};font-weight:${isPastDue(p.dueDate)?'600':'400'}">${p.dueDate||'—'}</td>
     <td style="font-size:12px">${p.poValue||'—'}</td>
     <td>${p.fineYN==='yes'?`<span class="badge b-fine">⚠️ ${p.finePct||''}%</span>`:'<span style="font-size:12px;color:var(--mu)">—</span>'}</td>
+    <td style="font-size:12px">${hl(p.saleTeam,q)||'—'}</td>
     <td style="font-size:12px">${hl(p.sale,q)||'—'}</td>
     <td>${poiCell}</td>
     <td>${etaCell}</td>
@@ -525,13 +536,24 @@ async function savePR(){
   if(d.error){document.getElementById('form-err').textContent=d.error==='PR number already exists'?'⚠️ PR Number นี้มีในระบบแล้ว':'Error: '+d.error;return;}
   closeFormModal();
   await init();
+}
 
-async function autoLinkAll(){
+async function loadPRs(){
+  const [data,orders]=await Promise.all([
+    fetch('/api/prs').then(r=>r.json()).catch(()=>[]),
+    fetch('/api/orders').then(r=>r.json()).catch(()=>[])
+  ]);
+  _prs=Array.isArray(data)?data:[];
+  _orders=Array.isArray(orders)?orders:[];
+  renderStats();
+}
+
+async function silentAutoLink(){
   try {
     await fetch('/api/prs/auto-link-all', {method:'POST', headers:{'Content-Type':'application/json'}});
   } catch(e) {}
 }
-autoLinkAll(); // silently fix any unlinked PRs on page load
+silentAutoLink(); // silently fix any unlinked PRs on page load
 
 // Backfill: create PR records for old order items that predate the admin system
 // Runs on every load but server skips existing PRs safely
@@ -543,7 +565,6 @@ fetch('/api/prs/backfill-from-orders', {method:'POST', headers:{'Content-Type':'
       loadPRs().then(()=>renderTable());
     }
   }).catch(()=>{});
-}
 
 async function cancelPR(id){
   const p=_prs.find(x=>x.id===id);
@@ -633,8 +654,10 @@ init();
 
 async function autoLinkAll(){
   const btn = document.getElementById('auto-link-btn');
-  btn.disabled = true;
-  btn.textContent = '⏳ กำลังตรวจสอบ...';
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = '⏳ กำลังตรวจสอบ...';
+  }
   try {
     const r = await fetch('/api/prs/auto-link-all', {method:'POST', headers:{'Content-Type':'application/json'}});
     const d = await r.json();
@@ -648,8 +671,10 @@ async function autoLinkAll(){
       renderTable();
     }
   } catch(e){ alert('เกิดข้อผิดพลาด: '+e.message); }
-  btn.disabled = false;
-  btn.textContent = '🔗 Auto-Link PR เดิม';
+  if (btn) {
+    btn.disabled = false;
+    btn.textContent = '🔗 Auto-Link PR เดิม';
+  }
 }
 </script>
 </body>
