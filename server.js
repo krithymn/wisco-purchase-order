@@ -192,6 +192,68 @@ async function initDB() {
     created_at    TEXT DEFAULT (datetime('now'))
   )`);
 
+  db.run(`
+    CREATE TABLE IF NOT EXISTS customers (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      customer_name TEXT NOT NULL,
+      wic_customer_id TEXT,
+      tier TEXT,
+      status TEXT,
+      registration_date TEXT,
+      sale_code TEXT,
+      team TEXT,
+      month_forecast REAL DEFAULT 0,
+      year_forecast REAL DEFAULT 0,
+      zone TEXT,
+      industry TEXT,
+      product_service TEXT,
+      contact_name TEXT,
+      position TEXT,
+      tel TEXT,
+      mobile TEXT,
+      line_id TEXT,
+      email TEXT,
+      address TEXT,
+      subdistrict TEXT,
+      district TEXT,
+      province TEXT,
+      zipcode TEXT,
+      last_visit_date TEXT DEFAULT '',
+      last_call_date TEXT DEFAULT '',
+      last_contact_date TEXT DEFAULT '',
+      next_planned_date TEXT DEFAULT '',
+      next_planned_type TEXT DEFAULT '',
+      created_at TEXT DEFAULT (datetime('now','localtime')),
+      updated_at TEXT DEFAULT (datetime('now','localtime'))
+    );
+    CREATE TABLE IF NOT EXISTS activities (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      customer_id INTEGER NOT NULL,
+      activity_type TEXT NOT NULL,
+      activity_date TEXT NOT NULL,
+      contact_person TEXT DEFAULT '',
+      summary TEXT DEFAULT '',
+      created_by TEXT DEFAULT '',
+      created_at TEXT DEFAULT (datetime('now','localtime')),
+      FOREIGN KEY(customer_id) REFERENCES customers(id) ON DELETE CASCADE
+    );
+    CREATE TABLE IF NOT EXISTS plans (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      customer_id INTEGER NOT NULL,
+      plan_type TEXT NOT NULL,
+      planned_date TEXT NOT NULL,
+      objective TEXT DEFAULT '',
+      created_by TEXT DEFAULT '',
+      created_at TEXT DEFAULT (datetime('now','localtime')),
+      FOREIGN KEY(customer_id) REFERENCES customers(id) ON DELETE CASCADE
+    );
+  `);
+  try { db.run("ALTER TABLE customers ADD COLUMN last_visit_date TEXT DEFAULT ''"); } catch(e) {}
+  try { db.run("ALTER TABLE customers ADD COLUMN last_call_date TEXT DEFAULT ''"); } catch(e) {}
+  try { db.run("ALTER TABLE customers ADD COLUMN last_contact_date TEXT DEFAULT ''"); } catch(e) {}
+  try { db.run("ALTER TABLE customers ADD COLUMN next_planned_date TEXT DEFAULT ''"); } catch(e) {}
+  try { db.run("ALTER TABLE customers ADD COLUMN next_planned_type TEXT DEFAULT ''"); } catch(e) {}
+
   saveDB();
   console.log('  ✅ Database ready.');
 }
@@ -998,15 +1060,16 @@ app.get('/api/export-prs-csv', (req, res) => {
   try {
     const prs = query("SELECT * FROM purchase_requests ORDER BY pr_no DESC");
     let csv = '\ufeff'; // UTF-8 BOM
-    csv += 'PR Number,Open Date,Customer,Customer PO,Due Date,PO Value,Fine,Fine %,Sale,Linked POI,Items\n';
+    csv += 'PR Number,Open Date,Customer,Customer PO,Due Date,PO Value,Fine,Fine %,Sale Team,Sale,Quotation No.,LD No.,Domestic/Overseas,PO No.,Cancel Status,Cancel Reason,Linked POI,Items\n';
     for (const p of prs) {
       let itemsArr = [];
       try { itemsArr = JSON.parse(p.items || '[]'); } catch(e) {}
       const itemsStr = itemsArr.map(i => `${i.product} (${i.quantity})`).join('; ');
       
       const escape = (val) => `"${(val || '').toString().replace(/"/g, '""')}"`;
+      const cancelStatus = p.is_cancelled ? 'Cancelled' : 'Active';
       
-      csv += `${escape(p.pr_no)},${escape(p.open_date)},${escape(p.customer_name)},${escape(p.customer_po)},${escape(p.due_date)},${escape(p.po_value)},${p.fine_yn === 'yes' ? 'Yes' : 'No'},${escape(p.fine_pct)},${escape(p.sale)},${escape(p.linked_poi)},${escape(itemsStr)}\n`;
+      csv += `${escape(p.pr_no)},${escape(p.open_date)},${escape(p.customer_name)},${escape(p.customer_po)},${escape(p.due_date)},${escape(p.po_value)},${p.fine_yn === 'yes' ? 'Yes' : 'No'},${escape(p.fine_pct)},${escape(p.sale_team)},${escape(p.sale)},${escape(p.quotation_no)},${escape(p.ld_no)},${escape(p.domestic)},${escape(p.po_no)},${cancelStatus},${escape(p.cancel_reason)},${escape(p.linked_poi)},${escape(itemsStr)}\n`;
     }
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.setHeader('Content-Disposition', 'attachment; filename="wisco_purchase_requests.csv"');
@@ -1048,6 +1111,465 @@ app.get('/api/export-json', (req, res) => {
     };
     res.json({ exportDate: new Date().toISOString(), totalOrders: orders.length, orders, config });
   } catch(e) { res.status(500).json({error:e.message}); }
+});
+
+// ── CUSTOMER MANAGEMENT BOOK (CMB) APIs ──────────────────────────
+
+// API: Get Customers list (paginated, searched, filtered)
+app.get('/api/customers', (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 12;
+    
+    const q = req.query.q || '';
+    const sale = req.query.sale || '';
+    const tier = req.query.tier || '';
+    const industry = req.query.industry || '';
+    const province = req.query.province || '';
+    const health = req.query.health || '';
+
+    let sql = `SELECT * FROM customers WHERE 1=1`;
+    const params = [];
+
+    if (q) {
+      const likeParam = `%${q}%`;
+      sql += ` AND (customer_name LIKE ? OR wic_customer_id LIKE ? OR contact_name LIKE ? OR mobile LIKE ? OR email LIKE ? OR product_service LIKE ?)`;
+      params.push(likeParam, likeParam, likeParam, likeParam, likeParam, likeParam);
+    }
+    if (sale) {
+      sql += ` AND sale_code = ?`;
+      params.push(sale);
+    }
+    if (tier) {
+      sql += ` AND tier = ?`;
+      params.push(tier);
+    }
+    if (industry) {
+      sql += ` AND industry = ?`;
+      params.push(industry);
+    }
+    if (province) {
+      sql += ` AND province = ?`;
+      params.push(province);
+    }
+
+    sql += ` ORDER BY customer_name ASC`;
+    let rows = query(sql, params);
+
+    // Compute care health in JS
+    const today = new Date();
+    today.setHours(0,0,0,0);
+
+    const dataWithHealth = rows.map(r => {
+      let care_health = 'healthy';
+      let days_elapsed = null;
+      
+      const last_contact = r.last_contact_date;
+      if (!last_contact) {
+        care_health = 'overdue';
+      } else {
+        const contactDate = new Date(last_contact);
+        contactDate.setHours(0,0,0,0);
+        days_elapsed = Math.floor((today - contactDate) / (1000 * 60 * 60 * 24));
+        
+        const tierGuideline = r.tier === 'A' ? 30 : r.tier === 'B' ? 60 : r.tier === 'C' ? 90 : r.tier === 'D' ? 180 : 90;
+        
+        if (days_elapsed >= tierGuideline) {
+          care_health = 'overdue';
+        } else if (days_elapsed >= (tierGuideline - 7)) {
+          care_health = 'attention';
+        }
+      }
+      
+      return { ...r, care_health, days_elapsed };
+    });
+
+    // Apply care health filter in memory
+    let filtered = dataWithHealth;
+    if (health) {
+      filtered = dataWithHealth.filter(c => c.care_health === health);
+    }
+
+    const total = filtered.length;
+    const offset = (page - 1) * limit;
+    const pageItems = filtered.slice(offset, offset + limit);
+
+    res.json({
+      data: pageItems,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit) || 1
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// API: Get single customer detail
+app.get('/api/customers/:id', (req, res) => {
+  try {
+    const row = query(`SELECT * FROM customers WHERE id = ?`, [req.params.id])[0];
+    if (!row) {
+      return res.status(404).json({ error: 'Customer not found' });
+    }
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    let care_health = 'healthy';
+    let days_elapsed = null;
+    if (!row.last_contact_date) {
+      care_health = 'overdue';
+    } else {
+      const contactDate = new Date(row.last_contact_date);
+      contactDate.setHours(0,0,0,0);
+      days_elapsed = Math.floor((today - contactDate) / (1000 * 60 * 60 * 24));
+      const tierGuideline = row.tier === 'A' ? 30 : row.tier === 'B' ? 60 : row.tier === 'C' ? 90 : row.tier === 'D' ? 180 : 90;
+      if (days_elapsed >= tierGuideline) {
+        care_health = 'overdue';
+      } else if (days_elapsed >= (tierGuideline - 7)) {
+        care_health = 'attention';
+      }
+    }
+    res.json({ ...row, care_health, days_elapsed });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// API: Create new customer profile
+app.post('/api/customers', (req, res) => {
+  try {
+    const c = req.body;
+    if (!c.customer_name) {
+      return res.status(400).json({ error: 'Customer name is required' });
+    }
+
+    run(`
+      INSERT INTO customers (
+        customer_name, wic_customer_id, tier, status, registration_date,
+        sale_code, team, month_forecast, year_forecast, zone,
+        industry, product_service, contact_name, position, tel,
+        mobile, line_id, email, address, subdistrict,
+        district, province, zipcode
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [
+      c.customer_name, c.wic_customer_id || '', c.tier || '', c.status || 'ฐานข้อมูลรายใหม่', c.registration_date || '',
+      c.sale_code || '', c.team || 'TSK', parseFloat(c.month_forecast) || 0, parseFloat(c.year_forecast) || 0, c.zone || '',
+      c.industry || '', c.product_service || '', c.contact_name || '', c.position || '', c.tel || '',
+      c.mobile || '', c.line_id || '', c.email || '', c.address || '', c.subdistrict || '',
+      c.district || '', c.province || '', c.zipcode || ''
+    ]);
+
+    const row = query("SELECT last_insert_rowid() as id")[0];
+    res.status(201).json({ id: row.id, message: 'Customer profile created successfully' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// API: Update customer profile
+app.put('/api/customers/:id', (req, res) => {
+  try {
+    const c = req.body;
+    const check = query(`SELECT id FROM customers WHERE id = ?`, [req.params.id])[0];
+    if (!check) {
+      return res.status(404).json({ error: 'Customer not found' });
+    }
+
+    run(`
+      UPDATE customers SET
+        customer_name = ?, wic_customer_id = ?, tier = ?, status = ?, registration_date = ?,
+        sale_code = ?, team = ?, month_forecast = ?, year_forecast = ?, zone = ?,
+        industry = ?, product_service = ?, contact_name = ?, position = ?, tel = ?,
+        mobile = ?, line_id = ?, email = ?, address = ?, subdistrict = ?,
+        district = ?, province = ?, zipcode = ?, updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `, [
+      c.customer_name, c.wic_customer_id || '', c.tier || '', c.status || '', c.registration_date || '',
+      c.sale_code || '', c.team || '', parseFloat(c.month_forecast) || 0, parseFloat(c.year_forecast) || 0, c.zone || '',
+      c.industry || '', c.product_service || '', c.contact_name || '', c.position || '', c.tel || '',
+      c.mobile || '', c.line_id || '', c.email || '', c.address || '', c.subdistrict || '',
+      c.district || '', c.province || '', c.zipcode || '', req.params.id
+    ]);
+
+    res.json({ message: 'Customer profile updated successfully' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// API: Delete customer profile
+app.delete('/api/customers/:id', (req, res) => {
+  try {
+    const check = query(`SELECT id FROM customers WHERE id = ?`, [req.params.id])[0];
+    if (!check) {
+      return res.status(404).json({ error: 'Customer not found' });
+    }
+    run(`DELETE FROM customers WHERE id = ?`, [req.params.id]);
+    res.json({ message: 'Customer profile deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// API: Get customer visits/calls timeline
+app.get('/api/customers/:id/visits', (req, res) => {
+  try {
+    const visits = query(`SELECT * FROM activities WHERE customer_id = ? ORDER BY activity_date DESC, id DESC`, [req.params.id]);
+    const plans = query(`SELECT * FROM plans WHERE customer_id = ? ORDER BY planned_date ASC`, [req.params.id]);
+    res.json({ visits, plans });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// API: Log completed visit or call
+app.post('/api/customers/:id/visits', (req, res) => {
+  try {
+    const { activity_type, activity_date, contact_person, summary, created_by } = req.body;
+    if (!activity_type || !activity_date) {
+      return res.status(400).json({ error: 'Activity type and date are required' });
+    }
+    
+    run(`
+      INSERT INTO activities (customer_id, activity_type, activity_date, contact_person, summary, created_by)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `, [req.params.id, activity_type, activity_date, contact_person || '', summary || '', created_by || '']);
+    
+    const c = query(`SELECT last_visit_date, last_call_date FROM customers WHERE id = ?`, [req.params.id])[0];
+    if (!c) {
+      return res.status(404).json({ error: 'Customer not found' });
+    }
+    
+    let last_visit = c.last_visit_date || '';
+    let last_call = c.last_call_date || '';
+    
+    if (activity_type === 'Visit' || activity_type === 'Online') {
+      if (!last_visit || activity_date > last_visit) last_visit = activity_date;
+    } else if (activity_type === 'Call') {
+      if (!last_call || activity_date > last_call) last_call = activity_date;
+    }
+    
+    const last_contact = last_visit && last_call ? (last_visit > last_call ? last_visit : last_call) : (last_visit || last_call);
+    
+    run(`
+      UPDATE customers 
+      SET last_visit_date = ?, last_call_date = ?, last_contact_date = ?, updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `, [last_visit, last_call, last_contact, req.params.id]);
+    
+    res.json({ message: 'Activity logged successfully' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// API: Schedule next planned activity
+app.post('/api/customers/:id/schedule', (req, res) => {
+  try {
+    const { plan_type, planned_date, objective, created_by } = req.body;
+    if (!plan_type || !planned_date) {
+      return res.status(400).json({ error: 'Plan type and date are required' });
+    }
+    
+    run(`DELETE FROM plans WHERE customer_id = ?`, [req.params.id]);
+    
+    run(`
+      INSERT INTO plans (customer_id, plan_type, planned_date, objective, created_by)
+      VALUES (?, ?, ?, ?, ?)
+    `, [req.params.id, plan_type, planned_date, objective || '', created_by || '']);
+    
+    run(`
+      UPDATE customers 
+      SET next_planned_date = ?, next_planned_type = ?, updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `, [planned_date, plan_type, req.params.id]);
+    
+    res.json({ message: 'Next step scheduled successfully' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// API: Get CMB dashboard stats
+app.get('/api/cmb-stats', (req, res) => {
+  try {
+    const q = req.query.q || '';
+    const sale = req.query.sale || '';
+    const tier = req.query.tier || '';
+    const industry = req.query.industry || '';
+    const province = req.query.province || '';
+    
+    let sql = `SELECT * FROM customers WHERE 1=1`;
+    const params = [];
+    if (q) {
+      const likeParam = `%${q}%`;
+      sql += ` AND (customer_name LIKE ? OR wic_customer_id LIKE ? OR contact_name LIKE ? OR mobile LIKE ? OR email LIKE ? OR product_service LIKE ?)`;
+      params.push(likeParam, likeParam, likeParam, likeParam, likeParam, likeParam);
+    }
+    if (sale) {
+      sql += ` AND sale_code = ?`;
+      params.push(sale);
+    }
+    if (tier) {
+      sql += ` AND tier = ?`;
+      params.push(tier);
+    }
+    if (industry) {
+      sql += ` AND industry = ?`;
+      params.push(industry);
+    }
+    if (province) {
+      sql += ` AND province = ?`;
+      params.push(province);
+    }
+
+    const rows = query(sql, params);
+    const totalCustomers = rows.length;
+
+    const today = new Date();
+    today.setHours(0,0,0,0);
+
+    const healthCounts = { healthy: 0, attention: 0, overdue: 0 };
+    const tierHealth = {
+      A: { healthy: 0, attention: 0, overdue: 0, total: 0 },
+      B: { healthy: 0, attention: 0, overdue: 0, total: 0 },
+      C: { healthy: 0, attention: 0, overdue: 0, total: 0 },
+      D: { healthy: 0, attention: 0, overdue: 0, total: 0 },
+      other: { healthy: 0, attention: 0, overdue: 0, total: 0 }
+    };
+    
+    let totalForecast = 0;
+
+    rows.forEach(r => {
+      totalForecast += (r.year_forecast || 0);
+      
+      let care_health = 'healthy';
+      const last_contact = r.last_contact_date;
+      if (!last_contact) {
+        care_health = 'overdue';
+      } else {
+        const contactDate = new Date(last_contact);
+        contactDate.setHours(0,0,0,0);
+        const days = Math.floor((today - contactDate) / (1000 * 60 * 60 * 24));
+        const tierGuideline = r.tier === 'A' ? 30 : r.tier === 'B' ? 60 : r.tier === 'C' ? 90 : r.tier === 'D' ? 180 : 90;
+        if (days >= tierGuideline) {
+          care_health = 'overdue';
+        } else if (days >= (tierGuideline - 7)) {
+          care_health = 'attention';
+        }
+      }
+
+      healthCounts[care_health]++;
+      
+      const t = r.tier || 'other';
+      if (tierHealth[t]) {
+        tierHealth[t][care_health]++;
+        tierHealth[t].total++;
+      } else {
+        tierHealth.other[care_health]++;
+        tierHealth.other.total++;
+      }
+    });
+
+    const indRows = query(`SELECT industry, COUNT(*) as count FROM customers GROUP BY industry ORDER BY count DESC LIMIT 15`);
+    const provRows = query(`SELECT province, COUNT(*) as count FROM customers GROUP BY province ORDER BY count DESC LIMIT 15`);
+    
+    const totalVisitsCount = query(`SELECT COUNT(*) as count FROM activities WHERE activity_type = 'Visit'`)[0].count;
+    const totalCallsCount = query(`SELECT COUNT(*) as count FROM activities WHERE activity_type = 'Call'`)[0].count;
+    
+    const salesStats = query(`SELECT created_by as sale_code, COUNT(*) as count FROM activities WHERE created_by != '' GROUP BY created_by`);
+
+    res.json({
+      totalCustomers,
+      totalForecast,
+      healthCounts,
+      tierHealth,
+      industries: indRows,
+      provinces: provRows,
+      totalVisitsCount,
+      totalCallsCount,
+      sales: salesStats
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// API: Re-sync CMB database from Excel file
+app.post('/api/cmb-sync', (req, res) => {
+  const { exec } = require('child_process');
+  exec('python seed_cmb.py', { cwd: __dirname }, (error, stdout, stderr) => {
+    if (error) {
+      return res.status(500).json({ error: stderr || error.message });
+    }
+    res.json({ message: stdout.trim() });
+  });
+});
+
+// API: Export filtered CMB data to Excel CSV
+app.get('/api/cmb-export-csv', (req, res) => {
+  try {
+    const q = req.query.q || '';
+    const sale = req.query.sale || '';
+    const tier = req.query.tier || '';
+    const industry = req.query.industry || '';
+    const province = req.query.province || '';
+
+    let sql = `SELECT * FROM customers WHERE 1=1`;
+    const params = [];
+    if (q) {
+      const likeParam = `%${q}%`;
+      sql += ` AND (customer_name LIKE ? OR wic_customer_id LIKE ? OR contact_name LIKE ? OR mobile LIKE ? OR email LIKE ? OR product_service LIKE ?)`;
+      params.push(likeParam, likeParam, likeParam, likeParam, likeParam, likeParam);
+    }
+    if (sale) {
+      sql += ` AND sale_code = ?`;
+      params.push(sale);
+    }
+    if (tier) {
+      sql += ` AND tier = ?`;
+      params.push(tier);
+    }
+    if (industry) {
+      sql += ` AND industry = ?`;
+      params.push(industry);
+    }
+    if (province) {
+      sql += ` AND province = ?`;
+      params.push(province);
+    }
+
+    sql += ` ORDER BY customer_name ASC`;
+    const rows = query(sql, params);
+
+    const headers = [
+      'ID', 'Customer Name', 'WIC Customer ID', 'Grade Tier', 'Status',
+      'Sale Code', 'Zone', 'Industry Type', 'Contact Person', 'Mobile', 'E-mail',
+      'Last Visit Date', 'Last Call Date', 'Last Contact Date', 'Next Planned Contact Date', 'Next Planned Type'
+    ];
+
+    let csvContent = '\ufeff'; // UTF-8 BOM
+    csvContent += headers.map(h => `"${h.replace(/"/g, '""')}"`).join(',') + '\n';
+
+    rows.forEach(r => {
+      const dataRow = [
+        r.id, r.customer_name, r.wic_customer_id, r.tier, r.status,
+        r.sale_code, r.zone, r.industry, r.contact_name, r.mobile, r.email,
+        r.last_visit_date, r.last_call_date, r.last_contact_date, r.next_planned_date, r.next_planned_type
+      ];
+      csvContent += dataRow.map(cell => {
+        const cleanCell = cell === null || cell === undefined ? '' : String(cell);
+        return `"${cleanCell.replace(/"/g, '""')}"`;
+      }).join(',') + '\n';
+    });
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="cmb_care_export.csv"');
+    res.status(200).send(csvContent);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 initDB().then(() => {
