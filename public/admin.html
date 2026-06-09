@@ -18,9 +18,26 @@
   --done-bd:rgba(34,197,94,.3);--late-bd:rgba(239,68,68,.3);--prog-bd:rgba(58,123,213,.35);--warn-bd:rgba(249,115,22,.3);--spec-bd:rgba(167,139,250,.3);
   
   --r:6px;--rl:12px;
+  --shadow: 0 2px 8px rgba(0,0,0,.4);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,.4);
+  --shadow-xl: 0 24px 64px rgba(0,0,0,.6);
+}
+:root[data-theme="light"] {
+  --bg:#f4f5f8;--sur:#ffffff;--sur2:#f8f9fa;--sur3:#edf2f7;--sur4:#e2e8f0;
+  --bd:#d1d5db;--bd2:#e5e7eb;
+  --tx:#0f172a;--mu:#64748b;
+  
+  --done:#10b981;--late:#ef4444;--prog:#3b82f6;--warn:#f59e0b;--spec:#8b5cf6;
+  
+  --done-bg:rgba(16,185,129,.08);--late-bg:rgba(239,68,68,.08);--prog-bg:rgba(59,130,246,.08);--warn-bg:rgba(245,158,11,.08);--spec-bg:rgba(139,92,246,.08);
+  --done-bd:rgba(16,185,129,.25);--late-bd:rgba(239,68,68,.25);--prog-bd:rgba(59,130,246,.25);--warn-bd:rgba(245,158,11,.25);--spec-bd:rgba(139,92,246,.25);
+  
+  --shadow: 0 2px 8px rgba(0,0,0,.06);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,.08);
+  --shadow-xl: 0 24px 64px rgba(15,23,42,.12);
 }
 html,body{background:var(--bg);color:var(--tx);font-family:'Sarabun','Inter',sans-serif;min-height:100vh}
-header{background:linear-gradient(90deg,#08090e,#0e1018);border-bottom:1px solid #1e2438;padding:0 24px;height:54px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;box-shadow:0 2px 8px rgba(0,0,0,.4)}
+header{background:linear-gradient(90deg,var(--bg),var(--sur));border-bottom:1px solid var(--bd);padding:0 24px;height:54px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;box-shadow:var(--shadow)}
 header::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,#a78bfa,#3a7bd5,#9aaac0,#d42030,transparent)}
 .logo{font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px;color:#fff}
 .btn{font-size:13px;padding:6px 14px;border-radius:var(--r);font-family:'Sarabun',sans-serif;cursor:pointer;font-weight:500;border:1px solid var(--bd);background:var(--sur);color:var(--tx);transition:all .15s;text-decoration:none;display:inline-flex;align-items:center;gap:5px}
@@ -59,7 +76,7 @@ td{padding:9px 12px;font-size:13px;vertical-align:middle}
 /* MODAL */
 .ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(6px);z-index:200;align-items:center;justify-content:center}
 .ov.open{display:flex}
-.modal{background:var(--sur);border:1px solid var(--bd);border-radius:var(--rl);width:780px;max-width:97vw;max-height:92vh;display:flex;flex-direction:column;box-shadow:0 24px 64px rgba(0,0,0,.6)}
+.modal{background:var(--sur);border:1px solid var(--bd);border-radius:var(--rl);width:780px;max-width:97vw;max-height:92vh;display:flex;flex-direction:column;box-shadow:var(--shadow-xl)}
 .mhdr{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--bd2);background:var(--sur2)}
 .mtitle{font-size:16px;font-weight:700;color:var(--spec)}
 .mclose{background:none;border:none;color:var(--mu);font-size:22px;cursor:pointer;padding:0;transition:color .12s}.mclose:hover{color:var(--tx)}
@@ -95,7 +112,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--spec);bo
 .items-tbl td{padding:6px 8px;border-bottom:1px solid var(--bd2)}
 
 ::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-thumb{background:var(--bd);border-radius:99px}
-.admin-drop{display:none;position:absolute;top:100%;left:0;right:0;background:var(--sur);border:1px solid var(--bd);border-radius:var(--r);box-shadow:0 8px 24px rgba(0,0,0,.4);z-index:100;max-height:180px;overflow-y:auto}
+.admin-drop{display:none;position:absolute;top:100%;left:0;right:0;background:var(--sur);border:1px solid var(--bd);border-radius:var(--r);box-shadow:var(--shadow-lg);z-index:100;max-height:180px;overflow-y:auto}
 .admin-drop.show{display:block}
 .admin-opt{padding:8px 12px;font-size:13px;cursor:pointer;font-family:'Sarabun',sans-serif;transition:all .1s}.admin-opt:hover{background:var(--sur2)}
 </style>
@@ -104,10 +121,13 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--spec);bo
 <header>
   <div class="logo">
     <img src="logo.png" style="height:30px;width:auto;object-fit:contain" alt="Wisco">
-    <span style="color:#b39ddb;font-weight:600">Admin — PR Management</span>
+    <span style="color:var(--spec);font-weight:600">Admin — PR Management</span>
   </div>
   <div style="display:flex;align-items:center;gap:10px">
     <div id="last-update" style="font-size:11px;color:#9575cd"></div>
+    <button id="theme-toggle" class="btn btn-sm" onclick="toggleTheme()" style="padding: 4px 10px; border-radius: 20px; font-size: 14px; background: var(--sur2); border: 1px solid var(--bd); cursor: pointer; display: flex; align-items: center; gap: 6px; margin-right: 5px; font-family:'Sarabun',sans-serif">
+      <span id="theme-icon">🌙</span> <span id="theme-text" style="font-size: 11px; font-weight: 600; color: var(--mu)">มืด</span>
+    </button>
     <div style="font-size:12px;color:#9575cd">🔒 Admin Only Page</div>
   </div>
 </header>
@@ -254,6 +274,34 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--spec);bo
 </div>
 
 <script>
+// Theme switching logic
+function initTheme(){
+  const saved = localStorage.getItem('wisco-theme') || 'dark';
+  setTheme(saved);
+}
+function setTheme(theme){
+  if (theme === 'light') {
+    document.documentElement.setAttribute('data-theme', 'light');
+    const icon = document.getElementById('theme-icon');
+    const text = document.getElementById('theme-text');
+    if (icon) icon.textContent = '☀️';
+    if (text) text.textContent = 'สว่าง';
+    localStorage.setItem('wisco-theme', 'light');
+  } else {
+    document.documentElement.removeAttribute('data-theme');
+    const icon = document.getElementById('theme-icon');
+    const text = document.getElementById('theme-text');
+    if (icon) icon.textContent = '🌙';
+    if (text) text.textContent = 'มืด';
+    localStorage.setItem('wisco-theme', 'dark');
+  }
+}
+function toggleTheme(){
+  const current = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+  setTheme(current);
+}
+initTheme(); // Initialize theme immediately to prevent FOUC
+
 let _prs=[], _editId=null, _items=[];
 
 function showDropdown(dropId,list,q,inputId){

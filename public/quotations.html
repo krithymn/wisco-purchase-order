@@ -159,6 +159,106 @@ main{display:grid;grid-template-columns:280px 1fr 280px;overflow:hidden;height:c
 
 ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:var(--bd);border-radius:99px}
 </style>
+
+
+<style id="theme-style-override">
+:root[data-theme="light"] {
+  --bg:#f4f5f8;
+  --sur:#ffffff;
+  --sur2:#f8f9fa;
+  --sur3:#edf2f7;
+  --sur4:#e2e8f0;
+  --s1:#ffffff;
+  --s2:#f8f9fa;
+  --s3:#edf2f7;
+  --s4:#e2e8f0;
+  --bd:#d1d5db;
+  --bd2:#e5e7eb;
+  --tx:#0f172a;
+  --mu:#64748b;
+  --shadow: 0 2px 8px rgba(0,0,0,.06);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,.08);
+  --shadow-xl: 0 24px 64px rgba(15,23,42,.12);
+  
+  --done:#10b981;
+  --late:#ef4444;
+  --prog:#3b82f6;
+  --pend:#f59e0b;
+  --warn:#f97316;
+  --spec:#8b5cf6;
+  --canc:#64748b;
+  
+  --done-bg:rgba(16,185,129,.08);
+  --late-bg:rgba(239,68,68,.08);
+  --prog-bg:rgba(59,130,246,.08);
+  --spec-bg:rgba(139,92,246,.08);
+  --done-dim:rgba(16,185,129,.08);
+  --late-dim:rgba(239,68,68,.08);
+  --prog-dim:rgba(59,130,246,.08);
+  --pend-dim:rgba(245,158,11,.08);
+  --warn-dim:rgba(249,115,22,.08);
+  --spec-dim:rgba(139,92,246,.08);
+  
+  --done-bd:rgba(16,185,129,.25);
+  --late-bd:rgba(239,68,68,.25);
+  --prog-bd:rgba(59,130,246,.25);
+  --spec-bd:rgba(139,92,246,.25);
+  
+  --red-dim:rgba(244,63,94,.08);--red-bd:rgba(244,63,94,.25);
+  --blue-dim:rgba(59,130,246,.08);--blue-bd:rgba(59,130,246,.25);
+  --green-dim:rgba(16,185,129,.08);--green-bd:rgba(16,185,129,.25);
+  --purple-dim:rgba(139,92,246,.08);--purple-bd:rgba(139,92,246,.25);
+  --warn-dim:rgba(234,179,8,.08);--warn-bd:rgba(234,179,8,.25);
+}
+/* General fixes for light mode */
+:root[data-theme="light"] header {
+  background: linear-gradient(90deg, var(--bg) 0%, var(--sur) 50%, var(--bg) 100%) !important;
+  box-shadow: var(--shadow) !important;
+  border-bottom: 1px solid var(--bd) !important;
+}
+:root[data-theme="light"] .nav-tabs {
+  background: var(--sur2) !important;
+  border-bottom: 1px solid var(--bd) !important;
+}
+:root[data-theme="light"] .nav-tab {
+  color: var(--mu) !important;
+}
+:root[data-theme="light"] .nav-tab:hover {
+  color: var(--tx) !important;
+}
+:root[data-theme="light"] .nav-tab.active {
+  color: var(--spec) !important;
+  border-bottom-color: var(--spec) !important;
+}
+:root[data-theme="light"] .btn-secondary {
+  background: var(--sur) !important;
+  border-color: var(--bd) !important;
+  color: var(--tx) !important;
+}
+:root[data-theme="light"] .btn-secondary:hover {
+  background: var(--sur2) !important;
+}
+:root[data-theme="light"] .ocard,
+:root[data-theme="light"] .qcard,
+:root[data-theme="light"] .customer-info-box,
+:root[data-theme="light"] .selector-container {
+  box-shadow: var(--shadow-lg) !important;
+}
+/* Sidebar input focus fix */
+:root[data-theme="light"] input,
+:root[data-theme="light"] select,
+:root[data-theme="light"] textarea {
+  border-color: var(--bd) !important;
+  background: var(--sur) !important;
+  color: var(--tx) !important;
+}
+:root[data-theme="light"] input:focus,
+:root[data-theme="light"] select:focus,
+:root[data-theme="light"] textarea:focus {
+  border-color: var(--spec) !important;
+}
+</style>
+
 </head>
 <body>
 <div id="app">
@@ -169,7 +269,6 @@ main{display:grid;grid-template-columns:280px 1fr 280px;overflow:hidden;height:c
   </div>
   <div style="display:flex;align-items:center;gap:14px">
     <div style="display:flex;align-items:center;gap:8px">
-      <a href="dashboard.html" style="font-size:12px;color:var(--silver2);text-decoration:none;padding:4px 10px;border:1px solid var(--bd);border-radius:99px;background:rgba(255,255,255,.05)" target="_blank">📊 PO Dashboard</a>
       <a href="quotations-edit.html" style="font-size:12px;color:#fff;text-decoration:none;padding:4px 12px;border:1px solid var(--spec);border-radius:99px;background:rgba(167,139,250,.15)" target="_blank">✏️ Manage Quotes</a>
       <div class="live-pill"><div class="live-dot"></div>Live</div>
     </div>
@@ -722,5 +821,61 @@ autoOpenSections();
 refresh();
 setInterval(refresh, 20000);
 </script>
+
+
+<script id="theme-script-override">
+function initTheme(){
+  const saved = localStorage.getItem('wisco-theme') || 'dark';
+  setTheme(saved);
+}
+function setTheme(theme){
+  if (theme === 'light') {
+    document.documentElement.setAttribute('data-theme', 'light');
+    localStorage.setItem('wisco-theme', 'light');
+  } else {
+    document.documentElement.removeAttribute('data-theme');
+    localStorage.setItem('wisco-theme', 'dark');
+  }
+  updateToggleState(theme);
+}
+function toggleTheme(){
+  const current = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+  setTheme(current);
+}
+function updateToggleState(theme){
+  const icon = document.getElementById('theme-icon');
+  const text = document.getElementById('theme-text');
+  if (icon) icon.textContent = theme === 'light' ? '☀️' : '🌙';
+  if (text) text.textContent = theme === 'light' ? 'สว่าง' : 'มืด';
+}
+function injectThemeButton(){
+  const header = document.querySelector('header');
+  if (!header) return;
+  if (document.getElementById('theme-toggle')) return;
+  const btn = document.createElement('button');
+  btn.id = 'theme-toggle';
+  btn.className = 'btn btn-sm';
+  btn.onclick = toggleTheme;
+  btn.style.cssText = "padding: 4px 10px; border-radius: 20px; font-size: 14px; background: var(--sur2); border: 1px solid var(--bd); cursor: pointer; display: flex; align-items: center; gap: 6px; font-family:'Sarabun',sans-serif; margin-right: 10px; flex-shrink: 0;";
+  
+  const saved = localStorage.getItem('wisco-theme') || 'dark';
+  btn.innerHTML = `<span id="theme-icon">${saved === 'light' ? '☀️' : '🌙'}</span> <span id="theme-text" style="font-size: 11px; font-weight: 600; color: var(--mu)">${saved === 'light' ? 'สว่าง' : 'มืด'}</span>`;
+  
+  // Find where to append
+  const right = header.querySelector('.header-right') || header.querySelector('div[style*="align-items:center"]') || header.querySelector('.logo + div') || header;
+  if (right && right !== header) {
+    right.insertBefore(btn, right.firstChild);
+  } else {
+    header.appendChild(btn);
+  }
+}
+initTheme();
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', injectThemeButton);
+} else {
+  injectThemeButton();
+}
+</script>
+
 </body>
 </html>

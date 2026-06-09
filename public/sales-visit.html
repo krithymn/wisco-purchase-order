@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sales Visit & Call care Logger | WISCO</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="customers.css">
+  <style>
+    /* Additional Styles for Sales Logger Selection */
+    .selector-container {
+      background: var(--s1);
+      border: 1px solid var(--bd);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+    }
+    .search-autocomplete {
+      position: relative;
+      width: 100%;
+    }
+    .search-input-large {
+      width: 100%;
+      background: var(--s2);
+      border: 1px solid var(--bd);
+      border-radius: 8px;
+      padding: 14px 16px;
+      font-size: 15px;
+      color: var(--tx);
+      font-family: inherit;
+      transition: all 0.15s;
+    }
+    .search-input-large:focus {
+      border-color: var(--red2);
+      outline: none;
+      box-shadow: 0 0 10px rgba(232, 64, 80, 0.15);
+    }
+    .autocomplete-dropdown {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: var(--s3);
+      border: 1px solid var(--bd);
+      border-top: none;
+      border-radius: 0 0 8px 8px;
+      max-height: 250px;
+      overflow-y: auto;
+      z-index: 100;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+      display: none;
+    }
+    .autocomplete-item {
+      padding: 12px 16px;
+      cursor: pointer;
+      border-bottom: 1px solid var(--bd2);
+      transition: background 0.12s;
+    }
+    .autocomplete-item:hover {
+      background: var(--s4);
+    }
+    .autocomplete-item-name {
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--tx);
+      margin-bottom: 2px;
+    }
+    .autocomplete-item-meta {
+      font-size: 11px;
+      color: var(--mu);
+      display: flex;
+      gap: 10px;
+    }
+    .sales-form-layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+    @media(min-width: 992px) {
+      .sales-form-layout {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+    .customer-info-box {
+      background: var(--s1);
+      border: 1px solid var(--bd);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    }
+    .action-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 12px;
+    }
+    .btn-add-customer {
+      background: linear-gradient(135deg, var(--blue), var(--blue2));
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 14px 20px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      box-shadow: 0 4px 12px rgba(58, 90, 138, 0.3);
+      transition: all 0.15s;
+    }
+    .btn-add-customer:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 15px rgba(58, 90, 138, 0.4);
+    }
+    .selected-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--bd);
+      padding-bottom: 12px;
+      margin-bottom: 16px;
+    }
+    .selected-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--tx);
+    }
+    /* Modal Styling */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(5px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+    .modal-overlay.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .modal-content {
+      background: var(--s1);
+      border: 1px solid var(--bd);
+      border-radius: 12px;
+      width: 90%;
+      max-width: 700px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      transform: scale(0.9);
+      transition: transform 0.25s ease;
+    }
+    .modal-overlay.open .modal-content {
+      transform: scale(1);
+    }
+    .modal-header {
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--bd);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .modal-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--tx);
+    }
+    .modal-close {
+      background: transparent;
+      border: none;
+      color: var(--mu);
+      font-size: 20px;
+      cursor: pointer;
+    }
+    .modal-body {
+      padding: 24px;
+    }
+    .modal-footer {
+      padding: 16px 24px;
+      border-top: 1px solid var(--bd);
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+    }
+    .form-group-block {
+      margin-bottom: 16px;
+    }
+    .form-group-block label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--mu);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .form-group-block input, .form-group-block select, .form-group-block textarea {
+      width: 100%;
+      background: var(--s2);
+      border: 1px solid var(--bd);
+      border-radius: 6px;
+      padding: 10px 12px;
+      color: var(--tx);
+      font-family: inherit;
+      font-size: 14px;
+    }
+    .form-group-block input:focus, .form-group-block select:focus, .form-group-block textarea:focus {
+      border-color: var(--blue2);
+      outline: none;
+    }
+    .form-row-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+  </style>
+
+
+<style id="theme-style-override">
+:root[data-theme="light"] {
+  --bg:#f4f5f8;
+  --sur:#ffffff;
+  --sur2:#f8f9fa;
+  --sur3:#edf2f7;
+  --sur4:#e2e8f0;
+  --s1:#ffffff;
+  --s2:#f8f9fa;
+  --s3:#edf2f7;
+  --s4:#e2e8f0;
+  --bd:#d1d5db;
+  --bd2:#e5e7eb;
+  --tx:#0f172a;
+  --mu:#64748b;
+  --shadow: 0 2px 8px rgba(0,0,0,.06);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,.08);
+  --shadow-xl: 0 24px 64px rgba(15,23,42,.12);
+  
+  --done:#10b981;
+  --late:#ef4444;
+  --prog:#3b82f6;
+  --pend:#f59e0b;
+  --warn:#f97316;
+  --spec:#8b5cf6;
+  --canc:#64748b;
+  
+  --done-bg:rgba(16,185,129,.08);
+  --late-bg:rgba(239,68,68,.08);
+  --prog-bg:rgba(59,130,246,.08);
+  --spec-bg:rgba(139,92,246,.08);
+  --done-dim:rgba(16,185,129,.08);
+  --late-dim:rgba(239,68,68,.08);
+  --prog-dim:rgba(59,130,246,.08);
+  --pend-dim:rgba(245,158,11,.08);
+  --warn-dim:rgba(249,115,22,.08);
+  --spec-dim:rgba(139,92,246,.08);
+  
+  --done-bd:rgba(16,185,129,.25);
+  --late-bd:rgba(239,68,68,.25);
+  --prog-bd:rgba(59,130,246,.25);
+  --spec-bd:rgba(139,92,246,.25);
+  
+  --red-dim:rgba(244,63,94,.08);--red-bd:rgba(244,63,94,.25);
+  --blue-dim:rgba(59,130,246,.08);--blue-bd:rgba(59,130,246,.25);
+  --green-dim:rgba(16,185,129,.08);--green-bd:rgba(16,185,129,.25);
+  --purple-dim:rgba(139,92,246,.08);--purple-bd:rgba(139,92,246,.25);
+  --warn-dim:rgba(234,179,8,.08);--warn-bd:rgba(234,179,8,.25);
+}
+/* General fixes for light mode */
+:root[data-theme="light"] header {
+  background: linear-gradient(90deg, var(--bg) 0%, var(--sur) 50%, var(--bg) 100%) !important;
+  box-shadow: var(--shadow) !important;
+  border-bottom: 1px solid var(--bd) !important;
+}
+:root[data-theme="light"] .nav-tabs {
+  background: var(--sur2) !important;
+  border-bottom: 1px solid var(--bd) !important;
+}
+:root[data-theme="light"] .nav-tab {
+  color: var(--mu) !important;
+}
+:root[data-theme="light"] .nav-tab:hover {
+  color: var(--tx) !important;
+}
+:root[data-theme="light"] .nav-tab.active {
+  color: var(--spec) !important;
+  border-bottom-color: var(--spec) !important;
+}
+:root[data-theme="light"] .btn-secondary {
+  background: var(--sur) !important;
+  border-color: var(--bd) !important;
+  color: var(--tx) !important;
+}
+:root[data-theme="light"] .btn-secondary:hover {
+  background: var(--sur2) !important;
+}
+:root[data-theme="light"] .ocard,
+:root[data-theme="light"] .qcard,
+:root[data-theme="light"] .customer-info-box,
+:root[data-theme="light"] .selector-container {
+  box-shadow: var(--shadow-lg) !important;
+}
+/* Sidebar input focus fix */
+:root[data-theme="light"] input,
+:root[data-theme="light"] select,
+:root[data-theme="light"] textarea {
+  border-color: var(--bd) !important;
+  background: var(--sur) !important;
+  color: var(--tx) !important;
+}
+:root[data-theme="light"] input:focus,
+:root[data-theme="light"] select:focus,
+:root[data-theme="light"] textarea:focus {
+  border-color: var(--spec) !important;
+}
+</style>
+
+</head>
+<body>
+<div id="app">
+  <!-- HEADER -->
+  <header>
+    <div class="logo">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--blue2)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0 0 8px var(--blue2))"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+      <div class="logo-name">Wisco <span style="color:var(--blue2)">Sales care</span> <span style="font-size:11px;opacity:0.6;font-weight:400;margin-left:4px">Logger</span></div>
+    </div>
+    <div class="header-right">
+      <div class="time-block">
+        <div id="clk-date"></div>
+        <div id="clk-time"></div>
+      </div>
+    </div>
+  </header>
+
+  <main style="display:block; padding: 20px; overflow-y: auto; height: calc(100vh - 60px);">
+    <!-- CUSTOMER SELECTOR PANEL -->
+    <div class="selector-container">
+      <h3 style="margin-bottom: 12px; font-weight: 700; color: var(--tx);">🔍 เลือกบริษัท / ลูกค้าที่ต้องการลงบันทึก</h3>
+      <div class="action-row">
+        <div class="search-autocomplete">
+          <input type="text" id="customer-search" class="search-input-large" placeholder="พิมพ์ชื่อบริษัท, WIC ID หรือเบอร์ติดต่อ เพื่อค้นหา..." autocomplete="off">
+          <div class="autocomplete-dropdown" id="autocomplete-list">
+            <!-- Autocomplete list items injected here -->
+          </div>
+        </div>
+        <button class="btn-add-customer" onclick="openAddCustomerModal()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          เพิ่มลูกค้าใหม่
+        </button>
+      </div>
+    </div>
+
+    <!-- MAIN WORKSPACE (Only visible when customer is selected) -->
+    <div id="sales-workspace" style="display: none;">
+      <div class="sales-form-layout">
+        <!-- LEFT COLUMN: forms -->
+        <div style="display: flex; flex-direction: column; gap: 20px;">
+          <!-- CUSTOMER METADATA CARD -->
+          <div class="customer-info-box">
+            <div class="selected-header">
+              <div class="selected-title" id="selected-name">Double A Public Company Limited</div>
+              <span id="selected-health-badge" class="ccard-tier">สถานะการดูแล</span>
+            </div>
+            <div class="meta-grid" style="grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px;">
+              <div class="meta-item"><span class="m-lbl">WIC ID:</span> <span class="m-val" id="selected-wic-id">—</span></div>
+              <div class="meta-item"><span class="m-lbl">Tier:</span> <span class="m-val" id="selected-tier">—</span></div>
+              <div class="meta-item"><span class="m-lbl">Sales ผู้รับผิดชอบ:</span> <span class="m-val" id="selected-sale">—</span></div>
+              <div class="meta-item"><span class="m-lbl">อุตสาหกรรม:</span> <span class="m-val" id="selected-industry">—</span></div>
+              <div class="meta-item"><span class="m-lbl">พื้นที่ / จังหวัด:</span> <span class="m-val" id="selected-zone">—</span></div>
+              <div class="meta-item"><span class="m-lbl">ผู้ติดต่อ:</span> <span class="m-val" id="selected-contact">—</span></div>
+              <div class="meta-item"><span class="m-lbl">เบอร์มือถือ:</span> <span class="m-val" id="selected-mobile">—</span></div>
+              <div class="meta-item"><span class="m-lbl">LINE ID:</span> <span class="m-val" id="selected-line">—</span></div>
+            </div>
+            <div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--bd2)">
+              <span class="m-lbl">ที่อยู่บริษัท:</span> <span class="m-val" style="font-size:11.5px;line-height:1.4" id="selected-address">—</span>
+            </div>
+          </div>
+
+          <!-- LOG INTERACTION FORM -->
+          <div class="customer-info-box" style="border-left: 4px solid var(--done);">
+            <h3 style="margin-bottom: 16px; font-weight: 700; color: var(--tx); display:flex; align-items:center; gap:8px">🚗 บันทึกประวัติการติดต่อ (Log Interaction)</h3>
+            <form id="activity-form" onsubmit="logActivity(event)">
+              <div class="form-grid">
+                <div class="form-group">
+                  <label>ประเภทกิจกรรม <span class="req">*</span></label>
+                  <select id="act-type" required>
+                    <option value="Visit">🚗 Onsite Visit (เยี่ยมหน้างาน)</option>
+                    <option value="Call">📞 Phone Call (โทรศัพท์ติดต่อ)</option>
+                    <option value="Online">💻 Online Meeting (ประชุมออนไลน์)</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>วันที่ดำเนินการ <span class="req">*</span></label>
+                  <input type="date" id="act-date" required>
+                </div>
+              </div>
+              <div class="form-grid">
+                <div class="form-group">
+                  <label>บุคคลที่ติดต่อด้วย</label>
+                  <input type="text" id="act-person" placeholder="ชื่อผู้ติดต่อ">
+                </div>
+                <div class="form-group">
+                  <label>พนักงานขายผู้ดูแล <span class="req">*</span></label>
+                  <select id="act-by" required>
+                    <option value="">-- เลือก Sales --</option>
+                    <option value="NN">NN</option>
+                    <option value="SV">SV</option>
+                    <option value="EN">EN</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-group">
+                <label>สรุปประเด็นเจรจา / งานที่คุย <span class="req">*</span></label>
+                <textarea id="act-summary" rows="3" required placeholder="เช่น เข้าแนะนำวาล์วรุ่นใหม่, ส่งราคาเสนอ, หรือติดตามข้อเสนอแนะ..."></textarea>
+              </div>
+              <div style="margin-top:12px;display:flex;justify-content:flex-end">
+                <button type="submit" class="btn btn-save" style="background:var(--done)">💾 บันทึกกิจกรรมสำเร็จ</button>
+              </div>
+            </form>
+          </div>
+
+          <!-- SCHEDULE NEXT PLAN FORM -->
+          <div class="customer-info-box" style="border-left: 4px solid var(--prog);">
+            <h3 style="margin-bottom: 16px; font-weight: 700; color: var(--tx); display:flex; align-items:center; gap:8px">📅 วางแผนรอบหน้า (Plan Next Step)</h3>
+            <form id="plan-form" onsubmit="schedulePlan(event)">
+              <div class="form-grid">
+                <div class="form-group">
+                  <label>กิจกรรมรอบหน้า <span class="req">*</span></label>
+                  <select id="plan-type" required>
+                    <option value="Visit">🚗 Onsite Visit (แผนเยี่ยมหน้างาน)</option>
+                    <option value="Call">📞 Phone Call (แผนโทรติดตาม)</option>
+                    <option value="Online">💻 Online Meeting (แผนประชุมออนไลน์)</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>วันที่วางแผนไว้ <span class="req">*</span></label>
+                  <input type="date" id="plan-date" required>
+                </div>
+              </div>
+              <div class="form-group">
+                <label>เป้าหมาย / Objective <span class="req">*</span></label>
+                <input type="text" id="plan-objective" required placeholder="เช่น เอาวาล์วตัวอย่างไปทดสอบ, เสนอราคาซ่อมบำรุง">
+              </div>
+              <div style="margin-top:12px;display:flex;justify-content:flex-end">
+                <button type="submit" class="btn btn-add">📅 บันทึกแผนงาน</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- RIGHT COLUMN: Timeline history -->
+        <div class="customer-info-box" style="display:flex; flex-direction:column; height:fit-content;">
+          <h3 style="margin-bottom: 16px; font-weight: 700; color: var(--tx); border-bottom:1px solid var(--bd); padding-bottom:12px">💬 ประวัติการดูแลย้อนหลัง (Timeline)</h3>
+          
+          <div id="planned-next-strip" class="planned-strip" style="display:none; margin-bottom:16px;">
+            <!-- Next scheduled visit populated here -->
+          </div>
+
+          <div class="timeline" id="visit-timeline">
+            <!-- Timeline items populated here -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- EMPTY STATE WORKSPACE -->
+    <div id="empty-workspace" class="empty-state" style="padding: 100px 20px; text-align: center; background: var(--s1); border: 1px dashed var(--bd); border-radius:12px;">
+      <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--mu)" stroke-width="1.5" style="margin-bottom:16px"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+      <h3 style="color: var(--tx); font-weight: 600; margin-bottom:8px">ยังไม่ได้เลือกบริษัทคู่ค้า</h3>
+      <p style="color: var(--mu); max-width: 450px; margin: 0 auto; font-size:13.5px">กรุณาพิมพ์ค้นหารายชื่อบริษัทในแถบค้นหาด้านบน หรือเพิ่มลูกค้ารายใหม่เข้าระบบเพื่อเริ่มต้นลงข้อมูลประวัติการเยี่ยมเยียนหรือโทรศัพท์</p>
+    </div>
+  </main>
+
+  <!-- ADD CUSTOMER MODAL -->
+  <div class="modal-overlay" id="add-customer-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title">➕ เพิ่มรายชื่อลูกค้าใหม่ (เข้าสู่ฐานข้อมูล CMB)</h2>
+        <button class="modal-close" onclick="closeAddCustomerModal()">✕</button>
+      </div>
+      <form id="new-customer-form" onsubmit="saveNewCustomer(event)">
+        <div class="modal-body">
+          <div class="form-group-block">
+            <label for="new-cust-name">ชื่อบริษัท / ลูกค้า <span class="req">*</span></label>
+            <input type="text" id="new-cust-name" required placeholder="เช่น บริษัท พีทีที เคมิคอล จำกัด (มหาชน)">
+          </div>
+
+          <div class="form-row-2">
+            <div class="form-group-block">
+              <label for="new-wic-id">WIC Customer ID</label>
+              <input type="text" id="new-wic-id" placeholder="เช่น D-17045">
+            </div>
+            <div class="form-group-block">
+              <label for="new-tier">ระดับความคุ้มครอง (Tier)</label>
+              <select id="new-tier">
+                <option value="">-- ไม่ระบุ --</option>
+                <option value="A">Tier A (เยี่ยมทุก 30 วัน)</option>
+                <option value="B">Tier B (เยี่ยมทุก 60 วัน)</option>
+                <option value="C">Tier C (เยี่ยมทุก 90 วัน)</option>
+                <option value="D">Tier D (เยี่ยมทุก 180 วัน)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row-2">
+            <div class="form-group-block">
+              <label for="new-sale">Sales ผู้ดูแล <span class="req">*</span></label>
+              <select id="new-sale" required>
+                <option value="">-- เลือก Sales --</option>
+                <option value="NN">NN</option>
+                <option value="SV">SV</option>
+                <option value="EN">EN</option>
+              </select>
+            </div>
+            <div class="form-group-block">
+              <label for="new-industry">กลุ่มอุตสาหกรรม</label>
+              <input type="text" id="new-industry" placeholder="เช่น โรงกลั่นน้ำมัน, ปิโตรเคมี, โรงไฟฟ้า">
+            </div>
+          </div>
+
+          <div class="form-row-2">
+            <div class="form-group-block">
+              <label for="new-zone">พื้นที่การดูแล (Zone)</label>
+              <input type="text" id="new-zone" placeholder="เช่น ชลบุรี, ระยอง, สระบุรี">
+            </div>
+            <div class="form-group-block">
+              <label for="new-product">สินค้า/บริการที่เกี่ยวข้อง</label>
+              <input type="text" id="new-product" placeholder="เช่น Control Valve, Ball Valve">
+            </div>
+          </div>
+
+          <div class="form-row-2">
+            <div class="form-group-block">
+              <label for="new-contact">ชื่อผู้จัดการ/ผู้ติดต่อ</label>
+              <input type="text" id="new-contact" placeholder="เช่น คุณวิทยา จัดซื้อ">
+            </div>
+            <div class="form-group-block">
+              <label for="new-position">ตำแหน่ง</label>
+              <input type="text" id="new-position" placeholder="เช่น วิศวกรไฟฟ้า, เจ้าหน้าที่จัดซื้ออาวุโส">
+            </div>
+          </div>
+
+          <div class="form-row-2">
+            <div class="form-group-block">
+              <label for="new-mobile">เบอร์มือถือติดต่อ</label>
+              <input type="text" id="new-mobile" placeholder="เช่น 089-1234567">
+            </div>
+            <div class="form-group-block">
+              <label for="new-tel">เบอร์โทรศัพท์สำนักงาน</label>
+              <input type="text" id="new-tel" placeholder="เช่น 02-1234567">
+            </div>
+          </div>
+
+          <div class="form-row-2">
+            <div class="form-group-block">
+              <label for="new-line">LINE ID</label>
+              <input type="text" id="new-line" placeholder="เช่น line_username">
+            </div>
+            <div class="form-group-block">
+              <label for="new-email">อีเมล</label>
+              <input type="email" id="new-email" placeholder="เช่น contact@customer.com">
+            </div>
+          </div>
+
+          <div class="form-group-block">
+            <label for="new-address">ที่อยู่เลขที่ตั้งบริษัท</label>
+            <textarea id="new-address" rows="2" placeholder="เช่น 99/9 หมู่ 2 นิคมอุตสาหกรรมมาบตาพุด"></textarea>
+          </div>
+
+          <div class="form-row-2">
+            <div class="form-group-block">
+              <label for="new-subdistrict">ตำบล / แขวง</label>
+              <input type="text" id="new-subdistrict" placeholder="เช่น มาบตาพุด">
+            </div>
+            <div class="form-group-block">
+              <label for="new-district">อำเภอ / เขต</label>
+              <input type="text" id="new-district" placeholder="เช่น เมืองระยอง">
+            </div>
+          </div>
+
+          <div class="form-row-2">
+            <div class="form-group-block">
+              <label for="new-province">จังหวัด</label>
+              <input type="text" id="new-province" placeholder="เช่น ระยอง">
+            </div>
+            <div class="form-group-block">
+              <label for="new-zipcode">รหัสไปรษณีย์</label>
+              <input type="text" id="new-zipcode" placeholder="เช่น 21150">
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-sec" onclick="closeAddCustomerModal()">ยกเลิก</button>
+          <button type="submit" class="btn btn-save" style="background:var(--blue2)">💾 บันทึกและค้นหาเลย</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- NOTIFICATION CONTAINER -->
+  <div class="toast-container" id="toast-container"></div>
+</div>
+
+<script src="sales-visit.js"></script>
+
+
+<script id="theme-script-override">
+function initTheme(){
+  const saved = localStorage.getItem('wisco-theme') || 'dark';
+  setTheme(saved);
+}
+function setTheme(theme){
+  if (theme === 'light') {
+    document.documentElement.setAttribute('data-theme', 'light');
+    localStorage.setItem('wisco-theme', 'light');
+  } else {
+    document.documentElement.removeAttribute('data-theme');
+    localStorage.setItem('wisco-theme', 'dark');
+  }
+  updateToggleState(theme);
+}
+function toggleTheme(){
+  const current = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+  setTheme(current);
+}
+function updateToggleState(theme){
+  const icon = document.getElementById('theme-icon');
+  const text = document.getElementById('theme-text');
+  if (icon) icon.textContent = theme === 'light' ? '☀️' : '🌙';
+  if (text) text.textContent = theme === 'light' ? 'สว่าง' : 'มืด';
+}
+function injectThemeButton(){
+  const header = document.querySelector('header');
+  if (!header) return;
+  if (document.getElementById('theme-toggle')) return;
+  const btn = document.createElement('button');
+  btn.id = 'theme-toggle';
+  btn.className = 'btn btn-sm';
+  btn.onclick = toggleTheme;
+  btn.style.cssText = "padding: 4px 10px; border-radius: 20px; font-size: 14px; background: var(--sur2); border: 1px solid var(--bd); cursor: pointer; display: flex; align-items: center; gap: 6px; font-family:'Sarabun',sans-serif; margin-right: 10px; flex-shrink: 0;";
+  
+  const saved = localStorage.getItem('wisco-theme') || 'dark';
+  btn.innerHTML = `<span id="theme-icon">${saved === 'light' ? '☀️' : '🌙'}</span> <span id="theme-text" style="font-size: 11px; font-weight: 600; color: var(--mu)">${saved === 'light' ? 'สว่าง' : 'มืด'}</span>`;
+  
+  // Find where to append
+  const right = header.querySelector('.header-right') || header.querySelector('div[style*="align-items:center"]') || header.querySelector('.logo + div') || header;
+  if (right && right !== header) {
+    right.insertBefore(btn, right.firstChild);
+  } else {
+    header.appendChild(btn);
+  }
+}
+initTheme();
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', injectThemeButton);
+} else {
+  injectThemeButton();
+}
+</script>
+
+</body>
+</html>
