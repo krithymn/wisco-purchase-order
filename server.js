@@ -1496,16 +1496,194 @@ app.get('/api/cmb-stats', (req, res) => {
   }
 });
 
-// API: Re-sync CMB database from Excel file
-app.post('/api/cmb-sync', (req, res) => {
-  const { exec } = require('child_process');
-  exec('python seed_cmb.py', { cwd: __dirname }, (error, stdout, stderr) => {
-    if (error) {
-      return res.status(500).json({ error: stderr || error.message });
+// API: Re-sync CMB database from Excel file (supports local file on server OR direct binary upload)
+app.post('/api/cmb-sync', express.raw({ type: '*/*', limit: '10mb' }), (req, res) => {
+  try {
+    const XLSX = require('xlsx');
+    let workbook;
+    
+    // Check if client uploaded raw binary data
+    if (Buffer.isBuffer(req.body) && req.body.length > 0) {
+      workbook = XLSX.read(req.body, { type: 'buffer' });
+    } else {
+      // Otherwise, try reading the local file on the server
+      const excelPath = path.join(__dirname, '5.6.2569  อาจารย์  ส่งมาให้ล่าสุด WIC TSK Team.xlsx');
+      if (!fs.existsSync(excelPath)) {
+        return res.status(404).json({ error: 'Excel file not found on server. Please upload it via browser instead.' });
+      }
+      workbook = XLSX.readFile(excelPath);
     }
-    res.json({ message: stdout.trim() });
-  });
+    
+    const sheetName = 'รวม TSK ';
+    if (!workbook.SheetNames.includes(sheetName)) {
+      return res.status(400).json({ error: `Sheet '${sheetName}' not found in the Excel workbook.` });
+    }
+    
+    const sheet = workbook.Sheets[sheetName];
+    const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false, defval: '' });
+    const dataRows = rows.slice(2);
+    
+    const insertStmt = db.prepare(`
+      INSERT INTO customers (
+        customer_name, wic_customer_id, tier, status, registration_date,
+        sale_code, team, month_forecast, year_forecast, zone,
+        industry, product_service, contact_name, position, tel,
+        mobile, line_id, email, address, subdistrict,
+        district, province, zipcode
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+    `);
+    
+    const cleanStr = (val) => {
+      if (val === undefined || val === null) return "";
+      let s = String(val).trim();
+      s = s.replace(/\u00a0/g, ' ');
+      return s;
+    };
+    
+    const cleanFloat = (val) => {
+      if (val === undefined || val === null) return 0.0;
+      let s = String(val).trim();
+      s = s.replace(/[^\d.-]/g, '');
+      const f = parseFloat(s);
+      return isNaN(f) ? 0.0 : f;
+    };
+    
+    const cleanedRows = [];
+    
+    for (let i = 0; i < dataRows.length; i++) {
+      const row = dataRows[i];
+      const custName = row[1] ? cleanStr(row[1]) : '';
+      if (!custName) continue;
+      
+      const wicId = row[2] ? cleanStr(row[2]) : '';
+      const tier = row[3] ? cleanStr(row[3]) : '';
+      const status = row[4] ? cleanStr(row[4]) : '';
+      const regDate = row[5] ? cleanStr(row[5]) : '';
+      const saleCode = row[6] ? cleanStr(row[6]) : '';
+      const team = row[7] ? cleanStr(row[7]) : '';
+      const monthFc = row[8] ? cleanFloat(row[8]) : 0.0;
+      const yearFc = row[9] ? cleanFloat(row[9]) : 0.0;
+      const zone = row[10] ? cleanStr(row[10]) : '';
+      const industry = row[11] ? cleanStr(row[11]) : '';
+      const prodSvc = row[12] ? cleanStr(row[12]) : '';
+      const contact = row[13] ? cleanStr(row[13]) : '';
+      const pos = row[14] ? cleanStr(row[14]) : '';
+      const tel = row[15] ? cleanStr(row[15]) : '';
+      const mobile = row[16] ? cleanStr(row[16]) : '';
+      
+      const lid1 = row[17] ? cleanStr(row[17]) : '';
+      const lid2 = row[18] ? cleanStr(row[18]) : '';
+      const lineId = lid1 ? lid1 : lid2;
+      
+      const email = row[19] ? cleanStr(row[19]) : '';
+      const addr = row[21] ? cleanStr(row[21]) : '';
+      const subdist = row[22] ? cleanStr(row[22]) : '';
+      const dist = row[23] ? cleanStr(row[23]) : '';
+      let prov = row[24] ? cleanStr(row[24]) : '';
+      const zipc = row[25] ? cleanStr(row[25]) : '';
+      
+      if (prov) {
+        prov = prov.replace("จ.", "").trim();
+      }
+      if (!prov && zone) {
+        const zClean = zone.replace("จ.", "").trim();
+        const validProvinces = ["กรุงเทพ", "กทม.", "สมุทรปราการ", "นนทบุรี", "นครปฐม", "สมุทรสาคร", "ระยอง", "ฉะเชิงเทรา", "ชลบุรี", "ปราจีนบุรี", "ปทุมธานี", "สระบุรี"];
+        if (validProvinces.includes(zClean)) {
+          prov = zClean;
+        }
+      }
+      if (prov === "กทม.") {
+        prov = "กรุงเทพ";
+      }
+      
+      cleanedRows.push([
+        custName, wicId, tier, status, regDate,
+        saleCode, team, monthFc, yearFc, zone,
+        industry, prodSvc, contact, pos, tel,
+        mobile, lineId, email, addr, subdist,
+        dist, prov, zipc
+      ]);
+    }
+    
+    // DB transaction: recreate table, insert rows
+    db.run("DROP TABLE IF EXISTS customers;");
+    db.run(`
+      CREATE TABLE IF NOT EXISTS customers (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        customer_name TEXT NOT NULL,
+        wic_customer_id TEXT,
+        tier TEXT,
+        status TEXT,
+        registration_date TEXT,
+        sale_code TEXT,
+        team TEXT,
+        month_forecast REAL DEFAULT 0,
+        year_forecast REAL DEFAULT 0,
+        zone TEXT,
+        industry TEXT,
+        product_service TEXT,
+        contact_name TEXT,
+        position TEXT,
+        tel TEXT,
+        mobile TEXT,
+        line_id TEXT,
+        email TEXT,
+        address TEXT,
+        subdistrict TEXT,
+        district TEXT,
+        province TEXT,
+        zipcode TEXT,
+        last_visit_date TEXT DEFAULT '',
+        last_call_date TEXT DEFAULT '',
+        last_contact_date TEXT DEFAULT '',
+        next_planned_date TEXT DEFAULT '',
+        next_planned_type TEXT DEFAULT '',
+        created_at TEXT DEFAULT (datetime('now','localtime')),
+        updated_at TEXT DEFAULT (datetime('now','localtime'))
+      );
+    `);
+    
+    db.run(`
+      CREATE TABLE IF NOT EXISTS activities (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        customer_id INTEGER NOT NULL,
+        activity_type TEXT NOT NULL,
+        activity_date TEXT NOT NULL,
+        contact_person TEXT DEFAULT '',
+        summary TEXT DEFAULT '',
+        created_by TEXT DEFAULT '',
+        created_at TEXT DEFAULT (datetime('now','localtime')),
+        FOREIGN KEY(customer_id) REFERENCES customers(id) ON DELETE CASCADE
+      );
+    `);
+    
+    db.run(`
+      CREATE TABLE IF NOT EXISTS plans (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        customer_id INTEGER NOT NULL,
+        plan_type TEXT NOT NULL,
+        planned_date TEXT NOT NULL,
+        objective TEXT DEFAULT '',
+        created_by TEXT DEFAULT '',
+        created_at TEXT DEFAULT (datetime('now','localtime')),
+        FOREIGN KEY(customer_id) REFERENCES customers(id) ON DELETE CASCADE
+      );
+    `);
+    
+    const insertMany = db.transaction((rowsToInsert) => {
+      for (const r of rowsToInsert) {
+        insertStmt.run(r);
+      }
+    });
+    
+    insertMany(cleanedRows);
+    res.json({ message: `seeded database with ${cleanedRows.length} customers!` });
+  } catch (err) {
+    console.error('CMB Sync failed:', err);
+    res.status(500).json({ error: `Sync failed: ${err.message}` });
+  }
 });
+
 
 // API: Export filtered CMB data to Excel CSV
 app.get('/api/cmb-export-csv', (req, res) => {
