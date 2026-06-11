@@ -212,8 +212,8 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--spec);bo
             <div id="sale-drop" class="admin-drop"></div>
           </div>
         </div>
-        <div class="fg"><label>QUOTATION No.</label><input id="f-quot-no" placeholder="QT-XXXX"></div>
         <div class="fg"><label>LD No.</label><input id="f-ld-no" placeholder="LD-XXXX"></div>
+        <div class="fg"><label>QUOTATION No.</label><input id="f-quot-no" placeholder="QT-XXXX"></div>
         <div class="fg"><label>นปท. / ตปท.</label>
           <select id="f-domestic">
             <option value="">— เลือก —</option>
@@ -246,8 +246,8 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--spec);bo
     <div class="mbody">
       <div class="section-label">📋 ข้อมูลใบเสนอราคา (Quotation Info)</div>
       <div class="form-grid">
-        <div class="fg"><label>Quotation No. *</label><input id="fq-quotation-no" placeholder="เช่น Q6905-001"></div>
         <div class="fg"><label>LD No.</label><input id="fq-ld-no" placeholder="เช่น LD69001"></div>
+        <div class="fg"><label>Quotation No. *</label><input id="fq-quotation-no" placeholder="เช่น Q6905-001"></div>
         
         <div class="fg"><label>ประเภทงานใบเสนอราคา (Job Type) *</label>
           <select id="fq-type">
@@ -480,16 +480,21 @@ function renderStats(){
   if (!statsBar) return;
 
   if (isQuotes) {
+    const total = _quotations.length || 1;
+    const winCount = _quotations.filter(q => q.status === 'WIN').length;
+    const pendingCount = _quotations.filter(q => q.status === 'PENDING' || !q.status).length;
+    const lostCount = _quotations.filter(q => q.status === 'LOST').length;
+
+    const winPct = Math.round((winCount / total) * 100);
+    const pendingPct = Math.round((pendingCount / total) * 100);
+    const lostPct = Math.round((lostCount / total) * 100);
+
     statsBar.innerHTML = `
-      <div class="stat-card"><div class="stat-n" id="sq-total">0</div><div class="stat-l">ใบเสนอราคาทั้งหมด</div></div>
-      <div class="stat-card"><div class="stat-n" style="color:var(--done)" id="sq-win">0</div><div class="stat-l">WIN (ชนะ)</div></div>
-      <div class="stat-card"><div class="stat-n" style="color:#9a6700" id="sq-pending">0</div><div class="stat-l">PENDING (รอผล)</div></div>
-      <div class="stat-card"><div class="stat-n" style="color:var(--late)" id="sq-lost">0</div><div class="stat-l">LOST (แพ้)</div></div>
+      <div class="stat-card"><div class="stat-n" id="sq-total">${_quotations.length}</div><div class="stat-l">ใบเสนอราคาทั้งหมด</div></div>
+      <div class="stat-card"><div class="stat-n" style="color:var(--done)" id="sq-win">${winCount} <span style="font-size:12px;color:var(--mu);font-weight:normal">(${winPct}%)</span></div><div class="stat-l">WIN (ชนะ)</div></div>
+      <div class="stat-card"><div class="stat-n" style="color:#9a6700" id="sq-pending">${pendingCount} <span style="font-size:12px;color:var(--mu);font-weight:normal">(${pendingPct}%)</span></div><div class="stat-l">PENDING (รอผล)</div></div>
+      <div class="stat-card"><div class="stat-n" style="color:var(--late)" id="sq-lost">${lostCount} <span style="font-size:12px;color:var(--mu);font-weight:normal">(${lostPct}%)</span></div><div class="stat-l">LOST (แพ้)</div></div>
     `;
-    document.getElementById('sq-total').textContent = _quotations.length;
-    document.getElementById('sq-win').textContent = _quotations.filter(q => q.status === 'WIN').length;
-    document.getElementById('sq-pending').textContent = _quotations.filter(q => q.status === 'PENDING' || !q.status).length;
-    document.getElementById('sq-lost').textContent = _quotations.filter(q => q.status === 'LOST').length;
   } else {
     statsBar.innerHTML = `
       <div class="stat-card"><div class="stat-n" id="s-total">0</div><div class="stat-l">PR ทั้งหมด</div></div>
@@ -571,8 +576,8 @@ function updateLayoutForTab() {
   if (thead) {
     if (isQuotes) {
       thead.innerHTML = `
-        <th>Quotation No.</th>
         <th>LD No.</th>
+        <th>Quotation No.</th>
         <th>ประเภทงาน</th>
         <th>วันที่เปิด</th>
         <th>ลูกค้า</th>
@@ -629,8 +634,8 @@ function renderTable(){
       const statusText = x.status || 'PENDING';
       
       return `<tr>
-        <td><strong>${hl(x.quotation_no, q)}</strong></td>
-        <td>${hl(x.ld_no, q) || '—'}</td>
+        <td><strong>${hl(x.ld_no, q) || '—'}</strong></td>
+        <td>${hl(x.quotation_no, q)}</td>
         <td>${hl(x.quotation_type, q) || '—'}</td>
         <td style="color:var(--mu)">${x.start_date || '—'}</td>
         <td>${hl(x.customer, q) || '—'}</td>
@@ -895,8 +900,8 @@ function openDetail(id){
       <div class="info-grid">
         <div class="info-item"><div class="ik">Sale Team</div><div class="iv">${p.saleTeam||'—'}</div></div>
         <div class="info-item"><div class="ik">Sale</div><div class="iv">${p.sale||'—'}</div></div>
-        <div class="info-item"><div class="ik">QUOTATION No.</div><div class="iv">${p.quotationNo||'—'}</div></div>
         <div class="info-item"><div class="ik">LD No.</div><div class="iv">${p.ldNo||'—'}</div></div>
+        <div class="info-item"><div class="ik">QUOTATION No.</div><div class="iv">${p.quotationNo||'—'}</div></div>
         <div class="info-item"><div class="ik">PO No.</div><div class="iv">${p.poNo||'—'}</div></div>
       </div>
     </div>
@@ -991,6 +996,13 @@ async function saveQuotation(){
     status: existing ? (existing.status || 'PENDING') : 'PENDING',
     product: existing ? (existing.product || '') : '',
     remark: document.getElementById('fq-remark').value.trim(),
+    responsible: existing ? (existing.responsible || '') : '',
+    progressStatus: existing ? (existing.progress_status || 'ตรวจสอบข้อมูล') : 'ตรวจสอบข้อมูล',
+    totalOffer: existing ? (parseFloat(existing.total_offer) || 0.0) : 0.0,
+    offerDate: existing ? (existing.offer_date || '') : '',
+    completedDate: existing ? (existing.completed_date || '') : '',
+    prNo: existing ? (existing.pr_no || '') : '',
+    poNo: existing ? (existing.po_no || '') : '',
   };
   
   const url = _editId ? `/api/quotations/${_editId}` : '/api/quotations';
@@ -1030,11 +1042,11 @@ function openQuotationDetail(id){
     <div class="detail-section">
       <div class="detail-title">📋 ข้อมูลทั่วไป</div>
       <div class="info-grid">
-        <div class="info-item"><div class="ik">Quotation No.</div><div class="iv">${q.quotation_no}</div></div>
         <div class="info-item"><div class="ik">LD No.</div><div class="iv">${q.ld_no || '—'}</div></div>
+        <div class="info-item"><div class="ik">Quotation No.</div><div class="iv">${q.quotation_no}</div></div>
         <div class="info-item"><div class="ik">ประเภทงาน</div><div class="iv">${q.quotation_type || '—'}</div></div>
         <div class="info-item"><div class="ik">วันที่เปิดบอร์ด</div><div class="iv">${q.start_date || '—'}</div></div>
-        <div class="info-item"><div class="ik">กำหนดส่ง (Leadtime)</div><div class="iv">${q.due_date || '—'}</div></div>
+        <div class="info-item"><div class="ik">กำหนดส่ง</div><div class="iv">${q.due_date || '—'}</div></div>
         <div class="info-item"><div class="ik">สถานะ</div><div class="iv"><span class="badge ${q.status === 'WIN' ? 'b-win' : q.status === 'PENDING' ? 'b-pending' : q.status === 'LOST' ? 'b-lost' : 'b-pending'}">${q.status || 'PENDING'}</span></div></div>
       </div>
     </div>
