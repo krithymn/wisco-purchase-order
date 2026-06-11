@@ -7,45 +7,19 @@
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --bg:#08090e;--sur:#0e1018;--sur2:#13161f;--sur3:#181c28;--sur4:#1e2330;
-  --bd:#1e2438;--bd2:#141826;
-  --tx:#e8eaf2;--mu:#7080a0;
-  --ac:#d42030;--red2:#e84050;--red3:#ff6070;
-  
-  --done:#22c55e;--late:#ef4444;--prog:#3a7bd5;--warn:#f97316;--spec:#a78bfa;
-  --done-bg:rgba(34,197,94,.1);--late-bg:rgba(239,68,68,.1);--prog-bg:rgba(58,123,213,.12);--warn-bg:rgba(249,115,22,.1);--spec-bg:rgba(167,139,250,.1);
-  --done-bd:rgba(34,197,94,.3);--late-bd:rgba(239,68,68,.3);--prog-bd:rgba(58,123,213,.35);--warn-bd:rgba(249,115,22,.3);--spec-bd:rgba(167,139,250,.3);
-  
-  --r:6px;--rl:12px;
-  --shadow: 0 2px 8px rgba(0,0,0,.4);
-  --shadow-lg: 0 8px 24px rgba(0,0,0,.4);
-  --shadow-xl: 0 24px 64px rgba(0,0,0,.6);
-}
-:root[data-theme="light"] {
-  --bg:#f4f5f8;--sur:#ffffff;--sur2:#f8f9fa;--sur3:#edf2f7;--sur4:#e2e8f0;
-  --bd:#d1d5db;--bd2:#e5e7eb;
-  --tx:#0f172a;--mu:#64748b;
-  
-  --done:#10b981;--late:#ef4444;--prog:#3b82f6;--warn:#f59e0b;--spec:#8b5cf6;
-  
-  --done-bg:rgba(16,185,129,.08);--late-bg:rgba(239,68,68,.08);--prog-bg:rgba(59,130,246,.08);--warn-bg:rgba(245,158,11,.08);--spec-bg:rgba(139,92,246,.08);
-  --done-bd:rgba(16,185,129,.25);--late-bd:rgba(239,68,68,.25);--prog-bd:rgba(59,130,246,.25);--warn-bd:rgba(245,158,11,.25);--spec-bd:rgba(139,92,246,.25);
-  
-  --shadow: 0 2px 8px rgba(0,0,0,.06);
-  --shadow-lg: 0 8px 24px rgba(0,0,0,.08);
-  --shadow-xl: 0 24px 64px rgba(15,23,42,.12);
-}
+:root{--bg:#08090e;--sur:#0e1018;--sur2:#13161f;--sur3:#181c28;--sur4:#1e2330;--bd:#1e2438;--bd2:#141826;--tx:#e8eaf2;--mu:#7080a0;--ac:#d42030;--red2:#e84050;--red3:#ff6070;--done:#22c55e;--late:#ef4444;--prog:#3a7bd5;--warn:#f97316;--spec:#a78bfa;--done-bg:rgba(34,197,94,.1);--late-bg:rgba(239,68,68,.1);--prog-bg:rgba(58,123,213,.12);--warn-bg:rgba(249,115,22,.1);--spec-bg:rgba(167,139,250,.1);--done-bd:rgba(34,197,94,.3);--late-bd:rgba(239,68,68,.3);--prog-bd:rgba(58,123,213,.35);--warn-bd:rgba(249,115,22,.3);--spec-bd:rgba(167,139,250,.3);--r:6px;--rl:12px;--shadow:0 2px 8px rgba(0,0,0,.4);--shadow-lg:0 8px 24px rgba(0,0,0,.4);--shadow-xl:0 24px 64px rgba(0,0,0,.6)}
+:root[data-theme="light"]{--bg:#f4f5f8;--sur:#ffffff;--sur2:#f8f9fa;--sur3:#edf2f7;--sur4:#e2e8f0;--bd:#d1d5db;--bd2:#e5e7eb;--tx:#0f172a;--mu:#64748b;--done:#10b981;--late:#ef4444;--prog:#3b82f6;--warn:#f59e0b;--spec:#8b5cf6;--done-bg:rgba(16,185,129,.08);--late-bg:rgba(239,68,68,.08);--prog-bg:rgba(59,130,246,.08);--warn-bg:rgba(245,158,11,.08);--spec-bg:rgba(139,92,246,.08);--done-bd:rgba(16,185,129,.25);--late-bd:rgba(239,68,68,.25);--prog-bd:rgba(59,130,246,.25);--warn-bd:rgba(245,158,11,.25);--spec-bd:rgba(139,92,246,.25);--shadow:0 2px 8px rgba(0,0,0,.06);--shadow-lg:0 8px 24px rgba(0,0,0,.08);--shadow-xl:0 24px 64px rgba(15,23,42,.12)}
+:root[data-theme="light"] header{background:linear-gradient(90deg,var(--bg) 0%,var(--sur) 50%,var(--bg) 100%) !important;box-shadow:var(--shadow) !important;border-bottom:1px solid var(--bd) !important}
+:root[data-theme="light"] header .logo span{color:var(--spec) !important}
+:root[data-theme="light"] header #last-update{color:var(--spec) !important}
+:root[data-theme="light"] header div[style*="color:#9575cd"]{color:var(--mu) !important}
 html,body{background:var(--bg);color:var(--tx);font-family:'Sarabun','Inter',sans-serif;min-height:100vh}
-header{background:linear-gradient(90deg,var(--bg),var(--sur));border-bottom:1px solid var(--bd);padding:0 24px;height:54px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;box-shadow:var(--shadow)}
-header::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,#a78bfa,#3a7bd5,#9aaac0,#d42030,transparent)}
+header{background:linear-gradient(90deg,#08090e,#1e1030);border-bottom:1px solid #2e1a50;padding:0 24px;height:54px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;box-shadow:0 2px 8px rgba(0,0,0,.4)}
 .logo{font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px;color:#fff}
 .btn{font-size:13px;padding:6px 14px;border-radius:var(--r);font-family:'Sarabun',sans-serif;cursor:pointer;font-weight:500;border:1px solid var(--bd);background:var(--sur);color:var(--tx);transition:all .15s;text-decoration:none;display:inline-flex;align-items:center;gap:5px}
-.btn:hover{background:var(--sur2);border-color:var(--mu)}
-.btn-primary{background:var(--spec);color:#fff;border-color:var(--spec)}
-.btn-primary:hover{opacity:.9;box-shadow:0 0 12px rgba(167,139,250,.4)}
-.btn-danger{background:var(--late);color:#fff;border-color:var(--late)}
-.btn-danger:hover{opacity:.9;box-shadow:0 0 12px rgba(239,68,68,.4)}
+.btn:hover{background:var(--sur2)}
+.btn-primary{background:var(--spec);color:#fff;border-color:var(--spec)}.btn-primary:hover{opacity:.9}
+.btn-danger{background:var(--late);color:#fff;border-color:var(--late)}.btn-danger:hover{opacity:.9}
 .btn-sm{font-size:11px;padding:4px 10px}
 
 /* STATS */
@@ -58,8 +32,8 @@ header::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;ba
 .main{padding:20px 24px}
 .section-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px}
 .section-title{font-size:18px;font-weight:700}
-.search-inp{font-size:13px;padding:7px 12px;border:1px solid var(--bd);border-radius:var(--r);background:var(--sur);color:var(--tx);font-family:'Sarabun',sans-serif;width:260px}
-.search-inp:focus{outline:none;border-color:var(--spec);box-shadow:0 0 0 3px rgba(167,139,250,.15)}
+.search-inp{font-size:13px;padding:7px 12px;border:1px solid var(--bd);border-radius:var(--r);font-family:'Sarabun',sans-serif;width:260px}
+.search-inp:focus{outline:none;border-color:var(--spec)}
 .table-wrap{background:var(--sur);border:1px solid var(--bd);border-radius:var(--rl);overflow:hidden}
 table{width:100%;border-collapse:collapse}
 thead tr{background:var(--sur2);border-bottom:1px solid var(--bd)}
@@ -69,26 +43,26 @@ tbody tr:hover{background:var(--sur2)}
 td{padding:9px 12px;font-size:13px;vertical-align:middle}
 .badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:99px;display:inline-block;white-space:nowrap}
 .b-linked{background:var(--done-bg);color:var(--done);border:1px solid var(--done-bd)}
-.b-pending{background:var(--warn-bg);color:var(--warn);border:1px solid var(--warn-bd)}
+.b-pending{background:#fff8c5;color:#9a6700;border:1px solid #e3b341}
 .b-fine{background:var(--late-bg);color:var(--late);border:1px solid var(--late-bd)}
-.highlight{background:rgba(167,139,250,0.15);color:var(--spec);border-radius:2px;padding:0 2px}
+.highlight{background:#fff3b0;border-radius:2px;padding:0 2px}
 
 /* MODAL */
-.ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(6px);z-index:200;align-items:center;justify-content:center}
+.ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:center;justify-content:center}
 .ov.open{display:flex}
-.modal{background:var(--sur);border:1px solid var(--bd);border-radius:var(--rl);width:780px;max-width:97vw;max-height:92vh;display:flex;flex-direction:column;box-shadow:var(--shadow-xl)}
-.mhdr{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--bd2);background:var(--sur2)}
+.modal{background:var(--sur);border-radius:var(--rl);width:780px;max-width:97vw;max-height:92vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.mhdr{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--bd2);background:linear-gradient(90deg,#f5f0ff,var(--sur2))}
 .mtitle{font-size:16px;font-weight:700;color:var(--spec)}
-.mclose{background:none;border:none;color:var(--mu);font-size:22px;cursor:pointer;padding:0;transition:color .12s}.mclose:hover{color:var(--tx)}
+.mclose{background:none;border:none;color:var(--mu);font-size:22px;cursor:pointer;padding:0}.mclose:hover{color:var(--tx)}
 .mbody{overflow-y:auto;padding:20px 24px}
 .mftr{padding:12px 20px;border-top:1px solid var(--bd2);display:flex;justify-content:flex-end;gap:8px;background:var(--sur2)}
 .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px 16px}
 .fg{display:flex;flex-direction:column;gap:4px}
 .fg.span2{grid-column:span 2}
 label{font-size:12px;font-weight:600;color:var(--mu)}
-input,select,textarea{font-size:13px;padding:8px 10px;border:1px solid var(--bd);border-radius:var(--r);font-family:'Sarabun',sans-serif;background:var(--sur);color:var(--tx);width:100%}
-input:focus,select:focus,textarea:focus{outline:none;border-color:var(--spec);box-shadow:0 0 0 3px rgba(167,139,250,.15)}
-.section-label{font-size:11px;font-weight:700;color:var(--spec);text-transform:uppercase;letter-spacing:.5px;margin:14px 0 6px;padding-bottom:4px;border-bottom:1px solid var(--prog-bd)}
+input,select,textarea{font-size:13px;padding:8px 10px;border:1px solid var(--bd);border-radius:var(--r);font-family:'Sarabun',sans-serif;background:var(--sur);width:100%}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--spec);box-shadow:0 0 0 3px rgba(124,58,237,.1)}
+.section-label{font-size:11px;font-weight:700;color:var(--spec);text-transform:uppercase;letter-spacing:.5px;margin:14px 0 6px;padding-bottom:4px;border-bottom:1px solid var(--prog-bg)}
 .fine-row{display:flex;align-items:center;gap:10px}
 .fine-pct-wrap{display:none}
 .fine-pct-wrap.show{display:flex;align-items:center;gap:6px}
@@ -98,8 +72,8 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--spec);bo
 .item-row{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;padding:8px 10px;border-bottom:1px solid var(--bd2);align-items:center}
 .item-row:last-child{border-bottom:none}
 .item-hdr{background:var(--sur2);font-size:10px;font-weight:700;color:var(--mu);text-transform:uppercase;padding:6px 10px;display:grid;grid-template-columns:1fr 1fr auto;gap:8px}
-.del-btn{background:none;border:none;color:var(--mu);font-size:16px;cursor:pointer;padding:2px 6px;border-radius:4px;transition:all .12s}.del-btn:hover{color:var(--late);background:var(--late-bg)}
-.add-item-btn{width:100%;padding:8px;border:1px dashed var(--bd);border-top:none;background:var(--sur2);color:var(--mu);font-size:12px;cursor:pointer;font-family:'Sarabun',sans-serif;text-align:center;transition:all .12s}.add-item-btn:hover{background:var(--sur);color:var(--tx)}
+.del-btn{background:none;border:none;color:var(--mu);font-size:16px;cursor:pointer;padding:2px 6px;border-radius:4px}.del-btn:hover{color:var(--late);background:var(--late-bg)}
+.add-item-btn{width:100%;padding:8px;border:1px dashed var(--bd);border-top:none;background:var(--sur2);color:var(--mu);font-size:12px;cursor:pointer;font-family:'Sarabun',sans-serif;text-align:center}.add-item-btn:hover{background:var(--sur);color:var(--tx)}
 
 /* detail modal */
 .detail-section{margin-bottom:16px}
@@ -111,23 +85,20 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--spec);bo
 .items-tbl th{font-size:10px;font-weight:700;color:var(--mu);text-transform:uppercase;padding:5px 8px;text-align:left;border-bottom:1px solid var(--bd2);background:var(--sur2)}
 .items-tbl td{padding:6px 8px;border-bottom:1px solid var(--bd2)}
 
-::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-thumb{background:var(--bd);border-radius:99px}
-.admin-drop{display:none;position:absolute;top:100%;left:0;right:0;background:var(--sur);border:1px solid var(--bd);border-radius:var(--r);box-shadow:var(--shadow-lg);z-index:100;max-height:180px;overflow-y:auto}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:var(--bd);border-radius:99px}
+.admin-drop{display:none;position:absolute;top:100%;left:0;right:0;background:var(--sur);border:1px solid var(--bd);border-radius:var(--r);box-shadow:0 4px 12px rgba(0,0,0,.1);z-index:100;max-height:180px;overflow-y:auto}
 .admin-drop.show{display:block}
-.admin-opt{padding:8px 12px;font-size:13px;cursor:pointer;font-family:'Sarabun',sans-serif;transition:all .1s}.admin-opt:hover{background:var(--sur2)}
+.admin-opt{padding:8px 12px;font-size:13px;cursor:pointer;font-family:'Sarabun',sans-serif}.admin-opt:hover{background:var(--sur2)}
 </style>
 </head>
 <body>
 <header>
   <div class="logo">
     <img src="logo.png" style="height:30px;width:auto;object-fit:contain" alt="Wisco">
-    <span style="color:var(--spec);font-weight:600">Admin — PR Management</span>
+    <span style="color:#b39ddb;font-weight:600">Admin — PR Management</span>
   </div>
   <div style="display:flex;align-items:center;gap:10px">
     <div id="last-update" style="font-size:11px;color:#9575cd"></div>
-    <button id="theme-toggle" class="btn btn-sm" onclick="toggleTheme()" style="padding: 4px 10px; border-radius: 20px; font-size: 14px; background: var(--sur2); border: 1px solid var(--bd); cursor: pointer; display: flex; align-items: center; gap: 6px; margin-right: 5px; font-family:'Sarabun',sans-serif">
-      <span id="theme-icon">🌙</span> <span id="theme-text" style="font-size: 11px; font-weight: 600; color: var(--mu)">มืด</span>
-    </button>
     <div style="font-size:12px;color:#9575cd">🔒 Admin Only Page</div>
   </div>
 </header>
@@ -146,7 +117,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--spec);bo
     <div class="section-title">📋 รายการ PR ทั้งหมด</div>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
       <input class="search-inp" id="q" placeholder="ค้นหา PR No., ลูกค้า, Sale..." oninput="renderTable()">
-      <select style="font-size:13px;padding:7px 10px;border:1px solid var(--bd);border-radius:var(--r);background:var(--sur);color:var(--tx);font-family:'Sarabun',sans-serif" id="f-status" onchange="renderTable()">
+      <select style="font-size:13px;padding:7px 10px;border:1px solid var(--bd);border-radius:var(--r);font-family:'Sarabun',sans-serif" id="f-status" onchange="renderTable()">
         <option value="">ทั้งหมด</option>
         <option value="pending">รอเปิด POI</option>
         <option value="linked">มี POI แล้ว</option>
@@ -154,7 +125,6 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--spec);bo
         <option value="fine">มีค่าปรับ</option>
         <option value="cancelled">🚫 ยกเลิกแล้ว</option>
       </select>
-      <a href="/api/export-prs-csv" download><button class="btn btn-secondary">📥 ส่งออก Excel (CSV)</button></a>
       <button class="btn btn-primary" onclick="openAddModal()">+ เพิ่ม PR ใหม่</button>
     </div>
   </div>
@@ -163,7 +133,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--spec);bo
     <button id="dtab-all"   onclick="setDTab('all')"   style="padding:8px 20px;font-size:13px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:3px solid var(--spec);color:var(--spec);margin-bottom:-2px;font-family:'Sarabun',sans-serif">🌐 ทั้งหมด</button>
     <button id="dtab-dom"   onclick="setDTab('นปท.')"  style="padding:8px 20px;font-size:13px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;color:var(--mu);margin-bottom:-2px;font-family:'Sarabun',sans-serif">🏠 ในประเทศ (นปท.)</button>
     <button id="dtab-intl"  onclick="setDTab('ตปท.')"  style="padding:8px 20px;font-size:13px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;color:var(--mu);margin-bottom:-2px;font-family:'Sarabun',sans-serif">✈️ ต่างประเทศ (ตปท.)</button>
-    <button id="dtab-finished" onclick="setDTab('finished')" style="padding:8px 20px;font-size:13px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;color:var(--mu);margin-bottom:-2px;font-family:'Sarabun',sans-serif">✅ PR เสร็จสิ้น</button>
+    <button id="dtab-quotes" onclick="setDTab('quotes')" style="padding:8px 20px;font-size:13px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;color:var(--mu);margin-bottom:-2px;font-family:'Sarabun',sans-serif">📄 ใบเสนอราคา (Quotations)</button>
   </div>
 
   <div class="table-wrap">
@@ -176,7 +146,6 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--spec);bo
         <th>กำหนดส่ง</th>
         <th>มูลค่า PO</th>
         <th>ค่าปรับ</th>
-        <th>ทีม Sales</th>
         <th>Sale</th>
         <th>สถานะ POI</th>
         <th>📦 ETA Wisco</th>
@@ -265,6 +234,98 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--spec);bo
   </div>
 </div>
 
+<!-- ADD/EDIT QUOTATION MODAL -->
+<div class="ov" id="q-form-modal">
+  <div class="modal">
+    <div class="mhdr"><span class="mtitle" id="q-form-title">+ เพิ่มใบเสนอราคาใหม่</span><button class="mclose" onclick="closeQuotationFormModal()">×</button></div>
+    <div class="mbody">
+      <div class="section-label">📋 ข้อมูลใบเสนอราคา (Quotation Info)</div>
+      <div class="form-grid">
+        <div class="fg"><label>Quotation No. *</label><input id="fq-quotation-no" placeholder="เช่น Q6905-001"></div>
+        <div class="fg"><label>LD No.</label><input id="fq-ld-no" placeholder="เช่น LD69001"></div>
+        
+        <div class="fg"><label>ประเภทงานใบเสนอราคา (Job Type) *</label>
+          <select id="fq-type" onchange="calculateAdminQuotationLeadTime()">
+            <option value="MRO">MRO</option>
+            <option value="Project">Project</option>
+            <option value="STOCK">STOCK</option>
+          </select>
+        </div>
+        <div class="fg"><label>วันที่เปิดบอร์ด *</label><input id="fq-start" class="date-in" placeholder="วว/ดด/ปปปป" maxlength="10" oninput="fmtDI(this); calculateAdminQuotationLeadTime();"></div>
+        
+        <div class="fg"><label>แบรนด์ (Brand) *</label>
+          <select id="fq-brand" onchange="calculateAdminQuotationLeadTime()">
+            <option value="Platinum brand">Platinum brand</option>
+            <option value="Golden brand">Golden brand</option>
+            <option value="Platinum & Golden brand">Platinum & Golden brand</option>
+          </select>
+        </div>
+        <div class="fg"><label>ประเภทวาล์ว (Valve Type) *</label>
+          <select id="fq-valve-type" onchange="calculateAdminQuotationLeadTime()">
+            <option value="Manual valve & Accessory">Manual valve & Accessory</option>
+            <option value="Special valve & Accessory">Special valve & Accessory</option>
+          </select>
+        </div>
+        
+        <div class="fg"><label>กำหนดส่งลูกค้า (Auto-Calculated)</label><input id="fq-due" placeholder="ระบบจะคำนวณอัตโนมัติ" readonly style="background:var(--sur2); opacity:0.8; cursor:not-allowed"></div>
+        <div class="fg"><label>ชื่อบริษัทลูกค้า *</label>
+          <div style="position:relative">
+            <input id="fq-cust" placeholder="พิมพ์ชื่อบริษัท..." autocomplete="off"
+              oninput="showDropdown('q-cust-drop',_configCustomers,this.value,'fq-cust')"
+              onfocus="showDropdown('q-cust-drop',_configCustomers,this.value,'fq-cust')"
+              onblur="setTimeout(()=>hideDropdown('q-cust-drop'),200)">
+            <div id="q-cust-drop" class="admin-drop"></div>
+          </div>
+        </div>
+        
+        <div class="fg"><label>ประเภทลูกค้า (Customer Type) *</label>
+          <select id="fq-cust-type">
+            <option value="End-user">End-user</option>
+            <option value="Trading">Trading</option>
+            <option value="EPC">EPC</option>
+          </select>
+        </div>
+        <div class="fg"><label>Sale Team *</label>
+          <div style="position:relative">
+            <input id="fq-saleteam" placeholder="พิมพ์หรือเลือก..." autocomplete="off"
+              oninput="showDropdown('q-saleteam-drop',_saleTeams,this.value,'fq-saleteam')"
+              onfocus="showDropdown('q-saleteam-drop',_saleTeams,this.value,'fq-saleteam')"
+              onblur="setTimeout(()=>hideDropdown('q-saleteam-drop'),200)">
+            <div id="q-saleteam-drop" class="admin-drop"></div>
+          </div>
+        </div>
+        
+        <div class="fg"><label>ผู้เสนอขาย (Sale) *</label>
+          <div style="position:relative">
+            <input id="fq-sale" placeholder="พิมพ์หรือเลือก..." autocomplete="off"
+              oninput="showDropdown('q-sale-drop',_sales,this.value,'fq-sale')"
+              onfocus="showDropdown('q-sale-drop',_sales,this.value,'fq-sale')"
+              onblur="setTimeout(()=>hideDropdown('q-sale-drop'),200)">
+            <div id="q-sale-drop" class="admin-drop"></div>
+          </div>
+        </div>
+        
+        <div class="fg"><label>สถานะ (Status)</label>
+          <select id="fq-status">
+            <option value="PENDING">PENDING (รอผล)</option>
+            <option value="WIN">WIN (ได้งาน)</option>
+            <option value="LOST">LOST (ไม่ได้งาน)</option>
+            <option value="HOLD">HOLD (ชะลอ)</option>
+          </select>
+        </div>
+        
+        <div class="fg span2"><label>รายละเอียดสินค้า / Product</label><textarea id="fq-product" rows="2" placeholder="ระบุแบรนด์ รุ่น ข้อมูลทางเทคนิค..."></textarea></div>
+        <div class="fg span2"><label>หมายเหตุ (Remark)</label><textarea id="fq-remark" rows="2" placeholder="ระบุหมายเหตุ..."></textarea></div>
+      </div>
+      <div id="q-form-err" style="color:var(--late);font-size:12px;margin-top:10px"></div>
+    </div>
+    <div class="mftr">
+      <button class="btn" onclick="closeQuotationFormModal()">ยกเลิก</button>
+      <button class="btn btn-primary" onclick="saveQuotation()">💾 บันทึกใบเสนอราคา</button>
+    </div>
+  </div>
+</div>
+
 <!-- DETAIL MODAL -->
 <div class="ov" id="detail-modal" onclick="if(event.target===this)closeDetail()">
   <div class="modal">
@@ -274,7 +335,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--spec);bo
 </div>
 
 <script>
-// Theme switching logic
+// Theme selector logic
 function initTheme(){
   const saved = localStorage.getItem('wisco-theme') || 'dark';
   setTheme(saved);
@@ -282,28 +343,102 @@ function initTheme(){
 function setTheme(theme){
   if (theme === 'light') {
     document.documentElement.setAttribute('data-theme', 'light');
-    const icon = document.getElementById('theme-icon');
-    const text = document.getElementById('theme-text');
-    if (icon) icon.textContent = '☀️';
-    if (text) text.textContent = 'สว่าง';
     localStorage.setItem('wisco-theme', 'light');
   } else {
     document.documentElement.removeAttribute('data-theme');
-    const icon = document.getElementById('theme-icon');
-    const text = document.getElementById('theme-text');
-    if (icon) icon.textContent = '🌙';
-    if (text) text.textContent = 'มืด';
     localStorage.setItem('wisco-theme', 'dark');
   }
+  updateToggleState(theme);
 }
 function toggleTheme(){
   const current = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
   setTheme(current);
 }
-initTheme(); // Initialize theme immediately to prevent FOUC
+function updateToggleState(theme){
+  const icon = document.getElementById('theme-icon');
+  const text = document.getElementById('theme-text');
+  if (icon) icon.textContent = theme === 'light' ? '☀️' : '🌙';
+  if (text) text.textContent = theme === 'light' ? 'สว่าง' : 'มืด';
+}
+function injectThemeButton(){
+  const header = document.querySelector('header');
+  if (!header) return;
+  if (document.getElementById('theme-toggle')) return;
+  const btn = document.createElement('button');
+  btn.id = 'theme-toggle';
+  btn.className = 'btn btn-sm';
+  btn.onclick = toggleTheme;
+  btn.style.cssText = "padding: 4px 10px; border-radius: 20px; font-size: 14px; background: var(--sur2); border: 1px solid var(--bd); cursor: pointer; display: flex; align-items: center; gap: 6px; font-family:'Sarabun',sans-serif; margin-right: 10px; flex-shrink: 0;";
+  
+  const saved = localStorage.getItem('wisco-theme') || 'dark';
+  btn.innerHTML = `<span id="theme-icon">${saved === 'light' ? '☀️' : '🌙'}</span> <span id="theme-text" style="font-size: 11px; font-weight: 600; color: var(--mu)">${saved === 'light' ? 'สว่าง' : 'มืด'}</span>`;
+  
+  const right = header.querySelector('div[style*="align-items:center"]');
+  if (right) {
+    right.insertBefore(btn, right.firstChild);
+  } else {
+    header.appendChild(btn);
+  }
+}
+initTheme();
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', injectThemeButton);
+} else {
+  injectThemeButton();
+}
 
 function esc(str){if(!str)return '';return String(str).replace(/"/g,'&quot;');}
-let _prs=[], _editId=null, _items=[];
+let _prs=[], _quotations=[], _editId=null, _items=[], _configCustomers=[];
+
+function addBusinessDays(startDateStr, days) {
+  if (!startDateStr) return '';
+  const date = new Date(startDateStr);
+  let remaining = days;
+  while (remaining > 0) {
+    date.setDate(date.getDate() + 1);
+    const day = date.getDay();
+    if (day !== 0 && day !== 6) { // not Sunday or Saturday
+      remaining--;
+    }
+  }
+  return date.toISOString().split('T')[0];
+}
+
+function calculateAdminQuotationLeadTime() {
+  const startDmy = document.getElementById('fq-start').value;
+  if (!startDmy || startDmy.length < 10) return;
+  const start = isoFrom(startDmy);
+  const jobType = document.getElementById('fq-type').value;
+  const brand = document.getElementById('fq-brand').value;
+  const valveType = document.getElementById('fq-valve-type').value;
+  
+  let days = 0;
+  if (jobType === 'MRO') {
+    if (brand === 'Platinum brand') {
+      days = (valveType === 'Manual valve & Accessory') ? 3 : 7;
+    } else if (brand === 'Golden brand') {
+      days = (valveType === 'Manual valve & Accessory') ? 2 : 5;
+    }
+  } else if (jobType === 'Project') {
+    if (brand === 'Platinum brand') {
+      days = (valveType === 'Manual valve & Accessory') ? 10 : 15;
+    } else if (brand === 'Golden brand') {
+      days = (valveType === 'Manual valve & Accessory') ? 5 : 10;
+    }
+  } else if (jobType === 'STOCK') {
+    days = (valveType === 'Manual valve & Accessory') ? 1 : 2;
+  }
+  
+  const dueInput = document.getElementById('fq-due');
+  if (dueInput) {
+    if (jobType === 'STOCK' && valveType === 'Manual valve & Accessory') {
+      dueInput.value = dmyFrom(start); // same day
+    } else {
+      const dueIso = addBusinessDays(start, days);
+      dueInput.value = dmyFrom(dueIso);
+    }
+  }
+}
 
 function showDropdown(dropId,list,q,inputId){
   const drop=document.getElementById(dropId);if(!drop)return;
@@ -338,7 +473,7 @@ function removeSaleTag(name){
 }
 function renderSaleTags(){
   const el=document.getElementById('sale-tags');if(!el)return;
-  el.innerHTML=_saleTags.map(t=>`<span style="display:inline-flex;align-items:center;gap:4px;background:var(--prog-bg);color:var(--prog);border:1px solid var(--prog-bd);border-radius:99px;font-size:12px;padding:2px 10px;font-weight:500">${t}<button type="button" onclick="removeSaleTag('${t.replace(/'/g,"\'")}')" style="background:none;border:none;color:var(--prog);cursor:pointer;font-size:14px;padding:0;line-height:1;margin-left:2px">×</button></span>`).join('');
+  el.innerHTML=_saleTags.map(t=>`<span style="display:inline-flex;align-items:center;gap:4px;background:#e8f0fe;color:#0550ae;border:1px solid #c2d4f8;border-radius:99px;font-size:12px;padding:2px 10px;font-weight:500">${t}<button type="button" onclick="removeSaleTag('${t.replace(/'/g,"\'")}')" style="background:none;border:none;color:#0550ae;cursor:pointer;font-size:14px;padding:0;line-height:1;margin-left:2px">×</button></span>`).join('');
 }
 function getSaleValue(){ return _saleTags.join(', '); }
 function setSaleValue(val){
@@ -351,25 +486,31 @@ let _saleTeams=[], _sales=[];
 let _orders=[];
 
 async function init(){
-  const [data,cfg,orders]=await Promise.all([
+  const [data,cfg,orders,quotes]=await Promise.all([
     fetch('/api/prs').then(r=>r.json()).catch(()=>[]),
     fetch('/api/config').then(r=>r.json()).catch(()=>({})),
-    fetch('/api/orders').then(r=>r.json()).catch(()=>[])
+    fetch('/api/orders').then(r=>r.json()).catch(()=>[]),
+    fetch('/api/quotations').then(r=>r.json()).catch(()=>[])
   ]);
   _prs=Array.isArray(data)?data:[];
   _saleTeams=cfg.saleTeams||[];
   _sales=cfg.sales||[];
+  _configCustomers=cfg.customers||[];
   _orders=Array.isArray(orders)?orders:[];
+  _quotations=Array.isArray(quotes)?quotes:[];
+  updateLayoutForTab();
   renderStats();
   renderTable();
   // Auto-refresh every 30 seconds
   setInterval(async()=>{
-    const [fresh,freshOrders]=await Promise.all([
+    const [fresh,freshOrders,freshQuotes]=await Promise.all([
       fetch('/api/prs').then(r=>r.json()).catch(()=>[]),
-      fetch('/api/orders').then(r=>r.json()).catch(()=>[])
+      fetch('/api/orders').then(r=>r.json()).catch(()=>[]),
+      fetch('/api/quotations').then(r=>r.json()).catch(()=>[])
     ]);
     _prs=Array.isArray(fresh)?fresh:[];
     _orders=Array.isArray(freshOrders)?freshOrders:[];
+    _quotations=Array.isArray(freshQuotes)?freshQuotes:[];
     renderStats();
     renderTable();
     const el=document.getElementById('last-update');
@@ -378,18 +519,32 @@ async function init(){
 }
 
 function renderStats(){
-  document.getElementById('s-total').textContent=_prs.length;
-  document.getElementById('s-linked').textContent=_prs.filter(p=>p.linkedPOI&&!_prs.filter(x=>x.id===p.id).some(()=>false)).length;
-  document.getElementById('s-pending').textContent=_prs.filter(p=>!p.linkedPOI).length;
-  document.getElementById('s-fine').textContent=_prs.filter(p=>p.fineYN==='yes').length;
-  // Done count in stat card if it exists
-  const sDone=document.getElementById('s-done');
-  if(sDone){
-    const doneCount=_prs.filter(p=>{
-      const ids=p.linkedPOIs&&p.linkedPOIs.length?p.linkedPOIs:(p.linkedPOI?[p.linkedPOI]:[]);
-      return ids.some(id=>isOrderDone(_orders&&_orders.find?_orders.find(x=>x.id===id):null));
-    }).length;
-    sDone.textContent=doneCount;
+  const isQuotes = _dTab === 'quotes';
+  const statsBar = document.getElementById('stats-bar');
+  if (!statsBar) return;
+
+  if (isQuotes) {
+    statsBar.innerHTML = `
+      <div class="stat-card"><div class="stat-n" id="sq-total">0</div><div class="stat-l">ใบเสนอราคาทั้งหมด</div></div>
+      <div class="stat-card"><div class="stat-n" style="color:var(--done)" id="sq-win">0</div><div class="stat-l">WIN (ชนะ)</div></div>
+      <div class="stat-card"><div class="stat-n" style="color:#9a6700" id="sq-pending">0</div><div class="stat-l">PENDING (รอผล)</div></div>
+      <div class="stat-card"><div class="stat-n" style="color:var(--late)" id="sq-lost">0</div><div class="stat-l">LOST (แพ้)</div></div>
+    `;
+    document.getElementById('sq-total').textContent = _quotations.length;
+    document.getElementById('sq-win').textContent = _quotations.filter(q => q.status === 'WIN').length;
+    document.getElementById('sq-pending').textContent = _quotations.filter(q => q.status === 'PENDING' || !q.status).length;
+    document.getElementById('sq-lost').textContent = _quotations.filter(q => q.status === 'LOST').length;
+  } else {
+    statsBar.innerHTML = `
+      <div class="stat-card"><div class="stat-n" id="s-total">0</div><div class="stat-l">PR ทั้งหมด</div></div>
+      <div class="stat-card"><div class="stat-n" style="color:var(--done)" id="s-linked">0</div><div class="stat-l">มี POI แล้ว</div></div>
+      <div class="stat-card"><div class="stat-n" style="color:#9a6700" id="s-pending">0</div><div class="stat-l">รอเปิด POI</div></div>
+      <div class="stat-card"><div class="stat-n" style="color:var(--late)" id="s-fine">0</div><div class="stat-l">มีค่าปรับ</div></div>
+    `;
+    document.getElementById('s-total').textContent = _prs.length;
+    document.getElementById('s-linked').textContent = _prs.filter(p => p.linkedPOI || (p.linkedPOIs && p.linkedPOIs.length > 0)).length;
+    document.getElementById('s-pending').textContent = _prs.filter(p => !p.linkedPOI && !(p.linkedPOIs && p.linkedPOIs.length > 0)).length;
+    document.getElementById('s-fine').textContent = _prs.filter(p => p.fineYN === 'yes').length;
   }
 }
 
@@ -398,38 +553,144 @@ function hl(t,q){if(!q||!t)return t||'';return String(t).replace(new RegExp('('+
 let _dTab='all';
 function setDTab(val){
   _dTab=val;
-  ['all','dom','intl','finished'].forEach(k=>{
+  ['all','dom','intl','quotes'].forEach(k=>{
     const btn=document.getElementById('dtab-'+k);
     if(!btn)return;
-    const active=(k==='all'&&val==='all')||(k==='dom'&&val==='นปท.')||(k==='intl'&&val==='ตปท.')||(k==='finished'&&val==='finished');
+    const active=(k==='all'&&val==='all')||(k==='dom'&&val==='นปท.')||(k==='intl'&&val==='ตปท.')||(k==='quotes'&&val==='quotes');
     btn.style.borderBottomColor=active?'var(--spec)':'transparent';
     btn.style.color=active?'var(--spec)':'var(--mu)';
   });
+  updateLayoutForTab();
+  renderStats();
   renderTable();
+}
+
+function updateLayoutForTab() {
+  const isQuotes = _dTab === 'quotes';
+  const titleEl = document.querySelector('.section-title');
+  if (titleEl) {
+    titleEl.textContent = isQuotes ? '📋 รายการใบเสนอราคา ทั้งหมด' : '📋 รายการ PR ทั้งหมด';
+  }
+  
+  const statusFilter = document.getElementById('f-status');
+  if (statusFilter) {
+    if (isQuotes) {
+      statusFilter.innerHTML = `
+        <option value="">สถานะทั้งหมด</option>
+        <option value="PENDING">PENDING (รอผล)</option>
+        <option value="WIN">WIN (ได้งาน)</option>
+        <option value="LOST">LOST (ไม่ได้งาน)</option>
+        <option value="HOLD">HOLD (ชะลอ)</option>
+      `;
+    } else {
+      statusFilter.innerHTML = `
+        <option value="">ทั้งหมด</option>
+        <option value="pending">รอเปิด POI</option>
+        <option value="linked">มี POI แล้ว</option>
+        <option value="done">✅ POI เสร็จแล้ว</option>
+        <option value="fine">มีค่าปรับ</option>
+        <option value="cancelled">🚫 ยกเลิกแล้ว</option>
+      `;
+    }
+  }
+  
+  const addBtn = document.querySelector('.section-hdr button');
+  if (addBtn) {
+    addBtn.textContent = isQuotes ? '+ เพิ่มใบเสนอราคาใหม่' : '+ เพิ่ม PR ใหม่';
+    addBtn.setAttribute('onclick', isQuotes ? 'openAddQuotationModal()' : 'openAddModal()');
+  }
+  
+  const thead = document.querySelector('thead tr');
+  if (thead) {
+    if (isQuotes) {
+      thead.innerHTML = `
+        <th>Quotation No.</th>
+        <th>LD No.</th>
+        <th>ประเภทงาน</th>
+        <th>วันที่เปิด</th>
+        <th>ลูกค้า</th>
+        <th>ประเภทลูกค้า</th>
+        <th>ทีม Sales</th>
+        <th>Sale</th>
+        <th>แบรนด์</th>
+        <th>ประเภทวาล์ว</th>
+        <th>สถานะ</th>
+        <th>Action</th>
+      `;
+    } else {
+      thead.innerHTML = `
+        <th>PR No.</th>
+        <th>วันที่เปิด PR</th>
+        <th>ลูกค้า</th>
+        <th>PO ลูกค้า</th>
+        <th>กำหนดส่ง</th>
+        <th>มูลค่า PO</th>
+        <th>ค่าปรับ</th>
+        <th>Sale</th>
+        <th>สถานะ POI</th>
+        <th>📦 ETA Wisco</th>
+        <th>Action</th>
+      `;
+    }
+  }
 }
 function isOrderDone(order){
   if(!order)return false;
   return order.completedSteps>=order.totalSteps;
 }
 function renderTable(){
+  const isQuotes = _dTab === 'quotes';
   const q=(document.getElementById('q').value||'').trim().toLowerCase();
   const fs=document.getElementById('f-status').value;
+  
+  if (isQuotes) {
+    let list = _quotations.filter(x => {
+      if (fs && x.status !== fs) return false;
+      if (!q) return true;
+      return [x.quotation_no, x.ld_no, x.quotation_type, x.customer, x.customer_type, x.sale_team, x.sale, x.brand, x.valve_type, x.remark]
+        .filter(Boolean).join(' ').toLowerCase().includes(q);
+    });
+    
+    const emptyEl = document.getElementById('empty');
+    if (emptyEl) {
+      emptyEl.style.display = list.length ? 'none' : 'block';
+      emptyEl.textContent = 'ยังไม่มีใบเสนอราคา — กด + เพิ่มใบเสนอราคาใหม่';
+    }
+    
+    document.getElementById('pr-body').innerHTML = list.map(x => {
+      const badgeClass = x.status === 'WIN' ? 'b-win' : x.status === 'PENDING' ? 'b-pending' : x.status === 'LOST' ? 'b-lost' : 'b-pending';
+      const statusText = x.status || 'PENDING';
+      
+      return `<tr>
+        <td><strong>${hl(x.quotation_no, q)}</strong></td>
+        <td>${hl(x.ld_no, q) || '—'}</td>
+        <td>${hl(x.quotation_type, q) || '—'}</td>
+        <td style="color:var(--mu)">${x.start_date || '—'}</td>
+        <td>${hl(x.customer, q) || '—'}</td>
+        <td>${hl(x.customer_type, q) || '—'}</td>
+        <td>${hl(x.sale_team, q) || '—'}</td>
+        <td>${hl(x.sale, q) || '—'}</td>
+        <td>${hl(x.brand, q) || '—'}</td>
+        <td>${hl(x.valve_type, q) || '—'}</td>
+        <td><span class="badge ${badgeClass}">${statusText}</span></td>
+        <td><div style="display:flex;gap:4px">
+          <button class="btn btn-sm" onclick="openQuotationDetail(${x.id})">ดู</button>
+          <button class="btn btn-sm" onclick="openEditQuotationModal(${x.id})">✏️</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteQuotation(${x.id})">ลบ</button>
+        </div></td>
+      </tr>`;
+    }).join('');
+    return;
+  }
+  
   let list=_prs.filter(p=>{
+    // domestic tab filter
+    if(_dTab==='นปท.'&&p.domestic!=='นปท.')return false;
+    if(_dTab==='ตปท.'&&p.domestic!=='ตปท.')return false;
+    // status filter
     const ids=p.linkedPOIs&&p.linkedPOIs.length?p.linkedPOIs:(p.linkedPOI?[p.linkedPOI]:[]);
     const linked=ids.length>0;
-    const done=linked && ids.some(id=>isOrderDone(_orders.find(x=>x.id===id)));
-
-    // partition finished vs active PRs
-    if (_dTab === 'finished') {
-      if (!done) return false;
-    } else {
-      if (done) return false;
-      // domestic tab filter
-      if(_dTab==='นปท.'&&p.domestic!=='นปท.')return false;
-      if(_dTab==='ตปท.'&&p.domestic!=='ตปท.')return false;
-    }
-
-    // status filter
+    const done=ids.some(id=>isOrderDone(_orders.find(x=>x.id===id)));
     if(fs==='pending'&&linked)return false;
     if(fs==='linked'&&(!linked||done))return false;
     if(fs==='done'&&!done)return false;
@@ -444,9 +705,9 @@ function renderTable(){
   document.getElementById('pr-body').innerHTML=list.map(p=>{
     const ids=p.linkedPOIs&&p.linkedPOIs.length?p.linkedPOIs:(p.linkedPOI?[p.linkedPOI]:[]);
     const domesticBadge=p.domestic==='นปท.'
-      ?'<span style="font-size:10px;padding:1px 6px;border-radius:99px;background:var(--prog-bg);color:var(--prog);border:1px solid var(--prog-bd);font-weight:600;margin-left:5px">🏠 นปท.</span>'
+      ?'<span style="font-size:10px;padding:1px 6px;border-radius:99px;background:#e0f2fe;color:#0550ae;border:1px solid #7dd3fc;font-weight:600;margin-left:5px">🏠 นปท.</span>'
       :p.domestic==='ตปท.'
-      ?'<span style="font-size:10px;padding:1px 6px;border-radius:99px;background:var(--done-bg);color:var(--done);border:1px solid var(--done-bd);font-weight:600;margin-left:5px">✈️ ตปท.</span>'
+      ?'<span style="font-size:10px;padding:1px 6px;border-radius:99px;background:#f0fdf4;color:#16a34a;border:1px solid #86efac;font-weight:600;margin-left:5px">✈️ ตปท.</span>'
       :'';
     const poiCell=(()=>{
       if(!ids.length)return'<span class="badge b-pending">⏳ รอเปิด POI</span>';
@@ -454,7 +715,7 @@ function renderTable(){
         const o=_orders.find(x=>x.id===id);
         const done=isOrderDone(o);
         return done
-          ?`<span class="badge b-linked" style="background:var(--done-bg);color:var(--done);border:1px solid var(--done-bd);margin-right:3px">✅ ${id} — เสร็จแล้ว</span>`
+          ?`<span class="badge" style="background:#dcfce7;color:#16a34a;border:1px solid #86efac;margin-right:3px">✅ ${id} — เสร็จแล้ว</span>`
           :`<span class="badge b-linked" style="margin-right:3px">🔗 ${id}</span>`;
       }).join('');
     })();
@@ -466,12 +727,12 @@ function renderTable(){
         if(isOrderDone(o))return`<span style="font-size:12px;font-weight:600;color:var(--done)">✅ ส่งมอบแล้ว</span>`;
         if(!o.etaWisco)return`<span style="color:var(--mu);font-size:12px">${id}: ยังไม่ระบุ</span>`;
         const d=new Date(o.etaWisco);const diff=Math.ceil((d-new Date())/86400000);
-        const color=diff<0?'var(--late)':diff<=7?'var(--warn)':'var(--done)';
+        const color=diff<0?'var(--late)':diff<=7?'#f59e0b':'var(--done)';
         return`<span style="font-size:12px;font-weight:600;color:${color}">${o.etaWisco}${diff<0?' (เลย '+Math.abs(diff)+' วัน)':diff<=7?' (อีก '+diff+' วัน)':''}</span>`;
       }).join('<br>');
     })();
     const _cStyle=p.isCancelled?'opacity:0.55;background:rgba(100,116,139,0.05);':'';
-    const _cBadge=p.isCancelled?('<span style="font-size:10px;padding:1px 6px;border-radius:99px;background:var(--sur2);color:var(--mu);border:1px solid var(--bd);font-weight:600;margin-left:5px">🚫 ยกเลิก'+(p.cancelReason?' — '+p.cancelReason:'')+'</span>'):'';
+    const _cBadge=p.isCancelled?('<span style="font-size:10px;padding:1px 6px;border-radius:99px;background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1;font-weight:600;margin-left:5px">🚫 ยกเลิก'+(p.cancelReason?' — '+p.cancelReason:'')+'</span>'):'';
     const _cTxt=p.isCancelled?'text-decoration:line-through;color:var(--mu);':'';
     return`<tr style="${_cStyle}">
     <td><strong style="${_cTxt}">${hl(p.prNo,q)}</strong>${domesticBadge}${_cBadge}</td>
@@ -481,15 +742,14 @@ function renderTable(){
     <td style="color:${isPastDue(p.dueDate)?'var(--late)':'var(--mu)'};font-weight:${isPastDue(p.dueDate)?'600':'400'}">${p.dueDate||'—'}</td>
     <td style="font-size:12px">${p.poValue||'—'}</td>
     <td>${p.fineYN==='yes'?`<span class="badge b-fine">⚠️ ${p.finePct||''}%</span>`:'<span style="font-size:12px;color:var(--mu)">—</span>'}</td>
-    <td style="font-size:12px">${hl(p.saleTeam,q)||'—'}</td>
     <td style="font-size:12px">${hl(p.sale,q)||'—'}</td>
     <td>${poiCell}</td>
     <td>${etaCell}</td>
     <td><div style="display:flex;gap:4px">
-      <button class="btn btn-sm btn-secondary" onclick="openDetail(${p.id})">ดู</button>
+      <button class="btn btn-sm" onclick="openDetail(${p.id})">ดู</button>
       ${p.isCancelled
-        ?('<button class="btn btn-sm" style="background:var(--prog-bg);color:var(--prog);border-color:var(--prog-bd)" onclick="uncancelPR('+p.id+')">↩ เปิดใหม่</button>')
-        :('<button class="btn btn-sm btn-secondary" onclick="openEditModal('+p.id+')">✏️</button><button class="btn btn-sm" style="background:rgba(255,255,255,0.05);color:var(--mu);border-color:var(--bd);margin-left:2px" onclick="cancelPR('+p.id+')">🚫 ยกเลิก</button>')}
+        ?('<button class="btn btn-sm" style="background:#e0f2fe;color:#0550ae;border-color:#7dd3fc" onclick="uncancelPR('+p.id+')">↩ เปิดใหม่</button>')
+        :('<button class="btn btn-sm" onclick="openEditModal('+p.id+')">✏️</button><button class="btn btn-sm" style="background:#f1f5f9;color:#64748b;border-color:#cbd5e1;margin-left:2px" onclick="cancelPR('+p.id+')">🚫 ยกเลิก</button>')}
       <button class="btn btn-sm btn-danger" onclick="deletePR(${p.id})">ลบ</button>
     </div></td>
   </tr>`;
@@ -507,8 +767,8 @@ function dmyFrom(iso){if(!iso||iso.length<10)return iso||'';const p=iso.split('-
 function renderItems(){
   document.getElementById('items-list').innerHTML=_items.map((it,i)=>`
     <div class="item-row">
-      <input placeholder="สินค้า / Valve" value="${esc(it.product)}" oninput="_items[${i}].product=this.value">
-      <input placeholder="จำนวน" value="${esc(it.quantity)}" oninput="_items[${i}].quantity=this.value">
+      <input placeholder="สินค้า / Valve" value="${it.product||''}" oninput="_items[${i}].product=this.value">
+      <input placeholder="จำนวน" value="${it.quantity||''}" oninput="_items[${i}].quantity=this.value">
       <button class="del-btn" onclick="removeItem(${i})">×</button>
     </div>`).join('');
 }
@@ -585,24 +845,13 @@ async function savePR(){
   if(d.error){document.getElementById('form-err').textContent=d.error==='PR number already exists'?'⚠️ PR Number นี้มีในระบบแล้ว':'Error: '+d.error;return;}
   closeFormModal();
   await init();
-}
 
-async function loadPRs(){
-  const [data,orders]=await Promise.all([
-    fetch('/api/prs').then(r=>r.json()).catch(()=>[]),
-    fetch('/api/orders').then(r=>r.json()).catch(()=>[])
-  ]);
-  _prs=Array.isArray(data)?data:[];
-  _orders=Array.isArray(orders)?orders:[];
-  renderStats();
-}
-
-async function silentAutoLink(){
+async function autoLinkAll(){
   try {
     await fetch('/api/prs/auto-link-all', {method:'POST', headers:{'Content-Type':'application/json'}});
   } catch(e) {}
 }
-silentAutoLink(); // silently fix any unlinked PRs on page load
+autoLinkAll(); // silently fix any unlinked PRs on page load
 
 // Backfill: create PR records for old order items that predate the admin system
 // Runs on every load but server skips existing PRs safely
@@ -614,6 +863,7 @@ fetch('/api/prs/backfill-from-orders', {method:'POST', headers:{'Content-Type':'
       loadPRs().then(()=>renderTable());
     }
   }).catch(()=>{});
+}
 
 async function cancelPR(id){
   const p=_prs.find(x=>x.id===id);
@@ -699,14 +949,156 @@ function openDetail(id){
 }
 function closeDetail(){document.getElementById('detail-modal').classList.remove('open');}
 
+function openAddQuotationModal(){
+  _editId = null;
+  document.getElementById('q-form-title').textContent = '+ เพิ่มใบเสนอราคาใหม่';
+  ['fq-quotation-no', 'fq-ld-no', 'fq-start', 'fq-due', 'fq-cust', 'fq-product', 'fq-remark'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('fq-type').value = 'MRO';
+  document.getElementById('fq-brand').value = 'Platinum brand';
+  document.getElementById('fq-valve-type').value = 'Manual valve & Accessory';
+  document.getElementById('fq-cust-type').value = 'End-user';
+  document.getElementById('fq-saleteam').value = _saleTeams[0] || '';
+  document.getElementById('fq-sale').value = _sales[0] || '';
+  document.getElementById('fq-status').value = 'PENDING';
+  document.getElementById('q-form-err').textContent = '';
+  document.getElementById('q-form-modal').classList.add('open');
+}
+
+function openEditQuotationModal(id){
+  const q = _quotations.find(x => x.id === id);
+  if (!q) return;
+  _editId = id;
+  document.getElementById('q-form-title').textContent = '✏️ แก้ไขใบเสนอราคา';
+  document.getElementById('fq-quotation-no').value = q.quotation_no || '';
+  document.getElementById('fq-ld-no').value = q.ld_no || '';
+  document.getElementById('fq-type').value = q.quotation_type || 'MRO';
+  document.getElementById('fq-start').value = dmyFrom(q.start_date) || '';
+  document.getElementById('fq-brand').value = q.brand || 'Platinum brand';
+  document.getElementById('fq-valve-type').value = q.valve_type || 'Manual valve & Accessory';
+  document.getElementById('fq-due').value = dmyFrom(q.due_date) || '';
+  document.getElementById('fq-cust').value = q.customer || '';
+  document.getElementById('fq-cust-type').value = q.customer_type || 'End-user';
+  document.getElementById('fq-saleteam').value = q.sale_team || '';
+  document.getElementById('fq-sale').value = q.sale || '';
+  document.getElementById('fq-status').value = q.status || 'PENDING';
+  document.getElementById('fq-product').value = q.product || '';
+  document.getElementById('fq-remark').value = q.remark || '';
+  document.getElementById('q-form-err').textContent = '';
+  document.getElementById('q-form-modal').classList.add('open');
+}
+
+function closeQuotationFormModal(){
+  document.getElementById('q-form-modal').classList.remove('open');
+}
+
+async function saveQuotation(){
+  const quotationNo = document.getElementById('fq-quotation-no').value.trim();
+  const customer = document.getElementById('fq-cust').value.trim();
+  const startDate = isoFrom(document.getElementById('fq-start').value);
+  
+  if (!quotationNo) { document.getElementById('q-form-err').textContent = 'กรุณาใส่ Quotation No.'; return; }
+  if (!customer) { document.getElementById('q-form-err').textContent = 'กรุณาใส่ชื่อลูกค้า'; return; }
+  if (!startDate) { document.getElementById('q-form-err').textContent = 'กรุณาเลือกวันที่เปิดบอร์ด'; return; }
+  
+  const body = {
+    quotationNo,
+    ldNo: document.getElementById('fq-ld-no').value.trim(),
+    quotationType: document.getElementById('fq-type').value,
+    startDate,
+    brand: document.getElementById('fq-brand').value,
+    valveType: document.getElementById('fq-valve-type').value,
+    dueDate: isoFrom(document.getElementById('fq-due').value),
+    customer,
+    customerType: document.getElementById('fq-cust-type').value,
+    saleTeam: document.getElementById('fq-saleteam').value.trim(),
+    sale: document.getElementById('fq-sale').value.trim(),
+    status: document.getElementById('fq-status').value,
+    product: document.getElementById('fq-product').value.trim(),
+    remark: document.getElementById('fq-remark').value.trim(),
+  };
+  
+  const url = _editId ? `/api/quotations/${_editId}` : '/api/quotations';
+  const method = _editId ? 'PUT' : 'POST';
+  const r = await fetch(url, {
+    method,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  const d = await r.json();
+  if (d.error) {
+    document.getElementById('q-form-err').textContent = 'Error: ' + d.error;
+    return;
+  }
+  closeQuotationFormModal();
+  await init();
+}
+
+async function deleteQuotation(id){
+  const q = _quotations.find(x => x.id === id);
+  if (!confirm(`ลบใบเสนอราคา ${q?.quotation_no}?\nการดำเนินการนี้ไม่สามารถย้อนกลับได้`)) return;
+  await fetch(`/api/quotations/${id}`, { method: 'DELETE' });
+  await init();
+}
+
+function openQuotationDetail(id){
+  const q = _quotations.find(x => x.id === id);
+  if (!q) return;
+  document.getElementById('detail-title').textContent = `ใบเสนอราคา: ${q.quotation_no}`;
+  
+  const formatMoney = (val) => {
+    if (val === undefined || val === null || isNaN(val)) return '—';
+    return parseFloat(val).toLocaleString('th-TH') + ' บาท';
+  };
+  
+  document.getElementById('detail-body').innerHTML = `
+    <div class="detail-section">
+      <div class="detail-title">📋 ข้อมูลทั่วไป</div>
+      <div class="info-grid">
+        <div class="info-item"><div class="ik">Quotation No.</div><div class="iv">${q.quotation_no}</div></div>
+        <div class="info-item"><div class="ik">LD No.</div><div class="iv">${q.ld_no || '—'}</div></div>
+        <div class="info-item"><div class="ik">ประเภทงาน</div><div class="iv">${q.quotation_type || '—'}</div></div>
+        <div class="info-item"><div class="ik">วันที่เปิดบอร์ด</div><div class="iv">${q.start_date || '—'}</div></div>
+        <div class="info-item"><div class="ik">กำหนดส่ง (Leadtime)</div><div class="iv">${q.due_date || '—'}</div></div>
+        <div class="info-item"><div class="ik">สถานะ</div><div class="iv"><span class="badge ${q.status === 'WIN' ? 'b-win' : q.status === 'PENDING' ? 'b-pending' : q.status === 'LOST' ? 'b-lost' : 'b-pending'}">${q.status || 'PENDING'}</span></div></div>
+      </div>
+    </div>
+    <div class="detail-section">
+      <div class="detail-title">🏢 ข้อมูลลูกค้า & Sales</div>
+      <div class="info-grid">
+        <div class="info-item"><div class="ik">ลูกค้า</div><div class="iv">${q.customer || '—'}</div></div>
+        <div class="info-item"><div class="ik">ประเภทลูกค้า</div><div class="iv">${q.customer_type || '—'}</div></div>
+        <div class="info-item"><div class="ik">Sale Team</div><div class="iv">${q.sale_team || '—'}</div></div>
+        <div class="info-item"><div class="ik">Sale</div><div class="iv">${q.sale || '—'}</div></div>
+        <div class="info-item"><div class="ik">แบรนด์</div><div class="iv">${q.brand || '—'}</div></div>
+        <div class="info-item"><div class="ik">ประเภทวาล์ว</div><div class="iv">${q.valve_type || '—'}</div></div>
+      </div>
+    </div>
+    <div class="detail-section">
+      <div class="detail-title">⚙️ ข้อมูลจากทีม Proposal</div>
+      <div class="info-grid">
+        <div class="info-item"><div class="ik">วันที่เสนอราคา (Offer Date)</div><div class="iv">${q.offer_date || '—'}</div></div>
+        <div class="info-item"><div class="ik">วันที่จัดทำเสร็จ (Completed Date)</div><div class="iv">${q.completed_date || '—'}</div></div>
+        <div class="info-item"><div class="ik">มูลค่าเสนอราคา</div><div class="iv">${formatMoney(q.total_offer)}</div></div>
+      </div>
+    </div>
+    <div class="detail-section">
+      <div class="detail-title">📦 รายละเอียดสินค้า</div>
+      <div style="padding:10px;background:var(--sur2);border-radius:var(--r);font-size:13px;white-space:pre-wrap;border:1px solid var(--bd2)">${esc(q.product) || 'ไม่มีรายละเอียดสินค้า'}</div>
+    </div>
+    <div class="detail-section">
+      <div class="detail-title">💬 หมายเหตุ</div>
+      <div style="padding:10px;background:var(--sur2);border-radius:var(--r);font-size:13px;white-space:pre-wrap;border:1px solid var(--bd2)">${esc(q.remark) || 'ไม่มีหมายเหตุ'}</div>
+    </div>
+  `;
+  document.getElementById('detail-modal').classList.add('open');
+}
+
 init();
 
 async function autoLinkAll(){
   const btn = document.getElementById('auto-link-btn');
-  if (btn) {
-    btn.disabled = true;
-    btn.textContent = '⏳ กำลังตรวจสอบ...';
-  }
+  btn.disabled = true;
+  btn.textContent = '⏳ กำลังตรวจสอบ...';
   try {
     const r = await fetch('/api/prs/auto-link-all', {method:'POST', headers:{'Content-Type':'application/json'}});
     const d = await r.json();
@@ -720,10 +1112,8 @@ async function autoLinkAll(){
       renderTable();
     }
   } catch(e){ alert('เกิดข้อผิดพลาด: '+e.message); }
-  if (btn) {
-    btn.disabled = false;
-    btn.textContent = '🔗 Auto-Link PR เดิม';
-  }
+  btn.disabled = false;
+  btn.textContent = '🔗 Auto-Link PR เดิม';
 }
 </script>
 </body>
