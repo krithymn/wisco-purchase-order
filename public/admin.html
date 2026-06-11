@@ -7,7 +7,7 @@
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{--bg:#08090e;--sur:#0e1018;--sur2:#13161f;--sur3:#181c28;--sur4:#1e2330;--bd:#1e2438;--bd2:#141826;--tx:#e8eaf2;--mu:#7080a0;--ac:#d42030;--red2:#e84050;--red3:#ff6070;--done:#22c55e;--late:#ef4444;--prog:#3a7bd5;--warn:#f97316;--spec:#a78bfa;--done-bg:rgba(34,197,94,.1);--late-bg:rgba(239,68,68,.1);--prog-bg:rgba(58,123,213,.12);--warn-bg:rgba(249,115,22,.1);--spec-bg:rgba(167,139,250,.1);--done-bd:rgba(34,197,94,.3);--late-bd:rgba(239,68,68,.3);--prog-bd:rgba(58,123,213,.35);--warn-bd:rgba(249,115,22,.3);--spec-bd:rgba(167,139,250,.3);--r:6px;--rl:12px;--shadow:0 2px 8px rgba(0,0,0,.4);--shadow-lg:0 8px 24px rgba(0,0,0,.4);--shadow-xl:0 24px 64px rgba(0,0,0,.6)}
+:root{--bg:#08090e;--sur:#0e1018;--sur2:#13161f;--sur3:#181c28;--sur4:#1e2330;--bd:#2e344b;--bd2:#1b1f2e;--tx:#e8eaf2;--mu:#8e9cb2;--ac:#d42030;--red2:#e84050;--red3:#ff6070;--done:#22c55e;--late:#ef4444;--prog:#3a7bd5;--warn:#f97316;--spec:#a78bfa;--done-bg:rgba(34,197,94,.1);--late-bg:rgba(239,68,68,.1);--prog-bg:rgba(58,123,213,.12);--warn-bg:rgba(249,115,22,.15);--spec-bg:rgba(167,139,250,.1);--done-bd:rgba(34,197,94,.3);--late-bd:rgba(239,68,68,.3);--prog-bd:rgba(58,123,213,.35);--warn-bd:rgba(249,115,22,.3);--spec-bd:rgba(167,139,250,.3);--r:6px;--rl:12px;--shadow:0 2px 8px rgba(0,0,0,.4);--shadow-lg:0 8px 24px rgba(0,0,0,.4);--shadow-xl:0 24px 64px rgba(0,0,0,.6)}
 :root[data-theme="light"]{--bg:#f4f5f8;--sur:#ffffff;--sur2:#f8f9fa;--sur3:#edf2f7;--sur4:#e2e8f0;--bd:#d1d5db;--bd2:#e5e7eb;--tx:#0f172a;--mu:#64748b;--done:#10b981;--late:#ef4444;--prog:#3b82f6;--warn:#f59e0b;--spec:#8b5cf6;--done-bg:rgba(16,185,129,.08);--late-bg:rgba(239,68,68,.08);--prog-bg:rgba(59,130,246,.08);--warn-bg:rgba(245,158,11,.08);--spec-bg:rgba(139,92,246,.08);--done-bd:rgba(16,185,129,.25);--late-bd:rgba(239,68,68,.25);--prog-bd:rgba(59,130,246,.25);--warn-bd:rgba(245,158,11,.25);--spec-bd:rgba(139,92,246,.25);--shadow:0 2px 8px rgba(0,0,0,.06);--shadow-lg:0 8px 24px rgba(0,0,0,.08);--shadow-xl:0 24px 64px rgba(15,23,42,.12)}
 :root[data-theme="light"] header{background:linear-gradient(90deg,var(--bg) 0%,var(--sur) 50%,var(--bg) 100%) !important;box-shadow:var(--shadow) !important;border-bottom:1px solid var(--bd) !important}
 :root[data-theme="light"] header .logo span{color:var(--spec) !important}
@@ -16,8 +16,8 @@
 html,body{background:var(--bg);color:var(--tx);font-family:'Sarabun','Inter',sans-serif;min-height:100vh}
 header{background:linear-gradient(90deg,#08090e,#1e1030);border-bottom:1px solid #2e1a50;padding:0 24px;height:54px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;box-shadow:0 2px 8px rgba(0,0,0,.4)}
 .logo{font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px;color:#fff}
-.btn{font-size:13px;padding:6px 14px;border-radius:var(--r);font-family:'Sarabun',sans-serif;cursor:pointer;font-weight:500;border:1px solid var(--bd);background:var(--sur);color:var(--tx);transition:all .15s;text-decoration:none;display:inline-flex;align-items:center;gap:5px}
-.btn:hover{background:var(--sur2)}
+.btn{font-size:13px;padding:6px 14px;border-radius:var(--r);font-family:'Sarabun',sans-serif;cursor:pointer;font-weight:500;border:1px solid var(--bd);background:var(--sur3);color:var(--tx);transition:all .15s;text-decoration:none;display:inline-flex;align-items:center;gap:5px}
+.btn:hover{background:var(--sur4)}
 .btn-primary{background:var(--spec);color:#fff;border-color:var(--spec)}.btn-primary:hover{opacity:.9}
 .btn-danger{background:var(--late);color:#fff;border-color:var(--late)}.btn-danger:hover{opacity:.9}
 .btn-sm{font-size:11px;padding:4px 10px}
@@ -32,7 +32,7 @@ header{background:linear-gradient(90deg,#08090e,#1e1030);border-bottom:1px solid
 .main{padding:20px 24px}
 .section-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px}
 .section-title{font-size:18px;font-weight:700}
-.search-inp{font-size:13px;padding:7px 12px;border:1px solid var(--bd);border-radius:var(--r);font-family:'Sarabun',sans-serif;width:260px}
+.search-inp{font-size:13px;padding:7px 12px;border:1px solid var(--bd);border-radius:var(--r);font-family:'Sarabun',sans-serif;width:260px;background:var(--sur);color:var(--tx)}
 .search-inp:focus{outline:none;border-color:var(--spec)}
 .table-wrap{background:var(--sur);border:1px solid var(--bd);border-radius:var(--rl);overflow:hidden}
 table{width:100%;border-collapse:collapse}
@@ -42,16 +42,18 @@ tbody tr{border-bottom:1px solid var(--bd2);transition:background .1s}
 tbody tr:hover{background:var(--sur2)}
 td{padding:9px 12px;font-size:13px;vertical-align:middle}
 .badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:99px;display:inline-block;white-space:nowrap}
-.b-linked{background:var(--done-bg);color:var(--done);border:1px solid var(--done-bd)}
-.b-pending{background:#fff8c5;color:#9a6700;border:1px solid #e3b341}
+.b-linked{background:var(--prog-bg);color:var(--prog);border:1px solid var(--prog-bd)}
+.b-pending{background:var(--warn-bg);color:var(--warn);border:1px solid var(--warn-bd)}
 .b-fine{background:var(--late-bg);color:var(--late);border:1px solid var(--late-bd)}
-.highlight{background:#fff3b0;border-radius:2px;padding:0 2px}
+.b-win{background:var(--done-bg);color:var(--done);border:1px solid var(--done-bd)}
+.b-lost{background:var(--late-bg);color:var(--late);border:1px solid var(--late-bd)}
+.highlight{background:rgba(245,158,11,0.25);border-radius:2px;padding:0 2px;color:inherit}
 
 /* MODAL */
 .ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:center;justify-content:center}
 .ov.open{display:flex}
-.modal{background:var(--sur);border-radius:var(--rl);width:780px;max-width:97vw;max-height:92vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.3)}
-.mhdr{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--bd2);background:linear-gradient(90deg,#f5f0ff,var(--sur2))}
+.modal{background:var(--sur);border-radius:var(--rl);width:780px;max-width:97vw;max-height:92vh;display:flex;flex-direction:column;box-shadow:var(--shadow-xl)}
+.mhdr{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--bd2);background:linear-gradient(90deg,var(--sur3),var(--sur2))}
 .mtitle{font-size:16px;font-weight:700;color:var(--spec)}
 .mclose{background:none;border:none;color:var(--mu);font-size:22px;cursor:pointer;padding:0}.mclose:hover{color:var(--tx)}
 .mbody{overflow-y:auto;padding:20px 24px}
@@ -60,8 +62,10 @@ td{padding:9px 12px;font-size:13px;vertical-align:middle}
 .fg{display:flex;flex-direction:column;gap:4px}
 .fg.span2{grid-column:span 2}
 label{font-size:12px;font-weight:600;color:var(--mu)}
-input,select,textarea{font-size:13px;padding:8px 10px;border:1px solid var(--bd);border-radius:var(--r);font-family:'Sarabun',sans-serif;background:var(--sur);width:100%}
-input:focus,select:focus,textarea:focus{outline:none;border-color:var(--spec);box-shadow:0 0 0 3px rgba(124,58,237,.1)}
+input,select,textarea{font-size:13px;padding:8px 10px;border:1px solid var(--bd);border-radius:var(--r);font-family:'Sarabun',sans-serif;background:var(--sur3);color:var(--tx);width:100%;transition:border-color .15s,box-shadow .15s}
+select option{background:var(--sur3);color:var(--tx)}
+input::placeholder,textarea::placeholder{color:var(--mu);opacity:0.75}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--spec);box-shadow:0 0 0 3px rgba(167,139,250,.2)}
 .section-label{font-size:11px;font-weight:700;color:var(--spec);text-transform:uppercase;letter-spacing:.5px;margin:14px 0 6px;padding-bottom:4px;border-bottom:1px solid var(--prog-bg)}
 .fine-row{display:flex;align-items:center;gap:10px}
 .fine-pct-wrap{display:none}
@@ -86,9 +90,9 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--spec);bo
 .items-tbl td{padding:6px 8px;border-bottom:1px solid var(--bd2)}
 
 ::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:var(--bd);border-radius:99px}
-.admin-drop{display:none;position:absolute;top:100%;left:0;right:0;background:var(--sur);border:1px solid var(--bd);border-radius:var(--r);box-shadow:0 4px 12px rgba(0,0,0,.1);z-index:100;max-height:180px;overflow-y:auto}
+.admin-drop{display:none;position:absolute;top:100%;left:0;right:0;background:var(--sur3);border:1px solid var(--bd);border-radius:var(--r);box-shadow:var(--shadow-lg);z-index:100;max-height:180px;overflow-y:auto}
 .admin-drop.show{display:block}
-.admin-opt{padding:8px 12px;font-size:13px;cursor:pointer;font-family:'Sarabun',sans-serif}.admin-opt:hover{background:var(--sur2)}
+.admin-opt{padding:8px 12px;font-size:13px;cursor:pointer;font-family:'Sarabun',sans-serif;color:var(--tx)}.admin-opt:hover{background:var(--sur4)}
 </style>
 </head>
 <body>
@@ -133,6 +137,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--spec);bo
     <button id="dtab-all"   onclick="setDTab('all')"   style="padding:8px 20px;font-size:13px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:3px solid var(--spec);color:var(--spec);margin-bottom:-2px;font-family:'Sarabun',sans-serif">🌐 ทั้งหมด</button>
     <button id="dtab-dom"   onclick="setDTab('นปท.')"  style="padding:8px 20px;font-size:13px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;color:var(--mu);margin-bottom:-2px;font-family:'Sarabun',sans-serif">🏠 ในประเทศ (นปท.)</button>
     <button id="dtab-intl"  onclick="setDTab('ตปท.')"  style="padding:8px 20px;font-size:13px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;color:var(--mu);margin-bottom:-2px;font-family:'Sarabun',sans-serif">✈️ ต่างประเทศ (ตปท.)</button>
+    <button id="dtab-done"  onclick="setDTab('done')"  style="padding:8px 20px;font-size:13px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;color:var(--mu);margin-bottom:-2px;font-family:'Sarabun',sans-serif">✅ PR เสร็จสิ้น</button>
     <button id="dtab-quotes" onclick="setDTab('quotes')" style="padding:8px 20px;font-size:13px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;color:var(--mu);margin-bottom:-2px;font-family:'Sarabun',sans-serif">📄 ใบเสนอราคา (Quotations)</button>
   </div>
 
@@ -197,7 +202,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--spec);bo
           </div>
         </div>
         <div class="fg" style="grid-column:span 1"><label>Sale <span style="font-size:10px;color:var(--mu);font-weight:400">(เพิ่มได้หลายคน)</span></label>
-          <div id="sale-tags" style="display:flex;flex-wrap:wrap;gap:5px;min-height:32px;padding:5px 8px;border:1px solid var(--bd);border-radius:var(--r);background:var(--sur);align-items:center;cursor:text" onclick="document.getElementById('f-sale').focus()"></div>
+          <div id="sale-tags" style="display:flex;flex-wrap:wrap;gap:5px;min-height:32px;padding:5px 8px;border:1px solid var(--bd);border-radius:var(--r);background:var(--sur3);align-items:center;cursor:text" onclick="document.getElementById('f-sale').focus()"></div>
           <div style="position:relative;margin-top:5px">
             <input id="f-sale" placeholder="พิมพ์หรือเลือกเพื่อเพิ่ม..." autocomplete="off"
               oninput="showDropdown('sale-drop',_sales,this.value,'f-sale')"
@@ -245,29 +250,15 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--spec);bo
         <div class="fg"><label>LD No.</label><input id="fq-ld-no" placeholder="เช่น LD69001"></div>
         
         <div class="fg"><label>ประเภทงานใบเสนอราคา (Job Type) *</label>
-          <select id="fq-type" onchange="calculateAdminQuotationLeadTime()">
+          <select id="fq-type">
             <option value="MRO">MRO</option>
             <option value="Project">Project</option>
             <option value="STOCK">STOCK</option>
           </select>
         </div>
-        <div class="fg"><label>วันที่เปิดบอร์ด *</label><input id="fq-start" class="date-in" placeholder="วว/ดด/ปปปป" maxlength="10" oninput="fmtDI(this); calculateAdminQuotationLeadTime();"></div>
+        <div class="fg"><label>วันที่เปิดบอร์ด *</label><input id="fq-start" class="date-in" placeholder="วว/ดด/ปปปป" maxlength="10" oninput="fmtDI(this);"></div>
         
-        <div class="fg"><label>แบรนด์ (Brand) *</label>
-          <select id="fq-brand" onchange="calculateAdminQuotationLeadTime()">
-            <option value="Platinum brand">Platinum brand</option>
-            <option value="Golden brand">Golden brand</option>
-            <option value="Platinum & Golden brand">Platinum & Golden brand</option>
-          </select>
-        </div>
-        <div class="fg"><label>ประเภทวาล์ว (Valve Type) *</label>
-          <select id="fq-valve-type" onchange="calculateAdminQuotationLeadTime()">
-            <option value="Manual valve & Accessory">Manual valve & Accessory</option>
-            <option value="Special valve & Accessory">Special valve & Accessory</option>
-          </select>
-        </div>
-        
-        <div class="fg"><label>กำหนดส่งลูกค้า (Auto-Calculated)</label><input id="fq-due" placeholder="ระบบจะคำนวณอัตโนมัติ" readonly style="background:var(--sur2); opacity:0.8; cursor:not-allowed"></div>
+        <div class="fg"><label>กำหนดส่ง</label><input id="fq-due" placeholder="รอคำนวณจากประเภทวาล์วและแบรนด์" readonly style="background:var(--sur2); opacity:0.8; cursor:not-allowed"></div>
         <div class="fg"><label>ชื่อบริษัทลูกค้า *</label>
           <div style="position:relative">
             <input id="fq-cust" placeholder="พิมพ์ชื่อบริษัท..." autocomplete="off"
@@ -305,16 +296,6 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--spec);bo
           </div>
         </div>
         
-        <div class="fg"><label>สถานะ (Status)</label>
-          <select id="fq-status">
-            <option value="PENDING">PENDING (รอผล)</option>
-            <option value="WIN">WIN (ได้งาน)</option>
-            <option value="LOST">LOST (ไม่ได้งาน)</option>
-            <option value="HOLD">HOLD (ชะลอ)</option>
-          </select>
-        </div>
-        
-        <div class="fg span2"><label>รายละเอียดสินค้า / Product</label><textarea id="fq-product" rows="2" placeholder="ระบุแบรนด์ รุ่น ข้อมูลทางเทคนิค..."></textarea></div>
         <div class="fg span2"><label>หมายเหตุ (Remark)</label><textarea id="fq-remark" rows="2" placeholder="ระบุหมายเหตุ..."></textarea></div>
       </div>
       <div id="q-form-err" style="color:var(--late);font-size:12px;margin-top:10px"></div>
@@ -413,41 +394,7 @@ function addBusinessDays(startDateStr, days) {
   return date.toISOString().split('T')[0];
 }
 
-function calculateAdminQuotationLeadTime() {
-  const startDmy = document.getElementById('fq-start').value;
-  if (!startDmy || startDmy.length < 10) return;
-  const start = isoFrom(startDmy);
-  const jobType = document.getElementById('fq-type').value;
-  const brand = document.getElementById('fq-brand').value;
-  const valveType = document.getElementById('fq-valve-type').value;
-  
-  let days = 0;
-  if (jobType === 'MRO') {
-    if (brand === 'Platinum brand') {
-      days = (valveType === 'Manual valve & Accessory') ? 3 : 7;
-    } else if (brand === 'Golden brand') {
-      days = (valveType === 'Manual valve & Accessory') ? 2 : 5;
-    }
-  } else if (jobType === 'Project') {
-    if (brand === 'Platinum brand') {
-      days = (valveType === 'Manual valve & Accessory') ? 10 : 15;
-    } else if (brand === 'Golden brand') {
-      days = (valveType === 'Manual valve & Accessory') ? 5 : 10;
-    }
-  } else if (jobType === 'STOCK') {
-    days = (valveType === 'Manual valve & Accessory') ? 1 : 2;
-  }
-  
-  const dueInput = document.getElementById('fq-due');
-  if (dueInput) {
-    if (jobType === 'STOCK' && valveType === 'Manual valve & Accessory') {
-      dueInput.value = dmyFrom(start); // same day
-    } else {
-      const dueIso = addBusinessDays(start, days);
-      dueInput.value = dmyFrom(dueIso);
-    }
-  }
-}
+// Admin quotation leadtime calculation removed as brand/valve are now managed by proposal team
 
 function showDropdown(dropId,list,q,inputId){
   const drop=document.getElementById(dropId);if(!drop)return;
@@ -482,7 +429,7 @@ function removeSaleTag(name){
 }
 function renderSaleTags(){
   const el=document.getElementById('sale-tags');if(!el)return;
-  el.innerHTML=_saleTags.map(t=>`<span style="display:inline-flex;align-items:center;gap:4px;background:#e8f0fe;color:#0550ae;border:1px solid #c2d4f8;border-radius:99px;font-size:12px;padding:2px 10px;font-weight:500">${t}<button type="button" onclick="removeSaleTag('${t.replace(/'/g,"\'")}')" style="background:none;border:none;color:#0550ae;cursor:pointer;font-size:14px;padding:0;line-height:1;margin-left:2px">×</button></span>`).join('');
+  el.innerHTML=_saleTags.map(t=>`<span style="display:inline-flex;align-items:center;gap:4px;background:var(--prog-bg);color:var(--prog);border:1px solid var(--prog-bd);border-radius:99px;font-size:12px;padding:2px 10px;font-weight:500">${t}<button type="button" onclick="removeSaleTag('${t.replace(/'/g,"\'")}')" style="background:none;border:none;color:var(--prog);cursor:pointer;font-size:14px;padding:0;line-height:1;margin-left:2px">×</button></span>`).join('');
 }
 function getSaleValue(){ return _saleTags.join(', '); }
 function setSaleValue(val){
@@ -562,10 +509,10 @@ function hl(t,q){if(!q||!t)return t||'';return String(t).replace(new RegExp('('+
 let _dTab='all';
 function setDTab(val){
   _dTab=val;
-  ['all','dom','intl','quotes'].forEach(k=>{
+  ['all','dom','intl','done','quotes'].forEach(k=>{
     const btn=document.getElementById('dtab-'+k);
     if(!btn)return;
-    const active=(k==='all'&&val==='all')||(k==='dom'&&val==='นปท.')||(k==='intl'&&val==='ตปท.')||(k==='quotes'&&val==='quotes');
+    const active=(k==='all'&&val==='all')||(k==='dom'&&val==='นปท.')||(k==='intl'&&val==='ตปท.')||(k==='done'&&val==='done')||(k==='quotes'&&val==='quotes');
     btn.style.borderBottomColor=active?'var(--spec)':'transparent';
     btn.style.color=active?'var(--spec)':'var(--mu)';
   });
@@ -576,9 +523,20 @@ function setDTab(val){
 
 function updateLayoutForTab() {
   const isQuotes = _dTab === 'quotes';
+  
   const titleEl = document.querySelector('.section-title');
   if (titleEl) {
-    titleEl.textContent = isQuotes ? '📋 รายการใบเสนอราคา ทั้งหมด' : '📋 รายการ PR ทั้งหมด';
+    if (isQuotes) {
+      titleEl.textContent = '📋 รายการใบเสนอราคา ทั้งหมด';
+    } else if (_dTab === 'done') {
+      titleEl.textContent = '📋 รายการ PR เสร็จสิ้นแล้ว';
+    } else if (_dTab === 'นปท.') {
+      titleEl.textContent = '📋 รายการ PR ในประเทศ (นปท.)';
+    } else if (_dTab === 'ตปท.') {
+      titleEl.textContent = '📋 รายการ PR ต่างประเทศ (ตปท.)';
+    } else {
+      titleEl.textContent = '📋 รายการ PR ทั้งหมด';
+    }
   }
   
   const statusFilter = document.getElementById('f-status');
@@ -693,23 +651,31 @@ function renderTable(){
   }
   
   let list=_prs.filter(p=>{
-    // domestic tab filter
-    if(_dTab==='นปท.'&&p.domestic!=='นปท.')return false;
-    if(_dTab==='ตปท.'&&p.domestic!=='ตปท.')return false;
-    // status filter
     const ids=p.linkedPOIs&&p.linkedPOIs.length?p.linkedPOIs:(p.linkedPOI?[p.linkedPOI]:[]);
     const linked=ids.length>0;
     const done=linked && ids.every(id=>{
       const o = _orders.find(x=>x.id===id);
       return o && isOrderDone(o);
     });
-    if(fs==='' && done)return false;
+
+    // 1. Partitioning by tab
+    if (_dTab === 'done') {
+      if (!done) return false;
+    } else {
+      if (done) return false;
+      if (_dTab === 'นปท.' && p.domestic !== 'นปท.') return false;
+      if (_dTab === 'ตปท.' && p.domestic !== 'ตปท.') return false;
+    }
+
+    // 2. Dropdown status filter
     if(fs==='pending'&&linked)return false;
     if(fs==='linked'&&(!linked||done))return false;
     if(fs==='done'&&!done)return false;
     if(fs==='fine'&&p.fineYN!=='yes')return false;
     if(fs==='cancelled'&&!p.isCancelled)return false;
     if(fs!==''&&fs!=='cancelled'&&p.isCancelled)return false;
+
+    // 3. Search query filter
     if(!q)return true;
     return[p.prNo,p.customerName,p.customerPO,p.sale,p.saleTeam,p.quotationNo,p.poNo,p.ldNo]
       .filter(Boolean).join(' ').toLowerCase().includes(q);
@@ -718,9 +684,9 @@ function renderTable(){
   document.getElementById('pr-body').innerHTML=list.map(p=>{
     const ids=p.linkedPOIs&&p.linkedPOIs.length?p.linkedPOIs:(p.linkedPOI?[p.linkedPOI]:[]);
     const domesticBadge=p.domestic==='นปท.'
-      ?'<span style="font-size:10px;padding:1px 6px;border-radius:99px;background:#e0f2fe;color:#0550ae;border:1px solid #7dd3fc;font-weight:600;margin-left:5px">🏠 นปท.</span>'
+      ?'<span style="font-size:10px;padding:1px 6px;border-radius:99px;background:var(--prog-bg);color:var(--prog);border:1px solid var(--prog-bd);font-weight:600;margin-left:5px">🏠 นปท.</span>'
       :p.domestic==='ตปท.'
-      ?'<span style="font-size:10px;padding:1px 6px;border-radius:99px;background:#f0fdf4;color:#16a34a;border:1px solid #86efac;font-weight:600;margin-left:5px">✈️ ตปท.</span>'
+      ?'<span style="font-size:10px;padding:1px 6px;border-radius:99px;background:var(--spec-bg);color:var(--spec);border:1px solid var(--spec-bd);font-weight:600;margin-left:5px">✈️ ตปท.</span>'
       :'';
     const poiCell=(()=>{
       if(!ids.length)return'<span class="badge b-pending">⏳ รอเปิด POI</span>';
@@ -728,7 +694,7 @@ function renderTable(){
         const o=_orders.find(x=>x.id===id);
         const done=isOrderDone(o);
         return done
-          ?`<span class="badge" style="background:#dcfce7;color:#16a34a;border:1px solid #86efac;margin-right:3px">✅ ${id} — เสร็จแล้ว</span>`
+          ?`<span class="badge" style="background:var(--done-bg);color:var(--done);border:1px solid var(--done-bd);margin-right:3px">✅ ${id} — เสร็จแล้ว</span>`
           :`<span class="badge b-linked" style="margin-right:3px">🔗 ${id}</span>`;
       }).join('');
     })();
@@ -745,7 +711,7 @@ function renderTable(){
       }).join('<br>');
     })();
     const _cStyle=p.isCancelled?'opacity:0.55;background:rgba(100,116,139,0.05);':'';
-    const _cBadge=p.isCancelled?('<span style="font-size:10px;padding:1px 6px;border-radius:99px;background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1;font-weight:600;margin-left:5px">🚫 ยกเลิก'+(p.cancelReason?' — '+p.cancelReason:'')+'</span>'):'';
+    const _cBadge=p.isCancelled?('<span style="font-size:10px;padding:1px 6px;border-radius:99px;background:var(--sur3);color:var(--mu);border:1px solid var(--bd);font-weight:600;margin-left:5px">🚫 ยกเลิก'+(p.cancelReason?' — '+p.cancelReason:'')+'</span>'):'';
     const _cTxt=p.isCancelled?'text-decoration:line-through;color:var(--mu);':'';
     return`<tr style="${_cStyle}">
     <td><strong style="${_cTxt}">${hl(p.prNo,q)}</strong>${domesticBadge}${_cBadge}</td>
@@ -965,14 +931,14 @@ function closeDetail(){document.getElementById('detail-modal').classList.remove(
 function openAddQuotationModal(){
   _editId = null;
   document.getElementById('q-form-title').textContent = '+ เพิ่มใบเสนอราคาใหม่';
-  ['fq-quotation-no', 'fq-ld-no', 'fq-start', 'fq-due', 'fq-cust', 'fq-product', 'fq-remark'].forEach(id => document.getElementById(id).value = '');
+  ['fq-quotation-no', 'fq-ld-no', 'fq-start', 'fq-due', 'fq-cust', 'fq-remark'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
   document.getElementById('fq-type').value = 'MRO';
-  document.getElementById('fq-brand').value = 'Platinum brand';
-  document.getElementById('fq-valve-type').value = 'Manual valve & Accessory';
   document.getElementById('fq-cust-type').value = 'End-user';
   document.getElementById('fq-saleteam').value = _saleTeams[0] || '';
   document.getElementById('fq-sale').value = _sales[0] || '';
-  document.getElementById('fq-status').value = 'PENDING';
   document.getElementById('q-form-err').textContent = '';
   document.getElementById('q-form-modal').classList.add('open');
 }
@@ -986,15 +952,11 @@ function openEditQuotationModal(id){
   document.getElementById('fq-ld-no').value = q.ld_no || '';
   document.getElementById('fq-type').value = q.quotation_type || 'MRO';
   document.getElementById('fq-start').value = dmyFrom(q.start_date) || '';
-  document.getElementById('fq-brand').value = q.brand || 'Platinum brand';
-  document.getElementById('fq-valve-type').value = q.valve_type || 'Manual valve & Accessory';
   document.getElementById('fq-due').value = dmyFrom(q.due_date) || '';
   document.getElementById('fq-cust').value = q.customer || '';
   document.getElementById('fq-cust-type').value = q.customer_type || 'End-user';
   document.getElementById('fq-saleteam').value = q.sale_team || '';
   document.getElementById('fq-sale').value = q.sale || '';
-  document.getElementById('fq-status').value = q.status || 'PENDING';
-  document.getElementById('fq-product').value = q.product || '';
   document.getElementById('fq-remark').value = q.remark || '';
   document.getElementById('q-form-err').textContent = '';
   document.getElementById('q-form-modal').classList.add('open');
@@ -1013,20 +975,21 @@ async function saveQuotation(){
   if (!customer) { document.getElementById('q-form-err').textContent = 'กรุณาใส่ชื่อลูกค้า'; return; }
   if (!startDate) { document.getElementById('q-form-err').textContent = 'กรุณาเลือกวันที่เปิดบอร์ด'; return; }
   
+  const existing = _editId ? _quotations.find(x => x.id === _editId) : null;
   const body = {
     quotationNo,
     ldNo: document.getElementById('fq-ld-no').value.trim(),
     quotationType: document.getElementById('fq-type').value,
     startDate,
-    brand: document.getElementById('fq-brand').value,
-    valveType: document.getElementById('fq-valve-type').value,
-    dueDate: isoFrom(document.getElementById('fq-due').value),
+    brand: existing ? (existing.brand || '') : '',
+    valveType: existing ? (existing.valve_type || '') : '',
+    dueDate: existing ? (existing.due_date || '') : '',
     customer,
     customerType: document.getElementById('fq-cust-type').value,
     saleTeam: document.getElementById('fq-saleteam').value.trim(),
     sale: document.getElementById('fq-sale').value.trim(),
-    status: document.getElementById('fq-status').value,
-    product: document.getElementById('fq-product').value.trim(),
+    status: existing ? (existing.status || 'PENDING') : 'PENDING',
+    product: existing ? (existing.product || '') : '',
     remark: document.getElementById('fq-remark').value.trim(),
   };
   
@@ -1096,11 +1059,11 @@ function openQuotationDetail(id){
     </div>
     <div class="detail-section">
       <div class="detail-title">📦 รายละเอียดสินค้า</div>
-      <div style="padding:10px;background:var(--sur2);border-radius:var(--r);font-size:13px;white-space:pre-wrap;border:1px solid var(--bd2)">${esc(q.product) || 'ไม่มีรายละเอียดสินค้า'}</div>
+      <div style="padding:10px;background:var(--sur3);border-radius:var(--r);font-size:13px;white-space:pre-wrap;border:1px solid var(--bd)">${esc(q.product) || 'ไม่มีรายละเอียดสินค้า'}</div>
     </div>
     <div class="detail-section">
       <div class="detail-title">💬 หมายเหตุ</div>
-      <div style="padding:10px;background:var(--sur2);border-radius:var(--r);font-size:13px;white-space:pre-wrap;border:1px solid var(--bd2)">${esc(q.remark) || 'ไม่มีหมายเหตุ'}</div>
+      <div style="padding:10px;background:var(--sur3);border-radius:var(--r);font-size:13px;white-space:pre-wrap;border:1px solid var(--bd)">${esc(q.remark) || 'ไม่มีหมายเหตุ'}</div>
     </div>
   `;
   document.getElementById('detail-modal').classList.add('open');
