@@ -390,6 +390,15 @@ if (document.readyState === 'loading') {
 function esc(str){if(!str)return '';return String(str).replace(/"/g,'&quot;');}
 let _prs=[], _quotations=[], _editId=null, _items=[], _configCustomers=[];
 
+async function loadPRs() {
+  const [data, orders] = await Promise.all([
+    fetch('/api/prs').then(r=>r.json()).catch(()=>[]),
+    fetch('/api/orders').then(r=>r.json()).catch(()=>[])
+  ]);
+  _prs = Array.isArray(data) ? data : [];
+  _orders = Array.isArray(orders) ? orders : [];
+}
+
 function addBusinessDays(startDateStr, days) {
   if (!startDateStr) return '';
   const date = new Date(startDateStr);
@@ -690,7 +699,11 @@ function renderTable(){
     // status filter
     const ids=p.linkedPOIs&&p.linkedPOIs.length?p.linkedPOIs:(p.linkedPOI?[p.linkedPOI]:[]);
     const linked=ids.length>0;
-    const done=ids.some(id=>isOrderDone(_orders.find(x=>x.id===id)));
+    const done=linked && ids.every(id=>{
+      const o = _orders.find(x=>x.id===id);
+      return o && isOrderDone(o);
+    });
+    if(fs==='' && done)return false;
     if(fs==='pending'&&linked)return false;
     if(fs==='linked'&&(!linked||done))return false;
     if(fs==='done'&&!done)return false;

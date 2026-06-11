@@ -272,18 +272,35 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--spec)}
             <input id="f-qno" required placeholder="เช่น Q6905-001">
           </div>
           <div class="fg">
-            <label>ประเภทงานใบเสนอราคา <span class="req">*</span></label>
-            <select id="f-type" required onchange="onTypeOrDateChange()">
-              <!-- Options loaded from config -->
+            <label>ประเภทงานใบเสนอราคา (Job Type) <span class="req">*</span></label>
+            <select id="f-type" required onchange="calculateQuotationLeadTime()">
+              <option value="MRO">MRO</option>
+              <option value="Project">Project</option>
+              <option value="STOCK">STOCK</option>
+            </select>
+          </div>
+          <div class="fg">
+            <label>แบรนด์ (Brand) <span class="req">*</span></label>
+            <select id="f-brand" required onchange="calculateQuotationLeadTime()">
+              <option value="Platinum brand">Platinum brand</option>
+              <option value="Golden brand">Golden brand</option>
+              <option value="Platinum & Golden brand">Platinum & Golden brand</option>
+            </select>
+          </div>
+          <div class="fg">
+            <label>ประเภทวาล์ว (Valve Type) <span class="req">*</span></label>
+            <select id="f-valve-type" required onchange="calculateQuotationLeadTime()">
+              <option value="Manual valve & Accessory">Manual valve & Accessory</option>
+              <option value="Special valve & Accessory">Special valve & Accessory</option>
             </select>
           </div>
           <div class="fg">
             <label>วันที่เปิดบอร์ด <span class="req">*</span></label>
-            <input id="f-start" type="date" required onchange="onTypeOrDateChange()">
+            <input id="f-start" type="date" required onchange="calculateQuotationLeadTime()">
           </div>
           <div class="fg">
             <label>กำหนดส่งลูกค้า (Auto-Calculated) <span class="req">*</span></label>
-            <input id="f-due" type="date" required>
+            <input id="f-due" type="date" required readonly style="background:var(--s1); opacity:0.8; cursor:not-allowed">
           </div>
           <div class="fg">
             <label>LD No.</label>
@@ -329,6 +346,10 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--spec)}
             <input id="f-completed-date" type="date">
           </div>
           <div class="fg fg-span">
+            <label>หมายเหตุ (Remark)</label>
+            <textarea id="f-remark" rows="2" placeholder="ระบุหมายเหตุความเห็นของทีม..."></textarea>
+          </div>
+          <div class="fg fg-span">
             <label>รายละเอียดสินค้า / Product</label>
             <textarea id="f-product" rows="3" placeholder="ระบุแบรนด์ รุ่น ข้อมูลทางเทคนิค..."></textarea>
           </div>
@@ -370,12 +391,39 @@ async function loadData() {
   _config = cfg;
 }
 
-function onTypeOrDateChange() {
+function calculateQuotationLeadTime() {
   const start = document.getElementById('f-start').value;
-  const typeName = document.getElementById('f-type').value;
-  const match = (_config.quotationTypes || []).find(t => t.name === typeName);
-  if (start && match) {
-    document.getElementById('f-due').value = addBusinessDays(start, match.days);
+  const jobType = document.getElementById('f-type').value;
+  const brand = document.getElementById('f-brand').value;
+  const valveType = document.getElementById('f-valve-type').value;
+  
+  if (!start) return;
+  
+  let days = 0;
+  
+  if (jobType === 'MRO') {
+    if (brand === 'Platinum brand') {
+      days = (valveType === 'Manual valve & Accessory') ? 3 : 7;
+    } else if (brand === 'Golden brand') {
+      days = (valveType === 'Manual valve & Accessory') ? 2 : 5;
+    }
+  } else if (jobType === 'Project') {
+    if (brand === 'Platinum brand') {
+      days = (valveType === 'Manual valve & Accessory') ? 10 : 15; // 2 weeks = 10 business days, 3 weeks = 15 business days
+    } else if (brand === 'Golden brand') {
+      days = (valveType === 'Manual valve & Accessory') ? 5 : 10; // 1 week = 5 business days, 10 days = 10 business days
+    }
+  } else if (jobType === 'STOCK') {
+    days = (valveType === 'Manual valve & Accessory') ? 1 : 2; // 0.5 day = 1 business day, 2 days = 2 business days
+  }
+  
+  const dueInput = document.getElementById('f-due');
+  if (dueInput) {
+    if (jobType === 'STOCK' && valveType === 'Manual valve & Accessory') {
+      dueInput.value = start; // same day
+    } else {
+      dueInput.value = addBusinessDays(start, days);
+    }
   }
 }
 
@@ -400,10 +448,6 @@ function selectCust(name) {
 }
 
 function initFormDropdowns() {
-  // Quotation Types
-  const fType = document.getElementById('f-type');
-  fType.innerHTML = (_config.quotationTypes || []).map(t => `<option value="${t.name}">${t.name} (${t.days} วัน)</option>`).join('');
-  
   // Sale Teams
   document.getElementById('f-saleteam').innerHTML = (_config.saleTeams || []).map(t => `<option value="${t}">${t}</option>`).join('');
   
@@ -419,12 +463,16 @@ function openCreateModal() {
   // Default values
   const today = new Date().toISOString().split('T')[0];
   document.getElementById('f-start').value = today;
+  document.getElementById('f-type').value = 'MRO';
+  document.getElementById('f-brand').value = 'Platinum brand';
+  document.getElementById('f-valve-type').value = 'Manual valve & Accessory';
   document.getElementById('f-cust-type').value = 'End-user';
   document.getElementById('f-offer-date').value = '';
   document.getElementById('f-completed-date').value = '';
+  document.getElementById('f-remark').value = '';
   
   initFormDropdowns();
-  onTypeOrDateChange();
+  calculateQuotationLeadTime();
   
   document.getElementById('modal').classList.add('open');
 }
@@ -436,7 +484,9 @@ function openEditModal(q) {
   initFormDropdowns();
   
   document.getElementById('f-qno').value = q.quotation_no;
-  document.getElementById('f-type').value = q.quotation_type;
+  document.getElementById('f-type').value = q.quotation_type || 'MRO';
+  document.getElementById('f-brand').value = q.brand || 'Platinum brand';
+  document.getElementById('f-valve-type').value = q.valve_type || 'Manual valve & Accessory';
   document.getElementById('f-start').value = q.start_date;
   document.getElementById('f-due').value = q.due_date;
   document.getElementById('f-ld').value = q.ld_no;
@@ -447,8 +497,10 @@ function openEditModal(q) {
   document.getElementById('f-offer').value = q.total_offer;
   document.getElementById('f-offer-date').value = q.offer_date || '';
   document.getElementById('f-completed-date').value = q.completed_date || '';
+  document.getElementById('f-remark').value = q.remark || '';
   document.getElementById('f-product').value = q.product;
   
+  calculateQuotationLeadTime();
   document.getElementById('modal').classList.add('open');
 }
 
@@ -466,12 +518,14 @@ async function saveQuotation() {
       method: 'PUT',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({ customers: _config.customers })
-    });
+    }).catch(console.error);
   }
 
   const payload = {
     quotationNo: document.getElementById('f-qno').value.trim(),
     quotationType: document.getElementById('f-type').value,
+    brand: document.getElementById('f-brand').value,
+    valveType: document.getElementById('f-valve-type').value,
     startDate: document.getElementById('f-start').value,
     dueDate: document.getElementById('f-due').value,
     ldNo: document.getElementById('f-ld').value.trim(),
@@ -482,6 +536,7 @@ async function saveQuotation() {
     totalOffer: parseFloat(document.getElementById('f-offer').value) || 0.0,
     offerDate: document.getElementById('f-offer-date').value || '',
     completedDate: document.getElementById('f-completed-date').value || '',
+    remark: document.getElementById('f-remark').value.trim(),
     product: document.getElementById('f-product').value.trim()
   };
 
@@ -635,60 +690,117 @@ function selectQuote(id) {
       <div class="detail-grid">
         <div class="detail-item"><div class="detail-lbl">วันที่เปิดบอร์ด</div><div class="detail-val">${q.start_date || '—'}</div></div>
         <div class="detail-item"><div class="detail-lbl">กำหนดส่งลูกค้า</div><div class="detail-val" style="color:var(--pend)">${q.due_date || '—'}</div></div>
+        <div class="detail-item"><div class="detail-lbl">แบรนด์</div><div class="detail-val">${q.brand || '—'}</div></div>
+        <div class="detail-item"><div class="detail-lbl">ประเภทวาล์ว</div><div class="detail-val">${q.valve_type || '—'}</div></div>
         <div class="detail-item"><div class="detail-lbl">ประเภทลูกค้า</div><div class="detail-val">${q.customer_type}</div></div>
         <div class="detail-item"><div class="detail-lbl">ยอดเงินที่เสนอ</div><div class="detail-val" style="color:var(--spec)">${q.total_offer ? parseFloat(q.total_offer).toLocaleString() + ' บาท' : '—'}</div></div>
         <div class="detail-item"><div class="detail-lbl">วันที่เสนอราคา</div><div class="detail-val">${q.offer_date || '—'}</div></div>
         <div class="detail-item"><div class="detail-lbl">วันที่จัดทำเสร็จ</div><div class="detail-val">${q.completed_date || '—'}</div></div>
         <div class="detail-item"><div class="detail-lbl">ทีมผู้ขาย</div><div class="detail-val">${q.sale_team} / ${q.sale}</div></div>
+        <div class="detail-item" style="grid-column: span 2"><div class="detail-lbl">หมายเหตุ (Remark)</div><div class="detail-val" style="white-space:pre-wrap">${q.remark || '—'}</div></div>
         <div class="detail-item" style="grid-column: span 2"><div class="detail-lbl">รายละเอียดงาน / Product</div><div class="detail-val" style="white-space:pre-wrap">${q.product || '—'}</div></div>
       </div>
     </div>
     
-    <!-- WORKFLOW & CLOSE OUT -->
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
-      <!-- Assignment -->
-      <div class="section-card" style="margin-bottom:0">
-        <div class="section-title">👤 มอบหมายงานรับผิดชอบ</div>
-        <div class="fg">
-          <label>วิศวกรจัดทำข้อเสนอราคา (Proposal Team)</label>
-          <select id="act-resp" onchange="assignResponsible(${q.id}, this.value)" style="margin-top:8px">
-            <option value="">-- ยังไม่มอบหมาย --</option>
-            ${(_config.team || []).map(name => `<option value="${name}" ${q.responsible === name ? 'selected' : ''}>${name}</option>`).join('')}
-          </select>
+    <!-- WORKFLOW & ENTRY & CLOSE OUT -->
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-top:20px">
+      <!-- Left cards -->
+      <div style="display:flex; flex-direction:column; gap:20px">
+        <!-- Assignment -->
+        <div class="section-card" style="margin-bottom:0">
+          <div class="section-title">👤 มอบหมายงานรับผิดชอบ</div>
+          <div class="fg">
+            <label>วิศวกรจัดทำข้อเสนอราคา (Proposal Team)</label>
+            <select id="act-resp" onchange="assignResponsible(${q.id}, this.value)" style="margin-top:8px">
+              <option value="">-- ยังไม่มอบหมาย --</option>
+              ${(_config.team || []).map(name => `<option value="${name}" ${q.responsible === name ? 'selected' : ''}>${name}</option>`).join('')}
+            </select>
+          </div>
+        </div>
+        
+        <!-- Proposal Entry -->
+        <div class="section-card" style="margin-bottom:0">
+          <div class="section-title">✍️ บันทึกรายละเอียดเสนอราคา (Proposal Entry)</div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:8px">
+            <div class="fg">
+              <label>วันที่เสนอราคา (Offer Date)</label>
+              <input type="date" id="act-offer-date" value="${q.offer_date || ''}">
+            </div>
+            <div class="fg">
+              <label>วันที่จัดทำเสร็จ (Complete Date)</label>
+              <input type="date" id="act-completed-date" value="${q.completed_date || ''}">
+            </div>
+          </div>
+          <div class="fg" style="margin-top:10px">
+            <label>มูลค่าเสนอราคา (บาท)</label>
+            <input type="number" step="0.01" min="0" id="act-offer" value="${q.total_offer || ''}" placeholder="0.00">
+          </div>
+          <div class="fg" style="margin-top:10px">
+            <label>หมายเหตุ (Remark)</label>
+            <textarea id="act-remark" rows="2" placeholder="ระบุหมายเหตุความเห็นของทีม...">${q.remark || ''}</textarea>
+          </div>
+          <button class="btn btn-primary" onclick="updateProposalInfo(${q.id})" style="margin-top:14px; width:100%; justify-content:center; background:linear-gradient(135deg, var(--spec), var(--blue))">💾 อัปเดตข้อมูลการจัดทำ</button>
         </div>
       </div>
       
-      <!-- Closeout -->
-      <div class="section-card" style="margin-bottom:0">
-        <div class="section-title">🟢 ปิดบอร์ดและลิงก์ประวัติ (Close Out)</div>
-        <div class="fg">
-          <label>สถานะของใบเสนอราคา</label>
-          <select id="act-status" onchange="toggleCloseoutFields(this.value)" style="margin-top:8px">
-            <option value="PENDING" ${q.status === 'PENDING' ? 'selected' : ''}>🟡 รอเสนอราคา (PENDING)</option>
-            <option value="WIN" ${q.status === 'WIN' ? 'selected' : ''}>🟢 ได้รับใบสั่งซื้อ (WIN)</option>
-            <option value="LOST" ${q.status === 'LOST' ? 'selected' : ''}>🔴 ไม่สำเร็จ (LOST)</option>
-            <option value="HOLD" ${q.status === 'HOLD' ? 'selected' : ''}>⚪ พักงานชั่วคราว (HOLD)</option>
-          </select>
-        </div>
-        
-        <div id="closeout-win-fields" style="display:${q.status === 'WIN' ? 'block' : 'none'}; margin-top:12px">
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px">
-            <div class="fg" style="margin-bottom:0">
-              <label>PR Number <span class="req">*</span></label>
-              <input id="act-pr" placeholder="เช่น PR6905-001" value="${q.pr_no || ''}">
-            </div>
-            <div class="fg" style="margin-bottom:0">
-              <label>PO Number</label>
-              <input id="act-po" placeholder="เช่น PO6905-001" value="${q.po_no || ''}">
-            </div>
+      <!-- Right cards -->
+      <div style="display:flex; flex-direction:column; gap:20px">
+        <!-- Closeout -->
+        <div class="section-card" style="margin-bottom:0; height:100%">
+          <div class="section-title">🟢 ปิดบอร์ดและลิงก์ประวัติ (Close Out)</div>
+          <div class="fg">
+            <label>สถานะของใบเสนอราคา</label>
+            <select id="act-status" onchange="toggleCloseoutFields(this.value)" style="margin-top:8px">
+              <option value="PENDING" ${q.status === 'PENDING' ? 'selected' : ''}>🟡 รอเสนอราคา (PENDING)</option>
+              <option value="WIN" ${q.status === 'WIN' ? 'selected' : ''}>🟢 ได้รับใบสั่งซื้อ (WIN)</option>
+              <option value="LOST" ${q.status === 'LOST' ? 'selected' : ''}>🔴 ไม่สำเร็จ (LOST)</option>
+              <option value="HOLD" ${q.status === 'HOLD' ? 'selected' : ''}>⚪ พักงานชั่วคราว (HOLD)</option>
+            </select>
           </div>
-          <p style="font-size:11px; color:var(--mu); line-height:1.4">💡 เมื่อบันทึกเป็น <b>WIN</b> ระบบจะนำข้อมูลนี้ไปสร้างใบงานใน <b>PO Tracker (PR List)</b> โดยอัตโนมัติ ไม่ต้องทำซ้ำ</p>
+          
+          <div id="closeout-win-fields" style="display:${q.status === 'WIN' ? 'block' : 'none'}; margin-top:12px">
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px">
+              <div class="fg" style="margin-bottom:0">
+                <label>PR Number <span class="req">*</span></label>
+                <input id="act-pr" placeholder="เช่น PR6905-001" value="${q.pr_no || ''}">
+              </div>
+              <div class="fg" style="margin-bottom:0">
+                <label>PO Number</label>
+                <input id="act-po" placeholder="เช่น PO6905-001" value="${q.po_no || ''}">
+              </div>
+            </div>
+            <p style="font-size:11px; color:var(--mu); line-height:1.4">💡 เมื่อบันทึกเป็น <b>WIN</b> ระบบจะนำข้อมูลนี้ไปสร้างใบงานใน <b>PO Tracker (PR List)</b> โดยอัตโนมัติ ไม่ต้องทำซ้ำ</p>
+          </div>
+          
+          <button class="btn btn-primary" onclick="saveCloseout(${q.id})" style="margin-top:20px; width:100%; justify-content:center">💾 บันทึกผลลัพธ์การนำเสนอ</button>
         </div>
-        
-        <button class="btn btn-primary" onclick="saveCloseout(${q.id})" style="margin-top:16px; width:100%; justify-content:center">💾 บันทึกผลลัพธ์การนำเสนอ</button>
       </div>
     </div>
   `;
+}
+
+async function updateProposalInfo(id) {
+  const offerDate = document.getElementById('act-offer-date').value;
+  const completedDate = document.getElementById('act-completed-date').value;
+  const totalOffer = document.getElementById('act-offer').value;
+  const remark = document.getElementById('act-remark').value.trim();
+  
+  try {
+    const r = await fetch(`/api/quotations/${id}/progress`, {
+      method: 'PATCH',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ offerDate, completedDate, totalOffer, remark })
+    });
+    if (r.ok) {
+      alert('✓ บันทึกรายละเอียดเสนอราคาเรียบร้อย');
+      await refresh();
+      selectQuote(id);
+    } else {
+      alert('อัปเดตล้มเหลว');
+    }
+  } catch (err) {
+    alert(err.message);
+  }
 }
 
 async function updateProgress(id, step) {
@@ -775,6 +887,24 @@ async function refresh() {
 
 // Init
 refresh();
+
+// Auto-refresh every 15 seconds to sync admin quotations
+setInterval(async () => {
+  await loadData();
+  rList();
+  if (_selected) {
+    const fresh = _quotations.find(x => x.id === _selected.id);
+    if (fresh) {
+      _selected = fresh;
+      const activeEl = document.activeElement;
+      if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.tagName === 'SELECT')) {
+        // User is editing, skip updating work-pane to prevent losing input focus
+      } else {
+        selectQuote(_selected.id);
+      }
+    }
+  }
+}, 15000);
 </script>
 
 
