@@ -35,6 +35,20 @@ const DEFAULT_STEPS = [
   { name: "รับสินค้าเข้าระบบ",                   defaultDays: 1  }
 ];
 
+function addBusinessDaysHelper(startDateStr, days) {
+  if (!startDateStr || isNaN(days)) return '';
+  let date = new Date(startDateStr);
+  let count = 0;
+  while (count < days) {
+    date.setDate(date.getDate() + 1);
+    const day = date.getDay(); // 0: Sunday, 6: Saturday
+    if (day !== 0 && day !== 6) {
+      count++;
+    }
+  }
+  return date.toISOString().split('T')[0];
+}
+
 async function initDB() {
   const dbDir = path.dirname(DB_PATH);
   if (!fs.existsSync(dbDir)) {
@@ -118,6 +132,9 @@ async function initDB() {
       status          TEXT DEFAULT 'PENDING',
       offer_date      TEXT DEFAULT '',
       total_offer     REAL DEFAULT 0.0,
+      brand           TEXT DEFAULT '',
+      valve_type      TEXT DEFAULT '',
+      remark          TEXT DEFAULT '',
       created_at      TEXT DEFAULT (datetime('now','localtime'))
     );
   `);
@@ -253,6 +270,60 @@ async function initDB() {
   try { db.run("ALTER TABLE customers ADD COLUMN last_contact_date TEXT DEFAULT ''"); } catch(e) {}
   try { db.run("ALTER TABLE customers ADD COLUMN next_planned_date TEXT DEFAULT ''"); } catch(e) {}
   try { db.run("ALTER TABLE customers ADD COLUMN next_planned_type TEXT DEFAULT ''"); } catch(e) {}
+  
+  // Safe column migrations for quotations
+  try { db.run("ALTER TABLE quotations ADD COLUMN brand TEXT DEFAULT ''"); } catch(e) {}
+  try { db.run("ALTER TABLE quotations ADD COLUMN valve_type TEXT DEFAULT ''"); } catch(e) {}
+  // Migration for empty brand/valve_type in quotations
+  try {
+    db.run(`
+      UPDATE quotations
+      SET brand = 'Platinum brand'
+      WHERE brand IS NULL OR brand = ''
+    `);
+    db.run(`
+      UPDATE quotations
+      SET valve_type = 'Manual valve & Accessory'
+      WHERE valve_type IS NULL OR valve_type = ''
+    `);
+
+    // Recalculate due dates if they are empty
+    const emptyQuotes = db.prepare("SELECT id, start_date, quotation_type, brand, valve_type FROM quotations WHERE due_date IS NULL OR due_date = ''").all();
+    for (const q of emptyQuotes) {
+      if (!q.start_date) continue;
+      
+      let days = 0;
+      const jobType = q.quotation_type || 'MRO';
+      const brand = q.brand || 'Platinum brand';
+      const valveType = q.valve_type || 'Manual valve & Accessory';
+      
+      const isPlatinum = brand === 'Platinum brand' || brand === 'Platinum & Golden brand';
+      const isGolden = brand === 'Golden brand';
+      
+      if (jobType === 'MRO') {
+        if (isPlatinum) {
+          days = (valveType === 'Manual valve & Accessory') ? 3 : 7;
+        } else if (isGolden) {
+          days = (valveType === 'Manual valve & Accessory') ? 2 : 5;
+        }
+      } else if (jobType === 'Project') {
+        if (isPlatinum) {
+          days = (valveType === 'Manual valve & Accessory') ? 10 : 15;
+        } else if (isGolden) {
+          days = (valveType === 'Manual valve & Accessory') ? 5 : 10;
+        }
+      } else if (jobType === 'STOCK') {
+        days = (valveType === 'Manual valve & Accessory') ? 0 : 2;
+      }
+      
+      const calculatedDue = addBusinessDaysHelper(q.start_date, days);
+      if (calculatedDue) {
+        db.prepare("UPDATE quotations SET due_date=? WHERE id=?").run([calculatedDue, q.id]);
+      }
+    }
+  } catch(e) {
+    console.error('Migration for brand/valve_type/due_date failed:', e.message);
+  }
 
   saveDB();
   console.log('  ✅ Database ready.');
@@ -954,14 +1025,40 @@ app.get('/api/quotations', (req, res) => {
 
 app.post('/api/quotations', (req, res) => {
   try {
-    const {startDate, quotationType, completedDate, dueDate, ldNo, quotationNo, saleTeam, sale, customer, customerType, prNo, poNo, product, responsible, progressStatus, status, offerDate, totalOffer} = req.body;
+    const {startDate, quotationType, completedDate, dueDate, ldNo, quotationNo, saleTeam, sale, customer, customerType, prNo, poNo, product, responsible, progressStatus, status, offerDate, totalOffer, brand, valveType, remark} = req.body;
     if (!quotationNo) return res.status(400).json({error:'Quotation No. required'});
     const dup = query("SELECT id FROM quotations WHERE LOWER(quotation_no)=LOWER(?)", [quotationNo]);
     if (dup.length) return res.status(409).json({error:'Quotation No. already exists'});
 
-    run(`INSERT INTO quotations(start_date, quotation_type, completed_date, due_date, ld_no, quotation_no, sale_team, sale, customer, customer_type, pr_no, po_no, product, responsible, progress_status, status, offer_date, total_offer)
-         VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
-      [startDate||'', quotationType||'', completedDate||'', dueDate||'', ldNo||'', quotationNo, saleTeam||'', sale||'', customer||'', customerType||'', prNo||'', poNo||'', product||'', responsible||'', progressStatus||'ตรวจสอบข้อมูล', status||'PENDING', offerDate||'', parseFloat(totalOffer)||0.0]);
+    const finalBrand = brand || 'Platinum brand';
+    const finalValveType = valveType || 'Manual valve & Accessory';
+    let finalDueDate = dueDate;
+    if (!finalDueDate && startDate) {
+      let days = 0;
+      const isPlatinum = finalBrand === 'Platinum brand' || finalBrand === 'Platinum & Golden brand';
+      const isGolden = finalBrand === 'Golden brand';
+      
+      if ((quotationType || 'MRO') === 'MRO') {
+        if (isPlatinum) {
+          days = (finalValveType === 'Manual valve & Accessory') ? 3 : 7;
+        } else if (isGolden) {
+          days = (finalValveType === 'Manual valve & Accessory') ? 2 : 5;
+        }
+      } else if ((quotationType || 'MRO') === 'Project') {
+        if (isPlatinum) {
+          days = (finalValveType === 'Manual valve & Accessory') ? 10 : 15;
+        } else if (isGolden) {
+          days = (finalValveType === 'Manual valve & Accessory') ? 5 : 10;
+        }
+      } else if ((quotationType || 'MRO') === 'STOCK') {
+        days = (finalValveType === 'Manual valve & Accessory') ? 0 : 2;
+      }
+      finalDueDate = addBusinessDaysHelper(startDate, days);
+    }
+
+    run(`INSERT INTO quotations(start_date, quotation_type, completed_date, due_date, ld_no, quotation_no, sale_team, sale, customer, customer_type, pr_no, po_no, product, responsible, progress_status, status, offer_date, total_offer, brand, valve_type, remark)
+         VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+      [startDate||'', quotationType||'', completedDate||'', finalDueDate||'', ldNo||'', quotationNo, saleTeam||'', sale||'', customer||'', customerType||'', prNo||'', poNo||'', product||'', responsible||'', progressStatus||'ตรวจสอบข้อมูล', status||'PENDING', offerDate||'', parseFloat(totalOffer)||0.0, finalBrand, finalValveType, remark||'']);
     
     const inserted = query("SELECT * FROM quotations WHERE quotation_no=?", [quotationNo])[0];
     if (inserted && inserted.status === 'WIN') {
@@ -973,9 +1070,36 @@ app.post('/api/quotations', (req, res) => {
 
 app.put('/api/quotations/:id', (req, res) => {
   try {
-    const {startDate, quotationType, completedDate, dueDate, ldNo, quotationNo, saleTeam, sale, customer, customerType, prNo, poNo, product, responsible, progressStatus, status, offerDate, totalOffer} = req.body;
-    run(`UPDATE quotations SET start_date=?, quotation_type=?, completed_date=?, due_date=?, ld_no=?, quotation_no=?, sale_team=?, sale=?, customer=?, customer_type=?, pr_no=?, po_no=?, product=?, responsible=?, progress_status=?, status=?, offer_date=?, total_offer=? WHERE id=?`,
-      [startDate||'', quotationType||'', completedDate||'', dueDate||'', ldNo||'', quotationNo||'', saleTeam||'', sale||'', customer||'', customerType||'', prNo||'', poNo||'', product||'', responsible||'', progressStatus||'ตรวจสอบข้อมูล', status||'PENDING', offerDate||'', parseFloat(totalOffer)||0.0, req.params.id]);
+    const {startDate, quotationType, completedDate, dueDate, ldNo, quotationNo, saleTeam, sale, customer, customerType, prNo, poNo, product, responsible, progressStatus, status, offerDate, totalOffer, brand, valveType, remark} = req.body;
+    
+    const finalBrand = brand || 'Platinum brand';
+    const finalValveType = valveType || 'Manual valve & Accessory';
+    let finalDueDate = dueDate;
+    if (!finalDueDate && startDate) {
+      let days = 0;
+      const isPlatinum = finalBrand === 'Platinum brand' || finalBrand === 'Platinum & Golden brand';
+      const isGolden = finalBrand === 'Golden brand';
+      
+      if ((quotationType || 'MRO') === 'MRO') {
+        if (isPlatinum) {
+          days = (finalValveType === 'Manual valve & Accessory') ? 3 : 7;
+        } else if (isGolden) {
+          days = (finalValveType === 'Manual valve & Accessory') ? 2 : 5;
+        }
+      } else if ((quotationType || 'MRO') === 'Project') {
+        if (isPlatinum) {
+          days = (finalValveType === 'Manual valve & Accessory') ? 10 : 15;
+        } else if (isGolden) {
+          days = (finalValveType === 'Manual valve & Accessory') ? 5 : 10;
+        }
+      } else if ((quotationType || 'MRO') === 'STOCK') {
+        days = (finalValveType === 'Manual valve & Accessory') ? 0 : 2;
+      }
+      finalDueDate = addBusinessDaysHelper(startDate, days);
+    }
+
+    run(`UPDATE quotations SET start_date=?, quotation_type=?, completed_date=?, due_date=?, ld_no=?, quotation_no=?, sale_team=?, sale=?, customer=?, customer_type=?, pr_no=?, po_no=?, product=?, responsible=?, progress_status=?, status=?, offer_date=?, total_offer=?, brand=?, valve_type=?, remark=? WHERE id=?`,
+      [startDate||'', quotationType||'', completedDate||'', finalDueDate||'', ldNo||'', quotationNo||'', saleTeam||'', sale||'', customer||'', customerType||'', prNo||'', poNo||'', product||'', responsible||'', progressStatus||'ตรวจสอบข้อมูล', status||'PENDING', offerDate||'', parseFloat(totalOffer)||0.0, finalBrand, finalValveType, remark||'', req.params.id]);
     
     if (status === 'WIN') {
       syncPRFromQuotation(req.params.id);
@@ -986,11 +1110,13 @@ app.put('/api/quotations/:id', (req, res) => {
 
 app.patch('/api/quotations/:id/progress', (req, res) => {
   try {
-    const {progressStatus, completedDate, responsible, offerDate} = req.body;
+    const {progressStatus, completedDate, responsible, offerDate, remark, totalOffer} = req.body;
     if (progressStatus !== undefined) run("UPDATE quotations SET progress_status=? WHERE id=?", [progressStatus, req.params.id]);
     if (completedDate !== undefined) run("UPDATE quotations SET completed_date=? WHERE id=?", [completedDate, req.params.id]);
     if (responsible !== undefined) run("UPDATE quotations SET responsible=? WHERE id=?", [responsible, req.params.id]);
     if (offerDate !== undefined) run("UPDATE quotations SET offer_date=? WHERE id=?", [offerDate, req.params.id]);
+    if (remark !== undefined) run("UPDATE quotations SET remark=? WHERE id=?", [remark, req.params.id]);
+    if (totalOffer !== undefined) run("UPDATE quotations SET total_offer=? WHERE id=?", [parseFloat(totalOffer)||0.0, req.params.id]);
     res.json({ok:true});
   } catch(e) { res.status(500).json({error:e.message}); }
 });
@@ -1021,10 +1147,10 @@ app.get('/api/export-quotations-csv', (req, res) => {
   try {
     const list = query("SELECT * FROM quotations ORDER BY created_at DESC");
     let csv = '\ufeff'; // UTF-8 BOM
-    csv += 'ID,Start Date,Quotation Type,Completed Date,Due Date,LD No.,Quotation No.,Sale Team,Sale,Customer,Customer Type,PR No.,PO No.,Product,Responsible,Progress Status,Status,Offer Date,Total Offer (Baht)\n';
+    csv += 'ID,Start Date,Job Type,Completed Date,Due Date,LD No,Quotation No,Sale Team,Sale,Customer,Customer Type,PR No,PO No,Product,Responsible,Progress Status,Status,Offer Date,Total Offer,Brand,Valve Type,Remark\n';
     for (const q of list) {
       const escape = (val) => `"${(val || '').toString().replace(/"/g, '""')}"`;
-      csv += `${q.id},${escape(q.start_date)},${escape(q.quotation_type)},${escape(q.completed_date)},${escape(q.due_date)},${escape(q.ld_no)},${escape(q.quotation_no)},${escape(q.sale_team)},${escape(q.sale)},${escape(q.customer)},${escape(q.customer_type)},${escape(q.pr_no)},${escape(q.po_no)},${escape(q.product)},${escape(q.responsible)},${escape(q.progress_status)},${escape(q.status)},${escape(q.offer_date)},${q.total_offer}\n`;
+      csv += `${q.id},${escape(q.start_date)},${escape(q.quotation_type)},${escape(q.completed_date)},${escape(q.due_date)},${escape(q.ld_no)},${escape(q.quotation_no)},${escape(q.sale_team)},${escape(q.sale)},${escape(q.customer)},${escape(q.customer_type)},${escape(q.pr_no)},${escape(q.po_no)},${escape(q.product)},${escape(q.responsible)},${escape(q.progress_status)},${escape(q.status)},${escape(q.offer_date)},${q.total_offer},${escape(q.brand)},${escape(q.valve_type)},${escape(q.remark)}\n`;
     }
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.setHeader('Content-Disposition', 'attachment; filename="wisco_quotations.csv"');
