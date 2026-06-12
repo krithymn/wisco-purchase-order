@@ -642,8 +642,8 @@ function renderTable(){
         <td>${hl(x.customer_type, q) || '—'}</td>
         <td>${hl(x.sale_team, q) || '—'}</td>
         <td>${hl(x.sale, q) || '—'}</td>
-        <td>${hl(x.brand, q) || '—'}</td>
-        <td>${hl(x.valve_type, q) || '—'}</td>
+        <td>${hl(x.brand || 'Platinum brand', q)}</td>
+        <td>${hl(x.valve_type || 'Manual valve & Accessory', q)}</td>
         <td><span class="badge ${badgeClass}">${statusText}</span></td>
         <td><div style="display:flex;gap:4px">
           <button class="btn btn-sm" onclick="openQuotationDetail(${x.id})">ดู</button>
@@ -986,8 +986,8 @@ async function saveQuotation(){
     ldNo: document.getElementById('fq-ld-no').value.trim(),
     quotationType: document.getElementById('fq-type').value,
     startDate,
-    brand: existing ? (existing.brand || '') : '',
-    valveType: existing ? (existing.valve_type || '') : '',
+    brand: existing ? (existing.brand || 'Platinum brand') : 'Platinum brand',
+    valveType: existing ? (existing.valve_type || 'Manual valve & Accessory') : 'Manual valve & Accessory',
     dueDate: existing ? (existing.due_date || '') : '',
     customer,
     customerType: document.getElementById('fq-cust-type').value,
@@ -1057,8 +1057,8 @@ function openQuotationDetail(id){
         <div class="info-item"><div class="ik">ประเภทลูกค้า</div><div class="iv">${q.customer_type || '—'}</div></div>
         <div class="info-item"><div class="ik">Sale Team</div><div class="iv">${q.sale_team || '—'}</div></div>
         <div class="info-item"><div class="ik">Sale</div><div class="iv">${q.sale || '—'}</div></div>
-        <div class="info-item"><div class="ik">แบรนด์</div><div class="iv">${q.brand || '—'}</div></div>
-        <div class="info-item"><div class="ik">ประเภทวาล์ว</div><div class="iv">${q.valve_type || '—'}</div></div>
+        <div class="info-item"><div class="ik">แบรนด์</div><div class="iv">${q.brand || 'Platinum brand'}</div></div>
+        <div class="info-item"><div class="ik">ประเภทวาล์ว</div><div class="iv">${q.valve_type || 'Manual valve & Accessory'}</div></div>
       </div>
     </div>
     <div class="detail-section">

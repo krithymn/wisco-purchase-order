@@ -268,6 +268,10 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--spec)}
       <form id="q-form" onsubmit="event.preventDefault(); saveQuotation();">
         <div class="form-grid">
           <div class="fg">
+            <label>LD No.</label>
+            <input id="f-ld" placeholder="เช่น LD69001">
+          </div>
+          <div class="fg">
             <label>Quotation No. <span class="req">*</span></label>
             <input id="f-qno" required placeholder="เช่น Q6905-001">
           </div>
@@ -299,12 +303,8 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--spec)}
             <input id="f-start" type="date" required onchange="calculateQuotationLeadTime()">
           </div>
           <div class="fg">
-            <label>กำหนดส่งลูกค้า (Auto-Calculated) <span class="req">*</span></label>
+            <label>กำหนดส่ง <span class="req">*</span></label>
             <input id="f-due" type="date" required readonly style="background:var(--s1); opacity:0.8; cursor:not-allowed">
-          </div>
-          <div class="fg">
-            <label>LD No.</label>
-            <input id="f-ld" placeholder="เช่น LD69001">
           </div>
           <div class="fg">
             <label>ลูกค้า <span class="req">*</span></label>
@@ -400,30 +400,28 @@ function calculateQuotationLeadTime() {
   if (!start) return;
   
   let days = 0;
+  const isPlatinum = brand === 'Platinum brand' || brand === 'Platinum & Golden brand';
+  const isGolden = brand === 'Golden brand';
   
   if (jobType === 'MRO') {
-    if (brand === 'Platinum brand') {
+    if (isPlatinum) {
       days = (valveType === 'Manual valve & Accessory') ? 3 : 7;
-    } else if (brand === 'Golden brand') {
+    } else if (isGolden) {
       days = (valveType === 'Manual valve & Accessory') ? 2 : 5;
     }
   } else if (jobType === 'Project') {
-    if (brand === 'Platinum brand') {
-      days = (valveType === 'Manual valve & Accessory') ? 10 : 15; // 2 weeks = 10 business days, 3 weeks = 15 business days
-    } else if (brand === 'Golden brand') {
-      days = (valveType === 'Manual valve & Accessory') ? 5 : 10; // 1 week = 5 business days, 10 days = 10 business days
+    if (isPlatinum) {
+      days = (valveType === 'Manual valve & Accessory') ? 10 : 15;
+    } else if (isGolden) {
+      days = (valveType === 'Manual valve & Accessory') ? 5 : 10;
     }
   } else if (jobType === 'STOCK') {
-    days = (valveType === 'Manual valve & Accessory') ? 1 : 2; // 0.5 day = 1 business day, 2 days = 2 business days
+    days = (valveType === 'Manual valve & Accessory') ? 0 : 2;
   }
   
   const dueInput = document.getElementById('f-due');
   if (dueInput) {
-    if (jobType === 'STOCK' && valveType === 'Manual valve & Accessory') {
-      dueInput.value = start; // same day
-    } else {
-      dueInput.value = addBusinessDays(start, days);
-    }
+    dueInput.value = addBusinessDays(start, days);
   }
 }
 
@@ -611,7 +609,7 @@ function rList() {
   container.innerHTML = list.map(x => `
     <div class="qcard st-${x.status} ${(_selected && _selected.id === x.id) ? 'active' : ''}" onclick="selectQuote(${x.id})">
       <div class="qc-hdr">
-        <span class="qc-no">${x.quotation_no}</span>
+        <span class="qc-no">${x.ld_no ? x.ld_no : '—'} <span style="font-size:11px;font-weight:400;color:var(--mu)">(${x.quotation_no})</span></span>
         <span class="badge b-${x.status.toLowerCase()}">${x.status}</span>
       </div>
       <div class="qc-cust">🏭 ${x.customer}</div>
@@ -664,8 +662,8 @@ function selectQuote(id) {
     <!-- Header Summary -->
     <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:20px;">
       <div>
-        <h2 style="font-size:24px; font-weight:800; font-family:'Inter',sans-serif; color:#fff">${q.quotation_no}</h2>
-        <p style="color:var(--mu); font-size:13px; margin-top:4px;">LD No: ${q.ld_no || '—'} · ประเภทงาน: ${q.quotation_type} · ลูกค้า: ${q.customer}</p>
+        <h2 style="font-size:24px; font-weight:800; font-family:'Inter',sans-serif; color:#fff">${q.ld_no || '—'}</h2>
+        <p style="color:var(--mu); font-size:13px; margin-top:4px;">Quotation No: ${q.quotation_no} · ประเภทงาน: ${q.quotation_type} · ลูกค้า: ${q.customer}</p>
       </div>
       <div style="display:flex; gap:10px;">
         <button class="btn btn-secondary" onclick="openEditModal(_selected)">✏️ แก้ไขข้อมูล</button>
@@ -689,9 +687,9 @@ function selectQuote(id) {
       <div class="section-title">📄 รายละเอียดใบเสนอราคา</div>
       <div class="detail-grid">
         <div class="detail-item"><div class="detail-lbl">วันที่เปิดบอร์ด</div><div class="detail-val">${q.start_date || '—'}</div></div>
-        <div class="detail-item"><div class="detail-lbl">กำหนดส่งลูกค้า</div><div class="detail-val" style="color:var(--pend)">${q.due_date || '—'}</div></div>
-        <div class="detail-item"><div class="detail-lbl">แบรนด์</div><div class="detail-val">${q.brand || '—'}</div></div>
-        <div class="detail-item"><div class="detail-lbl">ประเภทวาล์ว</div><div class="detail-val">${q.valve_type || '—'}</div></div>
+        <div class="detail-item"><div class="detail-lbl">กำหนดส่ง</div><div class="detail-val" style="color:var(--pend)">${q.due_date || '—'}</div></div>
+        <div class="detail-item"><div class="detail-lbl">แบรนด์</div><div class="detail-val">${q.brand || 'Platinum brand'}</div></div>
+        <div class="detail-item"><div class="detail-lbl">ประเภทวาล์ว</div><div class="detail-val">${q.valve_type || 'Manual valve & Accessory'}</div></div>
         <div class="detail-item"><div class="detail-lbl">ประเภทลูกค้า</div><div class="detail-val">${q.customer_type}</div></div>
         <div class="detail-item"><div class="detail-lbl">ยอดเงินที่เสนอ</div><div class="detail-val" style="color:var(--spec)">${q.total_offer ? parseFloat(q.total_offer).toLocaleString() + ' บาท' : '—'}</div></div>
         <div class="detail-item"><div class="detail-lbl">วันที่เสนอราคา</div><div class="detail-val">${q.offer_date || '—'}</div></div>

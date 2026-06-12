@@ -411,11 +411,16 @@ function renderKPIs() {
   const pending = visible.filter(q => q.status === 'PENDING').length;
   const overdue = visible.filter(q => q.status === 'PENDING' && calculateLeadTime(q) < 0).length;
   
+  const total = visible.length || 1;
+  const winPct = Math.round((win / total) * 100);
+  const pendingPct = Math.round((pending / total) * 100);
+  const overduePct = Math.round((overdue / total) * 100);
+  
   document.getElementById('kpis').innerHTML = `
     <div class="kpi k-total"><div class="kpi-n">${visible.length}</div><div class="kpi-l">Quotation ทั้งหมด</div><div class="kpi-glow"></div></div>
-    <div class="kpi k-win"><div class="kpi-n" style="color:var(--done)">${win}</div><div class="kpi-l">ชนะ (WIN)</div><div class="kpi-glow"></div></div>
-    <div class="kpi k-pending"><div class="kpi-n" style="color:var(--pend)">${pending}</div><div class="kpi-l">รอเสนอราคา</div><div class="kpi-glow"></div></div>
-    <div class="kpi k-overdue"><div class="kpi-n" style="color:var(--late)">${overdue}</div><div class="kpi-l">เลยกำหนดส่ง</div><div class="kpi-glow"></div></div>
+    <div class="kpi k-win"><div class="kpi-n" style="color:var(--done)">${win} <span style="font-size:16px;font-weight:normal;color:var(--mu)">(${winPct}%)</span></div><div class="kpi-l">ชนะ (WIN)</div><div class="kpi-glow"></div></div>
+    <div class="kpi k-pending"><div class="kpi-n" style="color:var(--pend)">${pending} <span style="font-size:16px;font-weight:normal;color:var(--mu)">(${pendingPct}%)</span></div><div class="kpi-l">รอเสนอราคา</div><div class="kpi-glow"></div></div>
+    <div class="kpi k-overdue"><div class="kpi-n" style="color:var(--late)">${overdue} <span style="font-size:16px;font-weight:normal;color:var(--mu)">(${overduePct}%)</span></div><div class="kpi-l">เลยกำหนดส่ง</div><div class="kpi-glow"></div></div>
   `;
 }
 
@@ -472,7 +477,7 @@ function renderCards() {
       <div class="qcard st-${q.status}" onclick="openDetail(${q.id})">
         <div class="ct">
           <div class="ct-hdr">
-            <span class="ct-id">${q.quotation_no}</span>
+            <span class="ct-id">${q.ld_no ? q.ld_no : '—'} <span style="font-size:12px;font-weight:400;color:var(--mu)">(${q.quotation_no})</span></span>
             <span class="badge b-${q.status.toLowerCase()}">${q.status}</span>
           </div>
           <div class="ct-cust">🏭 ${q.customer}</div>
@@ -608,7 +613,7 @@ function renderChecklist() {
     const dueStr = days < 0 ? `🚨 เลยกำหนด ${Math.abs(days)} วัน` : `⏰ อีก ${days} วัน`;
     return `
       <div class="chk-item" onclick="openDetail(${q.id})">
-        <div class="chk-id">${q.quotation_no}</div>
+        <div class="chk-id">${q.ld_no ? q.ld_no : '—'} <span style="font-size:10px;font-weight:400;color:var(--mu)">(${q.quotation_no})</span></div>
         <div class="chk-cust">${q.customer}</div>
         <div class="chk-due" style="color:${days < 0 ? 'var(--late)' : 'var(--warn)'}">${dueStr}</div>
       </div>
@@ -620,7 +625,7 @@ function openDetail(id) {
   const q = _quotations.find(x => x.id === id);
   if (!q) return;
   
-  document.getElementById('m-id').textContent = q.quotation_no;
+  document.getElementById('m-id').textContent = q.ld_no ? `${q.ld_no} (${q.quotation_no})` : q.quotation_no;
   document.getElementById('m-badges').innerHTML = `
     <span class="badge b-${q.status.toLowerCase()}">${q.status}</span>
     <span class="badge" style="background:var(--s3);color:var(--silver2)">Type: ${q.quotation_type}</span>
@@ -657,11 +662,13 @@ function openDetail(id) {
       <div class="mmi"><div class="mmil">ลูกค้า</div><div class="mmiv">${q.customer}</div></div>
       <div class="mmi"><div class="mmil">ประเภทลูกค้า</div><div class="mmiv">${q.customer_type}</div></div>
       <div class="mmi"><div class="mmil">วันที่เปิดใบเสนอราคา</div><div class="mmiv">${q.start_date || '—'}</div></div>
-      <div class="mmi"><div class="mmil">กำหนดส่งลูกค้า</div><div class="mmiv" style="color:var(--warn)">${q.due_date || '—'}</div></div>
-      <div class="mmi"><div class="mmil">Quotation No.</div><div class="mmiv">${q.quotation_no}</div></div>
+      <div class="mmi"><div class="mmil">กำหนดส่ง</div><div class="mmiv" style="color:var(--warn)">${q.due_date || '—'}</div></div>
       <div class="mmi"><div class="mmil">LD No.</div><div class="mmiv">${q.ld_no || '—'}</div></div>
+      <div class="mmi"><div class="mmil">Quotation No.</div><div class="mmiv">${q.quotation_no}</div></div>
       <div class="mmi"><div class="mmil">Sale / Sale Team</div><div class="mmiv">${q.sale} · ${q.sale_team}</div></div>
-      <div class="mmi"><div class="mmil">PR / PO (เมื่อชนะ)</div><div class="mmiv">${q.pr_no ? `PR: ${q.pr_no}` : ''} ${q.po_no ? `| PO: ${q.po_no}` : ''} ${(!q.pr_no && !q.po_no) ? '—' : ''}</div></div>
+      <div class="mmi"><div class="mmil">แบรนด์</div><div class="mmiv">${q.brand || 'Platinum brand'}</div></div>
+      <div class="mmi"><div class="mmil">ประเภทวาล์ว</div><div class="mmiv">${q.valve_type || 'Manual valve & Accessory'}</div></div>
+      <div class="mmi" style="grid-column: span 2;"><div class="mmil">PR / PO (เมื่อชนะ)</div><div class="mmiv">${q.pr_no ? `PR: ${q.pr_no}` : ''} ${q.po_no ? `| PO: ${q.po_no}` : ''} ${(!q.pr_no && !q.po_no) ? '—' : ''}</div></div>
       <div class="mmi" style="grid-column: span 2;"><div class="mmil">รายละเอียดสินค้า</div><div class="mmiv">${q.product || '—'}</div></div>
       <div class="mmi" style="grid-column: span 2;"><div class="mmil">ยอดรวมที่เสนอราคา</div><div class="mmiv" style="font-size:16px;color:var(--spec)">${q.total_offer ? parseFloat(q.total_offer).toLocaleString('th-TH') + ' บาท' : '—'}</div></div>
     </div>
@@ -782,12 +789,16 @@ function renderMetrics() {
     }
   });
   
+  const submittedPct = Math.round((totalSubmitted / (totalReceived || 1)) * 100);
+  const onTimePct = Math.round((onTime / (totalSubmitted || 1)) * 100);
+  const latePct = Math.round((late / (totalSubmitted || 1)) * 100);
+  
   document.getElementById('performance-metrics').innerHTML = `
     <div style="display:flex; flex-direction:column; gap:8px;">
       <div class="sup-row"><span class="sup-lbl">📋 จำนวนงานที่ได้รับทั้งหมด</span><span class="sup-val">${totalReceived} งาน</span></div>
-      <div class="sup-row"><span class="sup-lbl">📤 งานที่เสนอราคาแล้ว</span><span class="sup-val" style="color:var(--spec)">${totalSubmitted} งาน</span></div>
-      <div class="sup-row"><span class="sup-lbl">⏱️ เสนอราคาได้ทันกำหนด</span><span class="sup-val" style="color:var(--done)">${onTime} งาน</span></div>
-      <div class="sup-row"><span class="sup-lbl">🚨 เสนอราคาไม่ทันกำหนด</span><span class="sup-val" style="color:var(--late)">${late} งาน</span></div>
+      <div class="sup-row"><span class="sup-lbl">📤 งานที่เสนอราคาแล้ว</span><span class="sup-val" style="color:var(--spec)">${totalSubmitted} งาน (${submittedPct}%)</span></div>
+      <div class="sup-row"><span class="sup-lbl">⏱️ เสนอราคาได้ทันกำหนด</span><span class="sup-val" style="color:var(--done)">${onTime} งาน (${onTimePct}%)</span></div>
+      <div class="sup-row"><span class="sup-lbl">🚨 เสนอราคาไม่ทันกำหนด</span><span class="sup-val" style="color:var(--late)">${late} งาน (${latePct}%)</span></div>
       <div class="sup-row"><span class="sup-lbl">💰 ยอดรวมที่เสนอราคา</span><span class="sup-val" style="color:var(--blue)">${totalOfferedVal.toLocaleString('th-TH')} ฿</span></div>
       <div class="sup-row"><span class="sup-lbl">🟢 ยอด PO ที่ได้รับ (WIN)</span><span class="sup-val v-win">${totalWonVal.toLocaleString('th-TH')} ฿</span></div>
     </div>
