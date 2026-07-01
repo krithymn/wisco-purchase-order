@@ -274,6 +274,7 @@ async function initDB() {
   // Safe column migrations for quotations
   try { db.run("ALTER TABLE quotations ADD COLUMN brand TEXT DEFAULT ''"); } catch(e) {}
   try { db.run("ALTER TABLE quotations ADD COLUMN valve_type TEXT DEFAULT ''"); } catch(e) {}
+  try { db.run("ALTER TABLE quotations ADD COLUMN remark TEXT DEFAULT ''"); } catch(e) {}
   // Migration for empty brand/valve_type in quotations
   try {
     db.run(`
