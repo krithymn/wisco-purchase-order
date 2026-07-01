@@ -7,15 +7,46 @@
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{--bg:#f0f2f5;--sur:#fff;--sur2:#f6f8fa;--bd:#d0d7de;--bd2:#e8ebee;--tx:#1f2328;--mu:#636c76;--ac:#d42030;--done:#1a7f37;--late:#cf222e;--prog:#0550ae;--warn:#d97706;--spec:#7c3aed;--done-bg:#dafbe1;--late-bg:#ffebe9;--prog-bg:#ddf4ff;--warn-bg:#fff7ed;--spec-bg:#f5f3ff;--done-bd:#82cfad;--late-bd:#f5a1a0;--prog-bd:#79c0ff;--warn-bd:#f59e0b;--spec-bd:#c4b5fd;--r:6px;--rl:12px}
+:root{
+  --bg:#08090e;--sur:#0e1018;--sur2:#13161f;--sur3:#181c28;--sur4:#1e2330;
+  --bd:#1e2438;--bd2:#141826;
+  --tx:#e8eaf2;--mu:#7080a0;
+  --ac:#d42030;--red2:#e84050;--red3:#ff6070;
+  --done:#22c55e;--late:#ef4444;--prog:#3a7bd5;--warn:#f97316;--spec:#a78bfa;
+  --done-bg:rgba(34,197,94,.1);--late-bg:rgba(239,68,68,.1);--prog-bg:rgba(58,123,213,.12);--warn-bg:rgba(249,115,22,.1);--spec-bg:rgba(167,139,250,.1);
+  --done-bd:rgba(34,197,94,.3);--late-bd:rgba(239,68,68,.3);--prog-bd:rgba(58,123,213,.35);--warn-bd:rgba(249,115,22,.3);--spec-bd:rgba(167,139,250,.3);
+  --r:6px;--rl:12px;
+}
+:root[data-theme="light"]{
+  --bg:#f4f5f8;--sur:#ffffff;--sur2:#f8f9fa;--sur3:#edf2f7;--sur4:#e2e8f0;
+  --bd:#d1d5db;--bd2:#e5e7eb;
+  --tx:#0f172a;--mu:#64748b;
+  --ac:#d42030;--red2:#e84050;--red3:#ff6070;
+  --done:#10b981;--late:#ef4444;--prog:#3b82f6;--warn:#f59e0b;--spec:#8b5cf6;
+  --done-bg:rgba(16,185,129,.08);--late-bg:rgba(239,68,68,.08);--prog-bg:rgba(59,130,246,.08);--warn-bg:rgba(245,158,11,.08);--spec-bg:rgba(139,92,246,.08);
+  --done-bd:rgba(16,185,129,.25);--late-bd:rgba(239,68,68,.25);--prog-bd:rgba(59,130,246,.25);--warn-bd:rgba(245,158,11,.25);--spec-bd:rgba(139,92,246,.25);
+  --r:6px;--rl:12px;
+}
+:root[data-theme="light"] header{background:linear-gradient(90deg,var(--bg) 0%,var(--sur) 50%,var(--bg) 100%) !important;box-shadow:0 2px 8px rgba(0,0,0,.06) !important;border-bottom:1px solid var(--bd) !important}
+:root[data-theme="light"] .nav-tabs{background:var(--sur2);border-bottom:1px solid var(--bd)}
+:root[data-theme="light"] .nav-tab{color:var(--mu)}
+:root[data-theme="light"] .nav-tab:hover{color:var(--tx)}
+:root[data-theme="light"] .nav-tab.active{color:var(--ac);border-bottom-color:var(--ac)}
+:root[data-theme="light"] header .logo span{color:var(--ac) !important}
+:root[data-theme="light"] header div{color:var(--tx) !important}
+
 html,body{background:var(--bg);color:var(--tx);font-family:'Sarabun','Inter',sans-serif;min-height:100vh}
 header{background:linear-gradient(90deg,#08090e,#0e1018);border-bottom:1px solid #1e2438;padding:0 24px;height:54px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;box-shadow:0 2px 8px rgba(0,0,0,.4)}
+header::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--ac),var(--red2),var(--mu),var(--prog),transparent)}
 .logo{font-size:16px;font-weight:700;display:flex;align-items:center;gap:8px}
-.logo-icon{width:28px;height:28px;background:linear-gradient(135deg,#7c3aed,#0969da);border-radius:6px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:700}
-.btn{font-size:13px;padding:6px 14px;border-radius:var(--r);font-family:'Sarabun',sans-serif;cursor:pointer;font-weight:500;border:1px solid var(--bd);transition:all .15s}
-.btn-primary{background:var(--ac);color:#fff;border-color:var(--ac)}.btn-primary:hover{background:#0550ae}
-.btn-secondary{background:var(--sur);color:var(--tx)}.btn-secondary:hover{background:var(--sur2)}
-.btn-danger{background:#fff;color:var(--late);border-color:var(--late-bd)}.btn-danger:hover{background:var(--late-bg)}
+.logo-icon{width:28px;height:28px;background:linear-gradient(135deg,#c9a84c,#e8c96a);border-radius:6px;display:flex;align-items:center;justify-content:center;color:#0a0900;font-size:12px;font-weight:900;box-shadow:0 0 10px rgba(201,168,76,.3)}
+.btn{font-size:13px;padding:6px 14px;border-radius:var(--r);font-family:'Sarabun',sans-serif;cursor:pointer;font-weight:500;border:1px solid var(--bd);background:var(--sur);color:var(--tx);transition:all .15s;text-decoration:none;display:inline-flex;align-items:center;gap:5px}
+.btn:hover{background:var(--sur2);border-color:var(--mu)}
+.btn-primary{background:var(--ac);color:#fff;border-color:var(--ac)}
+.btn-primary:hover{background:var(--red2);border-color:var(--red2);box-shadow:0 0 12px rgba(232,64,80,.4)}
+.btn-secondary{background:rgba(255,255,255,.05);color:var(--tx);border-color:var(--bd)}
+.btn-secondary:hover{background:var(--sur2)}
+.btn-danger{background:var(--late);color:#fff;border-color:var(--late)}.btn-danger:hover{opacity:.9}
 .btn-success{background:var(--done-bg);color:var(--done);border-color:var(--done-bd);font-weight:600}
 .btn-sm{font-size:12px;padding:4px 10px}
 .nav-tabs{display:flex;gap:2px;padding:0 24px;background:#0e1018;border-bottom:1px solid #1e2438}
@@ -1039,6 +1070,7 @@ async function saveOrder(){
 
   const items=getItems();
   if(!items.length){document.getElementById('modal-alert').innerHTML='<div class="alert alert-error">กรุณาเพิ่มรายการสินค้าอย่างน้อย 1 รายการ</div>';return;}
+  const firstItem=items[0];
   const notes=document.getElementById('f-notes').value.trim();
   const body={id,customer:firstItem.customer||'',factory:fac,product:firstItem.product||'',quantity:firstItem.quantity||'',customerPO:'',startDate:getDateField('f-start'),productionFinishDate:getDateField('f-prod-finish'),dueDate:getDateField('f-due'),deliveryDateSup:getDateField('f-del-sup'),deliveryDateCust:getDateField('f-del-cust'),
     etaWisco:getDateField('f-eta-wisco'),prepayment:document.getElementById('f-prepay').checked,isPartial:document.getElementById('f-partial').checked,items,notes};
@@ -1479,6 +1511,59 @@ async function init(){
     }
   },30000);
 }
+// Theme selector logic
+function initTheme(){
+  const saved = localStorage.getItem('wisco-theme') || 'dark';
+  setTheme(saved);
+}
+function setTheme(theme){
+  if (theme === 'light') {
+    document.documentElement.setAttribute('data-theme', 'light');
+    localStorage.setItem('wisco-theme', 'light');
+  } else {
+    document.documentElement.removeAttribute('data-theme');
+    localStorage.setItem('wisco-theme', 'dark');
+  }
+  updateToggleState(theme);
+}
+function toggleTheme(){
+  const current = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+  setTheme(current);
+}
+function updateToggleState(theme){
+  const icon = document.getElementById('theme-icon');
+  const text = document.getElementById('theme-text');
+  if (icon) icon.textContent = theme === 'light' ? '☀️' : '🌙';
+  if (text) text.textContent = theme === 'light' ? 'สว่าง' : 'มืด';
+}
+function injectThemeButton(){
+  const header = document.querySelector('header');
+  if (!header) return;
+  if (document.getElementById('theme-toggle')) return;
+  const btn = document.createElement('button');
+  btn.id = 'theme-toggle';
+  btn.className = 'btn btn-sm';
+  btn.onclick = toggleTheme;
+  btn.style.cssText = "padding: 4px 10px; border-radius: 20px; font-size: 14px; background: var(--sur2); border: 1px solid var(--bd); cursor: pointer; display: flex; align-items: center; gap: 6px; font-family:'Sarabun',sans-serif; margin-right: 10px; flex-shrink: 0;";
+  
+  const saved = localStorage.getItem('wisco-theme') || 'dark';
+  btn.innerHTML = `<span id="theme-icon">${saved === 'light' ? '☀️' : '🌙'}</span> <span id="theme-text" style="font-size: 11px; font-weight: 600; color: var(--mu)">${saved === 'light' ? 'สว่าง' : 'มืด'}</span>`;
+  
+  // Find where to append
+  const right = header.querySelector('.header-right') || header.querySelector('div[style*="align-items:center"]') || header.querySelector('.logo + div') || header;
+  if (right && right !== header) {
+    right.insertBefore(btn, right.firstChild);
+  } else {
+    header.appendChild(btn);
+  }
+}
+initTheme();
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', injectThemeButton);
+} else {
+  injectThemeButton();
+}
+
 init();
 </script>
 </body>
