@@ -171,7 +171,12 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--spec);bo
       <div class="form-grid">
         <div class="fg"><label>วันที่เปิด PR *</label><input id="f-open-date" class="date-in" placeholder="วว/ดด/ปปปป" maxlength="10" oninput="fmtDI(this)"></div>
         <div class="fg"><label>PR No. *</label><input id="f-pr-no" placeholder="เช่น PR-2026-001"></div>
-        <div class="fg"><label>ชื่อบริษัทลูกค้า *</label><input id="f-cust-name" placeholder="ชื่อบริษัท"></div>
+        <div class="fg">
+          <label>ชื่อบริษัทลูกค้า *</label>
+          <select id="f-cust-name" style="width: 100%">
+            <!-- populated dynamically -->
+          </select>
+        </div>
         <div class="fg"><label>เลขที่ PO ของลูกค้า</label><input id="f-cust-po" placeholder="Customer PO No."></div>
         <div class="fg"><label>มูลค่า PO</label><input id="f-po-value" placeholder="เช่น 500,000 บาท"></div>
         <div class="fg"><label>กำหนดส่งลูกค้า</label><input id="f-due" class="date-in" placeholder="วว/ดด/ปปปป" maxlength="10" oninput="fmtDI(this)"></div>
@@ -259,14 +264,11 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--spec);bo
         <div class="fg"><label>วันที่เปิดบอร์ด *</label><input id="fq-start" class="date-in" placeholder="วว/ดด/ปปปป" maxlength="10" oninput="fmtDI(this);"></div>
         
         <div class="fg"><label>กำหนดส่ง</label><input id="fq-due" placeholder="รอคำนวณจากประเภทวาล์วและแบรนด์" readonly style="background:var(--sur2); opacity:0.8; cursor:not-allowed"></div>
-        <div class="fg"><label>ชื่อบริษัทลูกค้า *</label>
-          <div style="position:relative">
-            <input id="fq-cust" placeholder="พิมพ์ชื่อบริษัท..." autocomplete="off"
-              oninput="showDropdown('q-cust-drop',_configCustomers,this.value,'fq-cust')"
-              onfocus="showDropdown('q-cust-drop',_configCustomers,this.value,'fq-cust')"
-              onblur="setTimeout(()=>hideDropdown('q-cust-drop'),200)">
-            <div id="q-cust-drop" class="admin-drop"></div>
-          </div>
+        <div class="fg">
+          <label>ชื่อบริษัทลูกค้า *</label>
+          <select id="fq-cust" style="width: 100%">
+            <!-- populated dynamically -->
+          </select>
         </div>
         
         <div class="fg"><label>ประเภทลูกค้า (Customer Type) *</label>
@@ -762,10 +764,18 @@ function removeItem(i){_items.splice(i,1);renderItems();}
 // Fine toggle
 function togFine(v){document.getElementById('fine-pct-wrap').classList.toggle('show',v==='yes');}
 
+function populatePRCustomerDropdown() {
+  const select = document.getElementById('f-cust-name');
+  if (!select) return;
+  select.innerHTML = '<option value="">— เลือกลูกค้า —</option>' + 
+    (_configCustomers || []).map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+}
+
 // Form modal
 function openAddModal(){
   _editId=null;_items=[{product:'',quantity:''}];
   document.getElementById('form-title').textContent='+ เพิ่ม PR ใหม่';
+  populatePRCustomerDropdown();
   ['f-open-date','f-pr-no','f-cust-name','f-cust-po','f-po-value','f-due','f-sale-team','f-quot-no','f-ld-no','f-po-no','f-fine-pct'].forEach(id=>document.getElementById(id).value='');
   setSaleValue('');
   document.getElementById('f-fine-yn').value='no';
@@ -782,7 +792,17 @@ function openEditModal(id){
   document.getElementById('form-title').textContent='✏️ แก้ไข PR';
   document.getElementById('f-open-date').value=dmyFrom(p.openDate)||'';
   document.getElementById('f-pr-no').value=p.prNo||'';
-  document.getElementById('f-cust-name').value=p.customerName||'';
+  
+  const select = document.getElementById('f-cust-name');
+  populatePRCustomerDropdown();
+  if (p.customerName && !(_configCustomers || []).includes(p.customerName)) {
+    const opt = document.createElement('option');
+    opt.value = p.customerName;
+    opt.textContent = p.customerName + ' (ไม่อยู่ในรายชื่อ)';
+    select.appendChild(opt);
+  }
+  select.value = p.customerName || '';
+
   document.getElementById('f-cust-po').value=p.customerPO||'';
   document.getElementById('f-po-value').value=p.poValue||'';
   document.getElementById('f-due').value=dmyFrom(p.dueDate)||'';
@@ -933,9 +953,17 @@ function openDetail(id){
 }
 function closeDetail(){document.getElementById('detail-modal').classList.remove('open');}
 
+function populateQuotationCustomerDropdown() {
+  const select = document.getElementById('fq-cust');
+  if (!select) return;
+  select.innerHTML = '<option value="">— เลือกลูกค้า —</option>' + 
+    (_configCustomers || []).map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+}
+
 function openAddQuotationModal(){
   _editId = null;
   document.getElementById('q-form-title').textContent = '+ เพิ่มใบเสนอราคาใหม่';
+  populateQuotationCustomerDropdown();
   ['fq-quotation-no', 'fq-ld-no', 'fq-start', 'fq-due', 'fq-cust', 'fq-remark'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
@@ -958,7 +986,17 @@ function openEditQuotationModal(id){
   document.getElementById('fq-type').value = q.quotation_type || 'MRO';
   document.getElementById('fq-start').value = dmyFrom(q.start_date) || '';
   document.getElementById('fq-due').value = dmyFrom(q.due_date) || '';
-  document.getElementById('fq-cust').value = q.customer || '';
+  
+  const select = document.getElementById('fq-cust');
+  populateQuotationCustomerDropdown();
+  if (q.customer && !(_configCustomers || []).includes(q.customer)) {
+    const opt = document.createElement('option');
+    opt.value = q.customer;
+    opt.textContent = q.customer + ' (ไม่อยู่ในรายชื่อ)';
+    select.appendChild(opt);
+  }
+  select.value = q.customer || '';
+
   document.getElementById('fq-cust-type').value = q.customer_type || 'End-user';
   document.getElementById('fq-saleteam').value = q.sale_team || '';
   document.getElementById('fq-sale').value = q.sale || '';
