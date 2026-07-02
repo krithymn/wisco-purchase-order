@@ -767,8 +767,9 @@ function togFine(v){document.getElementById('fine-pct-wrap').classList.toggle('s
 function populatePRCustomerDropdown() {
   const select = document.getElementById('f-cust-name');
   if (!select) return;
+  const sorted = [...(_configCustomers || [])].sort((a,b) => a.localeCompare(b, 'th'));
   select.innerHTML = '<option value="">— เลือกลูกค้า —</option>' + 
-    (_configCustomers || []).map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+    sorted.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
 }
 
 // Form modal
@@ -956,8 +957,9 @@ function closeDetail(){document.getElementById('detail-modal').classList.remove(
 function populateQuotationCustomerDropdown() {
   const select = document.getElementById('fq-cust');
   if (!select) return;
+  const sorted = [...(_configCustomers || [])].sort((a,b) => a.localeCompare(b, 'th'));
   select.innerHTML = '<option value="">— เลือกลูกค้า —</option>' + 
-    (_configCustomers || []).map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+    sorted.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
 }
 
 function openAddQuotationModal(){

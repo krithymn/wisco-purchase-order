@@ -428,7 +428,8 @@ function calculateQuotationLeadTime() {
 // Autocomplete customers
 function showCustDrop(q) {
   const drop = document.getElementById('cust-drop');
-  const filtered = (_config.customers || []).filter(c => c.toLowerCase().includes(q.toLowerCase()));
+  const filtered = (_config.customers || []).filter(c => c.toLowerCase().includes(q.toLowerCase()))
+    .sort((a,b) => a.localeCompare(b, 'th'));
   drop.innerHTML = filtered.map(c => `<div class="ac-option" onmousedown="selectCust('${c.replace(/'/g, "\\'")}')">${c}</div>`).join('');
   
   // Custom option to add as new

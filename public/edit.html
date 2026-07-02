@@ -231,8 +231,10 @@ input:focus,select:focus{outline:none;border-color:var(--ac);box-shadow:0 0 0 3p
   </div>
 </header>
 <div class="nav-tabs">
-  <button class="nav-tab active" onclick="swTab('orders',this)">📦 Active Orders</button>
+  <button class="nav-tab active" onclick="swTab('orders',this)">📦 Active POI (ตปท.)</button>
+  <button class="nav-tab" onclick="swTab('orders_dom',this)">📦 Active PO (ในประเทศ)</button>
   <button class="nav-tab" onclick="swTab('prs',this)">📋 PR รอเปิด POI <span id="pr-badge" style="display:none;background:var(--late);color:#fff;font-size:9px;font-weight:700;padding:1px 6px;border-radius:99px;margin-left:4px">0</span></button>
+  <button class="nav-tab" onclick="swTab('pr_pos',this)">📋 PR รอเปิด PO <span id="pr-po-badge" style="display:none;background:var(--late);color:#fff;font-size:9px;font-weight:700;padding:1px 6px;border-radius:99px;margin-left:4px">0</span></button>
   <button class="nav-tab" onclick="swTab('archive',this)">🗄 Archive (เสร็จแล้ว)</button>
   <button class="nav-tab" onclick="swTab('cancelled',this)">🚫 ยกเลิกแล้ว</button>
   <button class="nav-tab" onclick="swTab('config',this)">⚙️ ตั้งค่า</button>
@@ -277,6 +279,33 @@ input:focus,select:focus{outline:none;border-color:var(--ac);box-shadow:0 0 0 3p
       <tbody id="pr-tab-body"></tbody>
     </table>
     <div id="pr-tab-empty" style="display:none;padding:40px;text-align:center;font-size:14px;color:var(--mu)">✅ PR ทั้งหมดมี POI แล้ว</div>
+  </div>
+</div>
+
+<!-- TAB: PR Domestic -->
+<div id="tab-pr-pos" style="padding:20px 24px;display:none">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+    <div>
+      <div style="font-size:18px;font-weight:700">📋 PR รอเปิด PO</div>
+      <div style="font-size:13px;color:var(--mu);margin-top:3px" id="pr-po-tab-count"></div>
+    </div>
+    <a href="admin.html" target="_blank"><button class="btn btn-secondary">⚙️ Admin PR Page</button></a>
+  </div>
+  <div style="background:var(--sur);border:1px solid var(--bd);border-radius:var(--rl);overflow:hidden">
+    <table style="width:100%;border-collapse:collapse">
+      <thead><tr style="background:var(--sur2);border-bottom:1px solid var(--bd)">
+        <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase">PR No.</th>
+        <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase">ลูกค้า</th>
+        <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase">PO ลูกค้า</th>
+        <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase">กำหนดส่ง</th>
+        <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase">ค่าปรับ</th>
+        <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase">Sale</th>
+        <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase">สถานะ</th>
+        <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase">Action</th>
+      </tr></thead>
+      <tbody id="pr-po-tab-body"></tbody>
+    </table>
+    <div id="pr-po-tab-empty" style="display:none;padding:40px;text-align:center;font-size:14px;color:var(--mu)">✅ PR ทั้งหมดมี PO แล้ว</div>
   </div>
 </div>
 
@@ -481,7 +510,7 @@ const NOTIFY_SUB=['ใบแจ้งสินค้าเข้า','Cer.','Dra
 // Manufacturing step is index 11 (เริ่มผลิต) without prepayment, 12 with prepayment
 // แจ้งบัญชี is index 10 (without prepay), 11 (with prepay)
 function getMfgStepIndex(o){ return o.prepayment ? 12 : 11; }
-let _orders=[],_prs=[],_team=[],_steps=[],_suppliers=[],_customers=[],_saleTeams=[],_sales=[],_active=null,_editId=null,_sfilt='',_pwUnlocked=false,_pwShow=false;
+let _orders=[],_prs=[],_team=[],_steps=[],_suppliers=[],_customers=[],_saleTeams=[],_sales=[],_active=null,_editId=null,_sfilt='',_pwUnlocked=false,_pwShow=false,_orderType='poi';
 
 async function get(p){const r=await fetch(API+p);return r.json()}
 async function post(p,b){const r=await fetch(API+p,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)});return r.json()}
@@ -583,7 +612,12 @@ function fcol(s){return{done:'#1a7f37',late:'#cf222e',progress:'#0969da',pending
 function filtSide(v){_sfilt=v.toLowerCase();rSide()}
 function rSide(){
   // Active list = exclude completed orders
-  const list=_orders.filter(o=>(!o.isCancelled&&o.completedSteps<o.totalSteps)&&(!_sfilt||o.id.toLowerCase().includes(_sfilt)||(o.customer||'').toLowerCase().includes(_sfilt)||(o.factory||'').toLowerCase().includes(_sfilt)));
+  let list=_orders.filter(o=>(!o.isCancelled&&o.completedSteps<o.totalSteps)&&(!_sfilt||o.id.toLowerCase().includes(_sfilt)||(o.customer||'').toLowerCase().includes(_sfilt)||(o.factory||'').toLowerCase().includes(_sfilt)));
+  if (_orderType === 'poi') {
+    list = list.filter(o => o.id.toLowerCase().startsWith('poi'));
+  } else {
+    list = list.filter(o => !o.id.toLowerCase().startsWith('poi'));
+  }
   document.getElementById('sidebar').innerHTML=list.map(o=>{
     const s=orderSt(o);const pct=Math.round((o.completedSteps/o.totalSteps)*100);
     return`<div class="order-item ${_active===o.id?'active':''}" onclick="openOrder('${o.id}')">
@@ -938,6 +972,7 @@ function populateSupplierDropdown(selectedVal){
   select.innerHTML = '<option value="">-- เลือก Supplier --</option>';
   
   const sups = [..._suppliers];
+  sups.sort((a,b) => a.localeCompare(b, 'th'));
   if(selectedVal && !sups.includes(selectedVal)){
     sups.push(selectedVal);
   }
@@ -1157,6 +1192,51 @@ function doJsonExport(){
   if(!token)return;
   window.open(`/api/export-json?token=${encodeURIComponent(token)}`,'_blank');
 }
+function rPRTab(){
+  // POI (ตปท.)
+  const pendingPoi = (_prs||[]).filter(p=>!p.linkedPOI && !p.isCancelled && p.domestic==='ตปท.');
+  const badgePoi = document.getElementById('pr-badge');
+  if(badgePoi){badgePoi.style.display=pendingPoi.length?'inline':'none';badgePoi.textContent=pendingPoi.length;}
+  document.getElementById('pr-tab-count').textContent=`${pendingPoi.length} PR รอเปิด POI จากทั้งหมด ${(_prs||[]).length} PR`;
+  document.getElementById('pr-tab-empty').style.display=pendingPoi.length?'none':'block';
+  document.getElementById('pr-tab-body').innerHTML=pendingPoi.map(p=>{
+    const domesticBadge=`<span style="font-size:10px;padding:1px 5px;border-radius:99px;background:#f0fdf4;color:#16a34a;border:1px solid #86efac;font-weight:600;margin-left:4px">✈️ ตปท.</span>`;
+    return`<tr style="border-bottom:1px solid var(--bd2)">
+      <td style="padding:10px 14px;font-weight:700">${p.prNo}${domesticBadge}</td>
+      <td style="padding:10px 14px;font-size:13px">${p.customerName||'—'}</td>
+      <td style="padding:10px 14px;font-size:12px;color:var(--mu)">${p.customerPO||'—'}</td>
+      <td style="padding:10px 14px;font-size:12px;color:${p.dueDate&&new Date(p.dueDate)<new Date()?'var(--late)':'var(--mu)'};font-weight:${p.dueDate&&new Date(p.dueDate)<new Date()?'600':'400'}">${p.dueDate||'—'}</td>
+      <td style="padding:10px 14px">${p.fineYN==='yes'?`<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:var(--late-bg);color:var(--late);border:1px solid var(--late-bd)">⚠️ ${p.finePct||'?'}%</span>`:'—'}</td>
+      <td style="padding:10px 14px;font-size:12px">${p.sale||'—'}</td>
+      <td style="padding:10px 14px"><span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:#fff8c5;color:#9a6700;border:1px solid #e3b341">⏳ รอเปิด POI</span></td>
+      <td style="padding:10px 14px"><button class="btn btn-sm btn-primary" onclick="openNewFromPR(${p.id})">+ เปิด POI จาก PR นี้</button></td>
+    </tr>`;
+  }).join('');
+
+  // PO (ในประเทศ / นปท.)
+  const pendingPo = (_prs||[]).filter(p=>!p.linkedPOI && !p.isCancelled && p.domestic!=='ตปท.');
+  const badgePo = document.getElementById('pr-po-badge');
+  if(badgePo){badgePo.style.display=pendingPo.length?'inline':'none';badgePo.textContent=pendingPo.length;}
+  const countEl = document.getElementById('pr-po-tab-count');
+  if(countEl) countEl.textContent=`${pendingPo.length} PR รอเปิด PO จากทั้งหมด ${(_prs||[]).length} PR`;
+  const emptyEl = document.getElementById('pr-po-tab-empty');
+  if(emptyEl) emptyEl.style.display=pendingPo.length?'none':'block';
+  const bodyEl = document.getElementById('pr-po-tab-body');
+  if(bodyEl) bodyEl.innerHTML=pendingPo.map(p=>{
+    const label=p.domestic==='นปท.'?'🏠 นปท.':'🏠 ในประเทศ';
+    const domesticBadge=`<span style="font-size:10px;padding:1px 5px;border-radius:99px;background:#e0f2fe;color:#0550ae;border:1px solid #7dd3fc;font-weight:600;margin-left:4px">${label}</span>`;
+    return`<tr style="border-bottom:1px solid var(--bd2)">
+      <td style="padding:10px 14px;font-weight:700">${p.prNo}${domesticBadge}</td>
+      <td style="padding:10px 14px;font-size:13px">${p.customerName||'—'}</td>
+      <td style="padding:10px 14px;font-size:12px;color:var(--mu)">${p.customerPO||'—'}</td>
+      <td style="padding:10px 14px;font-size:12px;color:${p.dueDate&&new Date(p.dueDate)<new Date()?'var(--late)':'var(--mu)'};font-weight:${p.dueDate&&new Date(p.dueDate)<new Date()?'600':'400'}">${p.dueDate||'—'}</td>
+      <td style="padding:10px 14px">${p.fineYN==='yes'?`<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:var(--late-bg);color:var(--late);border:1px solid var(--late-bd)">⚠️ ${p.finePct||'?'}%</span>`:'—'}</td>
+      <td style="padding:10px 14px;font-size:12px">${p.sale||'—'}</td>
+      <td style="padding:10px 14px"><span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:#fff8c5;color:#9a6700;border:1px solid #e3b341">⏳ รอเปิด PO</span></td>
+      <td style="padding:10px 14px"><button class="btn btn-sm btn-primary" onclick="openNewFromPR(${p.id})">+ เปิด PO จาก PR นี้</button></td>
+    </tr>`;
+  }).join('');
+}
 async function addMember(){
   const v=document.getElementById('new-member').value.trim();if(!v)return;
   if(_team.includes(v)){alert('มีชื่อนี้อยู่แล้ว');return}
@@ -1172,7 +1252,8 @@ async function delMember(i){
 function showCustDrop(i,q){
   const drop=document.getElementById('cust-drop-'+i);
   if(!drop)return;
-  const filtered=(_customers||[]).filter(c=>c.toLowerCase().includes((q||'').toLowerCase()));
+  const filtered=(_customers||[]).filter(c=>c.toLowerCase().includes((q||'').toLowerCase()))
+    .sort((a,b) => a.localeCompare(b, 'th'));
   drop.innerHTML=filtered.length
     ?filtered.map(c=>`<div class="sup-option" onmousedown="pickCust(${i},'${c.replace(/'/g,"\\'")}')">${c}</div>`).join('')
     :'<div style="padding:8px 12px;font-size:12px;color:var(--mu)">ไม่พบ — เพิ่มลูกค้าได้ที่ ⚙️ ตั้งค่า</div>';
@@ -1227,10 +1308,11 @@ async function delSale(i){
   _sales.splice(i,1);await put('/api/config/sales',{sales:_sales});rSaleGrid();
 }
 function rCustGrid(){
-  document.getElementById('cust-grid').innerHTML=(_customers||[]).map((c,i)=>`
+  const sorted = [...(_customers||[])].sort((a,b) => a.localeCompare(b, 'th'));
+  document.getElementById('cust-grid').innerHTML=sorted.map(c=>`
     <div class="cfg-row">
       <div class="cfg-row-main">👤 ${c}</div>
-      <button class="cfg-del" onclick="delCustomer(${i})">×</button>
+      <button class="cfg-del" onclick="delCustomer('${c.replace(/'/g, "\\'")}')">×</button>
     </div>`).join('');
 }
 async function addCustomer(){
@@ -1239,15 +1321,16 @@ async function addCustomer(){
   _customers.push(v);await put('/api/config/customers',{customers:_customers});
   document.getElementById('new-cust').value='';rCustGrid();
 }
-async function delCustomer(i){
-  if(!confirm('ลบลูกค้านี้?'))return;
-  _customers.splice(i,1);await put('/api/config/customers',{customers:_customers});rCustGrid();
+async function delCustomer(name){
+  if(!confirm(`ลบลูกค้า ${name}?`))return;
+  _customers=_customers.filter(x=>x!==name);await put('/api/config/customers',{customers:_customers});rCustGrid();
 }
 function rSupGrid(){
-  document.getElementById('sup-grid').innerHTML=_suppliers.map((s,i)=>`
+  const sorted = [...(_suppliers||[])].sort((a,b) => a.localeCompare(b, 'th'));
+  document.getElementById('sup-grid').innerHTML=sorted.map(s=>`
     <div class="cfg-row">
       <div class="cfg-row-main">🏭 ${s}</div>
-      <button class="cfg-del" onclick="delSupplier(${i})">×</button>
+      <button class="cfg-del" onclick="delSupplier('${s.replace(/'/g, "\\'")}')">×</button>
     </div>`).join('');
 }
 async function addSupplier(){
@@ -1256,9 +1339,9 @@ async function addSupplier(){
   _suppliers.push(v);await put('/api/config/suppliers',{suppliers:_suppliers});
   document.getElementById('new-sup').value='';rSupGrid();
 }
-async function delSupplier(i){
-  if(!confirm('ลบ Supplier นี้?'))return;
-  _suppliers.splice(i,1);await put('/api/config/suppliers',{suppliers:_suppliers});rSupGrid();
+async function delSupplier(name){
+  if(!confirm(`ลบ Supplier ${name}?`))return;
+  _suppliers=_suppliers.filter(x=>x!==name);await put('/api/config/suppliers',{suppliers:_suppliers});rSupGrid();
 }
 
 // ── Config: Steps ─────────────────────────────────────────────
@@ -1290,29 +1373,6 @@ function chkPW(){
 }
 function togPW(){_pwShow=!_pwShow;document.getElementById('pw-inp').type=_pwShow?'text':'password';document.getElementById('pw-eye').textContent=_pwShow?'🙈':'👁'}
 function canPW(){document.getElementById('pw-gate').classList.remove('show');document.getElementById('pw-inp').value='';document.getElementById('pw-err').textContent='';_doSwTab('orders',document.querySelectorAll('.nav-tab')[0]);}
-function rPRTab(){
-  const pending=(_prs||[]).filter(p=>!p.linkedPOI);
-  const badge=document.getElementById('pr-badge');
-  if(badge){badge.style.display=pending.length?'inline':'none';badge.textContent=pending.length;}
-  document.getElementById('pr-tab-count').textContent=`${pending.length} PR รอเปิด POI จากทั้งหมด ${(_prs||[]).length} PR`;
-  document.getElementById('pr-tab-empty').style.display=pending.length?'none':'block';
-  document.getElementById('pr-tab-body').innerHTML=pending.map(p=>{
-    const domesticBadge=p.domestic==='นปท.'
-      ?'<span style="font-size:10px;padding:1px 5px;border-radius:99px;background:#e0f2fe;color:#0550ae;border:1px solid #7dd3fc;font-weight:600;margin-left:4px">🏠 นปท.</span>'
-      :p.domestic==='ตปท.'
-      ?'<span style="font-size:10px;padding:1px 5px;border-radius:99px;background:#f0fdf4;color:#16a34a;border:1px solid #86efac;font-weight:600;margin-left:4px">✈️ ตปท.</span>'
-      :'';
-    return`<tr style="border-bottom:1px solid var(--bd2)">
-    <td style="padding:10px 14px;font-weight:700">${p.prNo}${domesticBadge}</td>
-    <td style="padding:10px 14px;font-size:13px">${p.customerName||'—'}</td>
-    <td style="padding:10px 14px;font-size:12px;color:var(--mu)">${p.customerPO||'—'}</td>
-    <td style="padding:10px 14px;font-size:12px;color:${p.dueDate&&new Date(p.dueDate)<new Date()?'var(--late)':'var(--mu)'};font-weight:${p.dueDate&&new Date(p.dueDate)<new Date()?'600':'400'}">${p.dueDate||'—'}</td>
-    <td style="padding:10px 14px">${p.fineYN==='yes'?`<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:var(--late-bg);color:var(--late);border:1px solid var(--late-bd)">⚠️ ${p.finePct||'?'}%</span>`:'—'}</td>
-    <td style="padding:10px 14px;font-size:12px">${p.sale||'—'}</td>
-    <td style="padding:10px 14px"><span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:#fff8c5;color:#9a6700;border:1px solid #e3b341">⏳ รอเปิด POI</span></td>
-    <td style="padding:10px 14px"><button class="btn btn-sm btn-primary" onclick="openNewFromPR(${p.id})">+ เปิด POI จาก PR นี้</button></td>
-  </tr>`;}).join('');
-}
 async function linkPRToExisting(orderId){
   const prId=document.getElementById('modal').getAttribute('data-pr-id');
   if(!prId)return;
@@ -1376,17 +1436,34 @@ async function openNewFromPR(prId){
   document.getElementById('modal').setAttribute('data-pr-id', String(prId));
   document.getElementById('modal').classList.add('open');
 }
+function openAndSwitchToOrder(id) {
+  const isPoi = id.toLowerCase().startsWith('poi');
+  const tabName = isPoi ? 'orders' : 'orders_dom';
+  const tabEl = document.querySelectorAll('.nav-tab')[isPoi ? 0 : 1];
+  swTab(tabName, tabEl);
+  setTimeout(() => openOrder(id), 100);
+}
 function _doSwTab(tab,el){
   document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');
-  document.getElementById('tab-orders').style.display=tab==='orders'?'block':'none';
+  document.getElementById('tab-orders').style.display=(tab==='orders'||tab==='orders_dom')?'block':'none';
   document.getElementById('tab-prs').style.display=tab==='prs'?'block':'none';
+  document.getElementById('tab-pr-pos').style.display=tab==='pr_pos'?'block':'none';
   document.getElementById('tab-archive').style.display=tab==='archive'?'block':'none';
   document.getElementById('tab-cancelled').style.display=tab==='cancelled'?'block':'none';
   document.getElementById('tab-config').style.display=tab==='config'?'block':'none';
+  
+  if(tab==='orders') {
+    _orderType='poi';
+    rSide();
+  } else if(tab==='orders_dom') {
+    _orderType='po';
+    rSide();
+  }
+  
   if(tab==='config'){rTeam();rSaleTeamGrid();rSaleGrid();rCustGrid();rSupGrid();rStepsCfg();}
   if(tab==='archive'){rArchive();}
   if(tab==='cancelled'){rCancelledTab();}
-  if(tab==='prs'){rPRTab();}
+  if(tab==='prs'||tab==='pr_pos'){rPRTab();}
 }
 function swTab(tab,el){
   if(tab==='config'&&!_pwUnlocked){document.getElementById('pw-gate').classList.add('show');setTimeout(()=>document.getElementById('pw-inp').focus(),50);return}
@@ -1433,7 +1510,7 @@ function rArchive(){
       <td style="padding:10px 14px;font-size:12px;color:var(--mu);max-width:220px">${custPR}</td>
       <td style="padding:10px 14px;font-size:12px;color:var(--done);font-weight:600">${o.dueDate||'—'}</td>
       <td style="padding:10px 14px">${o.dueDate?statusBadge:'<span style="color:var(--mu);font-size:12px">—</span>'}</td>
-      <td style="padding:10px 14px"><button class="btn btn-sm btn-secondary" onclick="activePO='${o.id}';swTab('orders',document.querySelectorAll('.nav-tab')[0]);setTimeout(()=>openOrder('${o.id}'),100)">เปิด</button></td>
+      <td style="padding:10px 14px"><button class="btn btn-sm btn-secondary" onclick="openAndSwitchToOrder('${o.id}')">เปิด</button></td>
     </tr>`;
   }).join('');
 }
@@ -1452,7 +1529,7 @@ function rCancelledTab(){
       <td style="padding:10px 14px;font-size:12px;color:var(--mu);max-width:220px">${custPR}</td>
       <td style="padding:10px 14px;font-size:12px;color:#64748b">${o.cancelReason||'—'}</td>
       <td style="padding:10px 14px;display:flex;gap:6px">
-        <button class="btn btn-sm btn-secondary" onclick="activePO='${o.id}';swTab('orders',document.querySelectorAll('.nav-tab')[0]);setTimeout(()=>openOrder('${o.id}'),100)">เปิด</button>
+        <button class="btn btn-sm btn-secondary" onclick="openAndSwitchToOrder('${o.id}')">เปิด</button>
         <button class="btn btn-sm" style="background:#e0f2fe;color:#0550ae;border-color:#7dd3fc" onclick="uncancelOrder('${o.id}')">↩ เปิดใหม่</button>
       </td>
     </tr>`;
@@ -1498,16 +1575,28 @@ async function init(){
     const freshPrs=await fetch('/api/prs').then(r=>r.json()).catch(()=>[]);
     const prev=_prs.length;
     _prs=Array.isArray(freshPrs)?freshPrs:[];
-    // Update badge count
-    const pending=_prs.filter(p=>!p.linkedPOI);
-    const badge=document.getElementById('pr-badge');
-    if(badge){badge.style.display=pending.length?'inline':'none';badge.textContent=pending.length;}
-    // If PR tab is open, refresh it
+    
+    // Update badge counts for both POI and PO
+    const pendingPoi=_prs.filter(p=>!p.linkedPOI && !p.isCancelled && p.domestic==='ตปท.');
+    const pendingPo=_prs.filter(p=>!p.linkedPOI && !p.isCancelled && p.domestic!=='ตปท.');
+    
+    const badgePoi=document.getElementById('pr-badge');
+    if(badgePoi){badgePoi.style.display=pendingPoi.length?'inline':'none';badgePoi.textContent=pendingPoi.length;}
+    
+    const badgePo=document.getElementById('pr-po-badge');
+    if(badgePo){badgePo.style.display=pendingPo.length?'inline':'none';badgePo.textContent=pendingPo.length;}
+    
+    // If either PR tab is open, refresh both lists
     const prTab=document.getElementById('tab-prs');
-    if(prTab&&prTab.style.display!=='none') rPRTab();
+    const prPoTab=document.getElementById('tab-pr-pos');
+    if((prTab&&prTab.style.display!=='none') || (prPoTab&&prPoTab.style.display!=='none')) {
+      rPRTab();
+    }
+    
     // Alert if new PRs added
-    if(pending.length>prev&&prev>=0&&document.hidden===false){
-      shAlert('📋 มี PR ใหม่ '+pending.length+' รายการรอเปิด POI','info');
+    const totalPending = pendingPoi.length + pendingPo.length;
+    if(totalPending>prev&&prev>=0&&document.hidden===false){
+      shAlert('📋 มี PR ใหม่ '+totalPending+' รายการรอเปิด POI/PO','info');
     }
   },30000);
 }
