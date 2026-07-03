@@ -978,43 +978,97 @@ app.patch('/api/prs/:id/link', (req, res) => {
 });
 
 // ── QUOTATION MANAGEMENT SYNC & ROUTES ────────────────────────
+
+function calculateOverallStatus(items) {
+  if (!Array.isArray(items) || items.length === 0) return 'PENDING';
+  const statuses = items.map(it => (it.status || 'PENDING').toUpperCase());
+  if (statuses.includes('WIN')) return 'WIN';
+  if (statuses.includes('PENDING')) return 'PENDING';
+  if (statuses.includes('HOLD')) return 'HOLD';
+  if (statuses.includes('CANCEL')) return 'CANCEL';
+  return 'LOST';
+}
+
+
 function syncPRFromQuotation(qId) {
   try {
     const qRow = query("SELECT * FROM quotations WHERE id=?", [qId]);
     if (!qRow.length) return;
     const q = qRow[0];
-    if (q.status !== 'WIN' || !q.pr_no) return;
 
-    // Check if PR already exists in purchase_requests
-    const exists = query("SELECT id FROM purchase_requests WHERE LOWER(pr_no)=LOWER(?)", [q.pr_no]);
-    if (exists.length > 0) {
-      run("UPDATE purchase_requests SET customer_name=?, customer_po=?, po_value=?, sale_team=?, sale=?, quotation_no=?, ld_no=?, po_no=? WHERE LOWER(pr_no)=LOWER(?)",
-        [q.customer || '', q.po_no || '', q.total_offer ? q.total_offer + ' บาท' : '', q.sale_team || '', q.sale || '', q.quotation_no || '', q.ld_no || '', q.po_no || '', q.pr_no.toLowerCase()]);
-      return;
+    // Parse items
+    let items = [];
+    try {
+      items = JSON.parse(q.product || '[]');
+      if (!Array.isArray(items)) items = [];
+    } catch(e) {
+      if (q.status === 'WIN' && q.pr_no) {
+        items = [{ product: q.product || '', quantity: '1', status: 'WIN', pr_no: q.pr_no, po_no: q.po_no }];
+      }
     }
 
-    // Create a new PR record from Quotation data
-    const items = JSON.stringify([{ product: q.product || '', quantity: '1' }]);
-    run(`INSERT INTO purchase_requests(pr_no, open_date, customer_name, customer_po, po_value, fine_yn, fine_pct, due_date, sale_team, sale, quotation_no, ld_no, domestic, po_no, items)
-         VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
-      [
-        q.pr_no,
-        q.start_date ? q.start_date.split('T')[0] : '',
-        q.customer || '',
-        q.po_no || '',
-        q.total_offer ? q.total_offer + ' บาท' : '',
-        'no', '',
-        q.due_date || '',
-        q.sale_team || '',
-        q.sale || '',
-        q.quotation_no || '',
-        q.ld_no || '',
-        '', // domestic
-        q.po_no || '',
-        items
-      ]
-    );
-    console.log(`Auto-created PR ${q.pr_no} from won Quotation ${q.quotation_no}`);
+    // Group won items by pr_no
+    const wonGroups = {};
+    for (const it of items) {
+      if (it.status === 'WIN' && it.pr_no && it.pr_no.trim()) {
+        const prNo = it.pr_no.trim();
+        if (!wonGroups[prNo]) {
+          wonGroups[prNo] = [];
+        }
+        wonGroups[prNo].push(it);
+      }
+    }
+
+    // Synchronize each group
+    for (const prNo in wonGroups) {
+      const groupItems = wonGroups[prNo];
+      const prItems = groupItems.map(it => ({
+        product: it.product || '',
+        quantity: it.quantity || '1'
+      }));
+      const poNos = [...new Set(groupItems.map(it => it.po_no).filter(Boolean))];
+      const poNo = poNos.join(', ');
+
+      const exists = query("SELECT id FROM purchase_requests WHERE LOWER(pr_no)=LOWER(?)", [prNo]);
+      if (exists.length > 0) {
+        run("UPDATE purchase_requests SET customer_name=?, customer_po=?, po_value=?, sale_team=?, sale=?, quotation_no=?, ld_no=?, po_no=?, items=? WHERE LOWER(pr_no)=LOWER(?)",
+          [
+            q.customer || '',
+            poNo || '',
+            q.total_offer ? q.total_offer + ' บาท' : '',
+            q.sale_team || '',
+            q.sale || '',
+            q.quotation_no || '',
+            q.ld_no || '',
+            poNo || '',
+            JSON.stringify(prItems),
+            prNo.toLowerCase()
+          ]
+        );
+        console.log(`Auto-updated PR ${prNo} from won items in Quotation ${q.quotation_no}`);
+      } else {
+        run(`INSERT INTO purchase_requests(pr_no, open_date, customer_name, customer_po, po_value, fine_yn, fine_pct, due_date, sale_team, sale, quotation_no, ld_no, domestic, po_no, items)
+             VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+          [
+            prNo,
+            q.start_date ? q.start_date.split('T')[0] : '',
+            q.customer || '',
+            poNo || '',
+            q.total_offer ? q.total_offer + ' บาท' : '',
+            'no', '',
+            q.due_date || '',
+            q.sale_team || '',
+            q.sale || '',
+            q.quotation_no || '',
+            q.ld_no || '',
+            '', // domestic
+            poNo || '',
+            JSON.stringify(prItems)
+          ]
+        );
+        console.log(`Auto-created PR ${prNo} from won items in Quotation ${q.quotation_no}`);
+      }
+    }
   } catch(e) { console.error('syncPRFromQuotation error:', e.message); }
 }
 
@@ -1057,9 +1111,24 @@ app.post('/api/quotations', (req, res) => {
       finalDueDate = addBusinessDaysHelper(startDate, days);
     }
 
+    let finalStatus = status || 'PENDING';
+    let finalPrNo = prNo || '';
+    let finalPoNo = poNo || '';
+    if (product) {
+      try {
+        const parsed = JSON.parse(product);
+        finalStatus = calculateOverallStatus(parsed);
+        const wonItem = parsed.find(it => it.status === 'WIN');
+        if (wonItem) {
+          finalPrNo = wonItem.pr_no || finalPrNo;
+          finalPoNo = wonItem.po_no || finalPoNo;
+        }
+      } catch(e) {}
+    }
+
     run(`INSERT INTO quotations(start_date, quotation_type, completed_date, due_date, ld_no, quotation_no, sale_team, sale, customer, customer_type, pr_no, po_no, product, responsible, progress_status, status, offer_date, total_offer, brand, valve_type, remark)
          VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
-      [startDate||'', quotationType||'', completedDate||'', finalDueDate||'', ldNo||'', quotationNo, saleTeam||'', sale||'', customer||'', customerType||'', prNo||'', poNo||'', product||'', responsible||'', progressStatus||'ตรวจสอบข้อมูล', status||'PENDING', offerDate||'', parseFloat(totalOffer)||0.0, finalBrand, finalValveType, remark||'']);
+      [startDate||'', quotationType||'', completedDate||'', finalDueDate||'', ldNo||'', quotationNo, saleTeam||'', sale||'', customer||'', customerType||'', finalPrNo, finalPoNo, product||'', responsible||'', progressStatus||'ตรวจสอบข้อมูล', finalStatus, offerDate||'', parseFloat(totalOffer)||0.0, finalBrand, finalValveType, remark||'']);
     
     const inserted = query("SELECT * FROM quotations WHERE quotation_no=?", [quotationNo])[0];
     if (inserted && inserted.status === 'WIN') {
@@ -1099,10 +1168,25 @@ app.put('/api/quotations/:id', (req, res) => {
       finalDueDate = addBusinessDaysHelper(startDate, days);
     }
 
+    let finalStatus = status || 'PENDING';
+    let finalPrNo = prNo || '';
+    let finalPoNo = poNo || '';
+    if (product) {
+      try {
+        const parsed = JSON.parse(product);
+        finalStatus = calculateOverallStatus(parsed);
+        const wonItem = parsed.find(it => it.status === 'WIN');
+        if (wonItem) {
+          finalPrNo = wonItem.pr_no || finalPrNo;
+          finalPoNo = wonItem.po_no || finalPoNo;
+        }
+      } catch(e) {}
+    }
+
     run(`UPDATE quotations SET start_date=?, quotation_type=?, completed_date=?, due_date=?, ld_no=?, quotation_no=?, sale_team=?, sale=?, customer=?, customer_type=?, pr_no=?, po_no=?, product=?, responsible=?, progress_status=?, status=?, offer_date=?, total_offer=?, brand=?, valve_type=?, remark=? WHERE id=?`,
-      [startDate||'', quotationType||'', completedDate||'', finalDueDate||'', ldNo||'', quotationNo||'', saleTeam||'', sale||'', customer||'', customerType||'', prNo||'', poNo||'', product||'', responsible||'', progressStatus||'ตรวจสอบข้อมูล', status||'PENDING', offerDate||'', parseFloat(totalOffer)||0.0, finalBrand, finalValveType, remark||'', req.params.id]);
+      [startDate||'', quotationType||'', completedDate||'', finalDueDate||'', ldNo||'', quotationNo||'', saleTeam||'', sale||'', customer||'', customerType||'', finalPrNo, finalPoNo, product||'', responsible||'', progressStatus||'ตรวจสอบข้อมูล', finalStatus, offerDate||'', parseFloat(totalOffer)||0.0, finalBrand, finalValveType, remark||'', req.params.id]);
     
-    if (status === 'WIN') {
+    if (finalStatus === 'WIN') {
       syncPRFromQuotation(req.params.id);
     }
     res.json({ok:true});
@@ -1135,6 +1219,35 @@ app.patch('/api/quotations/:id/status', (req, res) => {
     }
     res.json({ok:true});
   } catch(e) { res.status(500).json({error:e.message}); }
+});
+
+app.post('/api/quotations/:id/item-statuses', (req, res) => {
+  try {
+    const { items } = req.body;
+    if (!Array.isArray(items)) {
+      return res.status(400).json({ error: 'items must be an array' });
+    }
+    
+    const overallStatus = calculateOverallStatus(items);
+    
+    let mainPrNo = '';
+    let mainPoNo = '';
+    const wonItem = items.find(it => it.status === 'WIN');
+    if (wonItem) {
+      mainPrNo = wonItem.pr_no || '';
+      mainPoNo = wonItem.po_no || '';
+    }
+    
+    run("UPDATE quotations SET product=?, status=?, pr_no=?, po_no=? WHERE id=?", [JSON.stringify(items), overallStatus, mainPrNo, mainPoNo, req.params.id]);
+    
+    if (overallStatus === 'WIN') {
+      syncPRFromQuotation(req.params.id);
+    }
+    
+    res.json({ ok: true, status: overallStatus });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 app.delete('/api/quotations/:id', (req, res) => {
