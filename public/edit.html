@@ -449,11 +449,14 @@ input:focus,select:focus{outline:none;border-color:var(--ac);box-shadow:0 0 0 3p
       <div id="modal-alert"></div>
       <div class="form-grid">
         <div class="fg"><label>เลขที่ PO <span class="req">*</span></label><input id="f-id" placeholder="เช่น POI6901-0001"></div>
-        <div class="fg">
+        <div class="fg" style="position:relative">
           <label>Supplier / โรงงาน</label>
-          <select id="f-fac" style="width: 100%; font-size: 13px; padding: 7px 10px; border: 1px solid var(--bd); border-radius: var(--r); background: var(--sur); color: var(--tx); font-family: 'Sarabun', sans-serif;">
-            <!-- populated dynamically -->
-          </select>
+          <input id="f-fac" placeholder="พิมพ์เพื่อค้นหา Supplier..." autocomplete="off"
+                 onfocus="showSupDrop(this.value)"
+                 oninput="showSupDrop(this.value)"
+                 onblur="setTimeout(hideSupDrop, 200)"
+                 style="width: 100%; font-size: 13px; padding: 7px 10px; border: 1px solid var(--bd); border-radius: var(--r); background: var(--sur); color: var(--tx); font-family: 'Sarabun', sans-serif;">
+          <div id="sup-drop" class="sup-dropdown"></div>
         </div>
         <div class="fg"><label>วันที่เปิด PO</label><input id="f-start" class="date-display" placeholder="วว/ดด/ปปปป" maxlength="10" oninput="fmtDate(this)" autocomplete="off"></div>
         <div class="fg"><label>วันที่ผลิตเสร็จ</label><input id="f-prod-finish" class="date-display" placeholder="วว/ดด/ปปปป" maxlength="10" oninput="fmtDate(this)" autocomplete="off"></div>
@@ -510,7 +513,7 @@ const NOTIFY_SUB=['ใบแจ้งสินค้าเข้า','Cer.','Dra
 // Manufacturing step is index 11 (เริ่มผลิต) without prepayment, 12 with prepayment
 // แจ้งบัญชี is index 10 (without prepay), 11 (with prepay)
 function getMfgStepIndex(o){ return o.prepayment ? 12 : 11; }
-let _orders=[],_prs=[],_team=[],_steps=[],_suppliers=[],_customers=[],_saleTeams=[],_sales=[],_active=null,_editId=null,_sfilt='',_pwUnlocked=false,_pwShow=false,_orderType='poi';
+let _orders=[],_prs=[],_team=[],_steps=[],_suppliers=[],_customers=[],_saleTeams=[],_sales=[],_active=null,_editId=null,_sfilt='',_pwUnlocked=false,_pwShow=false,_orderType='poi',_selectedSupplier='';
 
 async function get(p){const r=await fetch(API+p);return r.json()}
 async function post(p,b){const r=await fetch(API+p,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)});return r.json()}
@@ -965,32 +968,50 @@ async function undoPrepaid(id){
   await loadAll();rSide();rDetail(id);
 }
 
-// ── Supplier dropdown population ──────────────────────────────
-function populateSupplierDropdown(selectedVal){
-  const select = document.getElementById('f-fac');
-  if(!select) return;
-  select.innerHTML = '<option value="">-- เลือก Supplier --</option>';
-  
+// ── Supplier dropdown searchable select-only ──────────────────
+function showSupDrop(q) {
+  const drop = document.getElementById('sup-drop');
+  if (!drop) return;
   const sups = [..._suppliers];
   sups.sort((a,b) => a.localeCompare(b, 'th'));
-  if(selectedVal && !sups.includes(selectedVal)){
-    sups.push(selectedVal);
+  const filtered = sups.filter(s => s.toLowerCase().includes((q || '').toLowerCase()));
+  drop.innerHTML = filtered.map(s => {
+    const safe = s.replace(/'/g, "\\'");
+    return `<div class="sup-option" onmousedown="pickSupplier('${safe}')">${s}</div>`;
+  }).join('') || '<div style="padding:8px 12px;font-size:12px;color:var(--mu)">ไม่พบ Supplier</div>';
+  drop.classList.add('show');
+}
+function hideSupDrop() {
+  const drop = document.getElementById('sup-drop');
+  if (drop) drop.classList.remove('show');
+  const inp = document.getElementById('f-fac');
+  if (!inp) return;
+  const val = inp.value.trim();
+  const sups = [..._suppliers];
+  const matched = sups.find(s => s.toLowerCase() === val.toLowerCase());
+  if (val === '') {
+    _selectedSupplier = '';
+    inp.value = '';
+  } else if (matched) {
+    _selectedSupplier = matched;
+    inp.value = matched;
+  } else {
+    inp.value = _selectedSupplier;
   }
-  
-  sups.forEach(s => {
-    const opt = document.createElement('option');
-    opt.value = s;
-    opt.textContent = s;
-    if(s === selectedVal) opt.selected = true;
-    select.appendChild(opt);
-  });
+}
+function pickSupplier(val) {
+  _selectedSupplier = val;
+  const inp = document.getElementById('f-fac');
+  if (inp) inp.value = val;
+  hideSupDrop();
 }
 
 // ── Order modal ───────────────────────────────────────────────
 function openNew(){
   document.getElementById('modal-t').textContent='เพิ่ม Order ใหม่';
   document.getElementById('f-id').value = '';
-  populateSupplierDropdown('');
+  _selectedSupplier = '';
+  document.getElementById('f-fac').value = '';
   ['f-start','f-prod-finish','f-due','f-del-sup','f-del-cust','f-eta-wisco'].forEach(x=>setDateField(x,''));
   document.getElementById('f-partial').checked=false;
   document.getElementById('f-id').disabled=false;
@@ -1005,7 +1026,8 @@ function editOrder(id){
   const o=_orders.find(x=>x.id===id);if(!o)return;
   document.getElementById('modal-t').textContent='แก้ไข Order';
   document.getElementById('f-id').value=o.id;document.getElementById('f-id').disabled=true;
-  populateSupplierDropdown(o.factory||'');
+  _selectedSupplier = o.factory || '';
+  document.getElementById('f-fac').value = o.factory || '';
   setDateField('f-start',o.startDate||o.poOpenDate||'');
   setDateField('f-prod-finish',o.productionFinishDate||'');
   setDateField('f-due',o.dueDate||'');
@@ -1042,7 +1064,6 @@ function renderItemsList(items){
       <div class="item-row-top">
         <div style="flex:1;position:relative">
           <input placeholder="ชื่อลูกค้า (พิมพ์หรือเลือก)" value="${it.customer||''}" 
-            onchange="updItem(${i},'customer',this.value)"
             oninput="showCustDrop(${i},this.value)"
             onfocus="showCustDrop(${i},this.value)"
             onblur="setTimeout(()=>hideCustDrop(${i}),200)"
@@ -1259,21 +1280,29 @@ function showCustDrop(i,q){
     :'<div style="padding:8px 12px;font-size:12px;color:var(--mu)">ไม่พบ — เพิ่มลูกค้าได้ที่ ⚙️ ตั้งค่า</div>';
   drop.classList.add('show');
 }
-function hideCustDrop(i){const d=document.getElementById('cust-drop-'+i);if(d)d.classList.remove('show');}
+function hideCustDrop(i){
+  const d=document.getElementById('cust-drop-'+i);
+  if(d)d.classList.remove('show');
+  const inp=document.querySelector('#item-row-'+i+' input[placeholder*="ลูกค้า"]');
+  if(!inp)return;
+  const val=inp.value.trim();
+  const matched=(_customers||[]).find(c=>c.toLowerCase()===val.toLowerCase());
+  if(val===''){
+    updItem(i,'customer','');
+    inp.value='';
+  }else if(matched){
+    updItem(i,'customer',matched);
+    inp.value=matched;
+  }else{
+    const lastVal=(_modalItems[i]&&_modalItems[i].customer)||'';
+    inp.value=lastVal;
+  }
+}
 function pickCust(i,name){
   updItem(i,'customer',name);
   const inp=document.querySelector('#item-row-'+i+' input[placeholder*="ลูกค้า"]');
   if(inp)inp.value=name;
   hideCustDrop(i);
-}
-async function addCustFromField(i,name){
-  if(!(_customers||[]).includes(name)){
-    if(!_customers)_customers=[];
-    _customers.push(name);
-    await put('/api/config/customers',{customers:_customers});
-    rCustGrid();
-  }
-  pickCust(i,name);
 }
 function rSaleTeamGrid(){
   document.getElementById('saleteam-grid').innerHTML=(_saleTeams||[]).map((s,i)=>`
