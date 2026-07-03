@@ -654,7 +654,32 @@ function rList() {
     
     // search
     return x.quotation_no.toLowerCase().includes(q) ||
-           x.customer.toLowerCase(function renderReadonlyCloseout(q) {
+           x.customer.toLowerCase().includes(q) ||
+           (x.ld_no || '').toLowerCase().includes(q) ||
+           (x.sale || '').toLowerCase().includes(q);
+  });
+  
+  const sidebar = document.getElementById('q-list');
+  if (!list.length) {
+    sidebar.innerHTML = '<div style="text-align:center; padding:40px 16px; color:var(--mu); font-size:13px">ไม่มีข้อมูลที่ตรงกัน</div>';
+    return;
+  }
+  sidebar.innerHTML = list.map(x => {
+    const active = _selected && _selected.id === x.id ? 'active' : '';
+    const badgeClass = `b-${(x.status || 'PENDING').toLowerCase()}`;
+    return `
+      <div class="q-item ${active}" onclick="selectQuote(${x.id})">
+        <div style="display:flex; justify-content:space-between; align-items:center">
+          <strong style="font-size:13px">${x.ld_no || x.quotation_no}</strong>
+          <span class="badge ${badgeClass}" style="font-size:9px">${x.status || 'PENDING'}</span>
+        </div>
+        <div style="font-size:11px; color:var(--mu); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">${x.customer}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderReadonlyCloseout(q) {
   const container = document.getElementById('closeout-readonly-list');
   if (!container) return;
   let items = [];
@@ -665,7 +690,6 @@ function rList() {
     items = q.product ? [{ product: q.product, quantity: '1', status: q.status || 'PENDING' }] : [];
   }
   if (items.length === 0) {
-    container.innerHTML = `<div style="font-size:12px; color:var(--mu)">喙勦浮喙堗浮喔掂福喔侧涪喔佮覆喔｀釜喔脆笝喔勦箟喔�</div>`;
     container.innerHTML = `<div style="font-size:12px; color:var(--mu)">ไม่มีรายการสินค้า</div>`;
     return;
   }
