@@ -377,7 +377,7 @@ if (document.readyState === 'loading') {
 }
 
 function esc(str){if(!str)return '';return String(str).replace(/"/g,'&quot;');}
-let _prs=[], _quotations=[], _editId=null, _items=[], _configCustomers=[], _selectedCustAdmin='', _selectedQuotCust='';
+let _prs=[], _quotations=[], _editId=null, _items=[], _configCustomers=[], _selectedCustAdmin='', _selectedQuotCust='', _adminQuoteItems=[], _adminQuoteId=null;
 
 async function loadPRs() {
   const [data, orders] = await Promise.all([
@@ -568,10 +568,10 @@ function renderStats(){
     const lostPct = Math.round((lostCount / total) * 100);
 
     statsBar.innerHTML = `
-      <div class="stat-card"><div class="stat-n" id="sq-total">${_quotations.length}</div><div class="stat-l">ใบเสนอราคาทั้งหมด</div></div>
-      <div class="stat-card"><div class="stat-n" style="color:var(--done)" id="sq-win">${winCount} <span style="font-size:12px;color:var(--mu);font-weight:normal">(${winPct}%)</span></div><div class="stat-l">WIN (ชนะ)</div></div>
-      <div class="stat-card"><div class="stat-n" style="color:#9a6700" id="sq-pending">${pendingCount} <span style="font-size:12px;color:var(--mu);font-weight:normal">(${pendingPct}%)</span></div><div class="stat-l">PENDING (รอผล)</div></div>
-      <div class="stat-card"><div class="stat-n" style="color:var(--late)" id="sq-lost">${lostCount} <span style="font-size:12px;color:var(--mu);font-weight:normal">(${lostPct}%)</span></div><div class="stat-l">LOST (แพ้)</div></div>
+      <div class="stat-card"><div class="stat-n" id="sq-total">${_quotations.length}</div><div class="stat-l">Total Quotations</div></div>
+      <div class="stat-card"><div class="stat-n" style="color:var(--done)" id="sq-win">${winCount} <span style="font-size:12px;color:var(--mu);font-weight:normal">(${winPct}%)</span></div><div class="stat-l">WIN</div></div>
+      <div class="stat-card"><div class="stat-n" style="color:#9a6700" id="sq-pending">${pendingCount} <span style="font-size:12px;color:var(--mu);font-weight:normal">(${pendingPct}%)</span></div><div class="stat-l">PENDING</div></div>
+      <div class="stat-card"><div class="stat-n" style="color:var(--late)" id="sq-lost">${lostCount} <span style="font-size:12px;color:var(--mu);font-weight:normal">(${lostPct}%)</span></div><div class="stat-l">LOST</div></div>
     `;
   } else {
     statsBar.innerHTML = `
@@ -627,10 +627,11 @@ function updateLayoutForTab() {
     if (isQuotes) {
       statusFilter.innerHTML = `
         <option value="">สถานะทั้งหมด</option>
-        <option value="PENDING">PENDING (รอผล)</option>
-        <option value="WIN">WIN (ได้งาน)</option>
-        <option value="LOST">LOST (ไม่ได้งาน)</option>
-        <option value="HOLD">HOLD (ชะลอ)</option>
+        <option value="PENDING">PENDING</option>
+        <option value="WIN">WIN</option>
+        <option value="LOST">LOST</option>
+        <option value="HOLD">HOLD</option>
+        <option value="CANCEL">CANCEL</option>
       `;
     } else {
       statusFilter.innerHTML = `
@@ -708,7 +709,11 @@ function renderTable(){
     }
     
     document.getElementById('pr-body').innerHTML = list.map(x => {
-      const badgeClass = x.status === 'WIN' ? 'b-win' : x.status === 'PENDING' ? 'b-pending' : x.status === 'LOST' ? 'b-lost' : 'b-pending';
+      const badgeClass = x.status === 'WIN' ? 'b-win' : 
+                         x.status === 'PENDING' ? 'b-pending' : 
+                         x.status === 'LOST' ? 'b-lost' : 
+                         x.status === 'HOLD' ? 'b-pending' : 
+                         x.status === 'CANCEL' ? 'b-lost' : 'b-pending';
       const statusText = x.status || 'PENDING';
       
       return `<tr>
@@ -1115,9 +1120,105 @@ async function deleteQuotation(id){
   await init();
 }
 
+function updateAdminItemField(idx, field, value) {
+  if (_adminQuoteItems[idx]) {
+    _adminQuoteItems[idx][field] = value;
+  }
+}
+
+function renderAdminItemsList() {
+  let html = `
+    <table style="width:100%; border-collapse:collapse; font-size:13px; font-family:'Sarabun',sans-serif; text-align:left; border:1px solid var(--bd)">
+      <thead>
+        <tr style="background:var(--sur2); border-bottom:1px solid var(--bd)">
+          <th style="padding:10px; border-right:1px solid var(--bd)">รายละเอียดสินค้า / Product</th>
+          <th style="padding:10px; width:60px; text-align:center; border-right:1px solid var(--bd)">จำนวน</th>
+          <th style="padding:10px; width:120px; border-right:1px solid var(--bd)">สถานะ</th>
+          <th style="padding:10px; width:130px; border-right:1px solid var(--bd)">PR No. (หากชนะ)</th>
+          <th style="padding:10px; width:130px">PO No. (หากชนะ)</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
+  
+  if (_adminQuoteItems.length === 0) {
+    html += `<tr><td colspan="5" style="padding:15px; text-align:center; color:var(--mu)">ไม่มีรายละเอียดสินค้า</td></tr>`;
+  } else {
+    _adminQuoteItems.forEach((it, idx) => {
+      const isWin = it.status === 'WIN';
+      html += `
+        <tr style="border-bottom:1px solid var(--bd); background:var(--sur)">
+          <td style="padding:10px; border-right:1px solid var(--bd); color:#fff; font-weight:600;">${esc(it.product)}</td>
+          <td style="padding:10px; text-align:center; border-right:1px solid var(--bd)">${esc(it.quantity || '1')}</td>
+          <td style="padding:10px; border-right:1px solid var(--bd)">
+            <select onchange="updateAdminItemField(${idx}, 'status', this.value); renderAdminItemsList();" style="width:100%; font-size:12px; padding:4px; border-radius:4px; border:1px solid var(--bd); background:var(--sur2); color:var(--tx)">
+              <option value="PENDING" ${it.status === 'PENDING' ? 'selected' : ''}>🟡 PENDING</option>
+              <option value="WIN" ${it.status === 'WIN' ? 'selected' : ''}>🟢 WIN</option>
+              <option value="LOST" ${it.status === 'LOST' ? 'selected' : ''}>🔴 LOST</option>
+              <option value="HOLD" ${it.status === 'HOLD' ? 'selected' : ''}>⚪ HOLD</option>
+              <option value="CANCEL" ${it.status === 'CANCEL' ? 'selected' : ''}>🚫 CANCEL</option>
+            </select>
+          </td>
+          <td style="padding:10px; border-right:1px solid var(--bd)">
+            <input type="text" value="${esc(it.pr_no || '')}" 
+                   placeholder="เช่น PR6905-001" 
+                   ${isWin ? '' : 'disabled style="background:var(--sur2); opacity:0.5"'}
+                   oninput="updateAdminItemField(${idx}, 'pr_no', this.value)"
+                   style="width:100%; font-size:12px; padding:4px; border-radius:4px; border:1px solid var(--bd); background:var(--sur); color:var(--tx)">
+          </td>
+          <td style="padding:10px">
+            <input type="text" value="${esc(it.po_no || '')}" 
+                   placeholder="เช่น PO6905-001" 
+                   ${isWin ? '' : 'disabled style="background:var(--sur2); opacity:0.5"'}
+                   oninput="updateAdminItemField(${idx}, 'po_no', this.value)"
+                   style="width:100%; font-size:12px; padding:4px; border-radius:4px; border:1px solid var(--bd); background:var(--sur); color:var(--tx)">
+          </td>
+        </tr>
+      `;
+    });
+  }
+  
+  html += `
+      </tbody>
+    </table>
+  `;
+  const container = document.getElementById('admin-quote-items-container');
+  if (container) container.innerHTML = html;
+}
+
+async function saveAdminQuotationStatuses() {
+  if (!_adminQuoteId) return;
+  for (let i = 0; i < _adminQuoteItems.length; i++) {
+    const it = _adminQuoteItems[i];
+    if (it.status === 'WIN' && (!it.pr_no || !it.pr_no.trim())) {
+      alert(`กรุณาระบุ PR No. สำหรับรายการที่ชนะ: "${it.product}"`);
+      return;
+    }
+  }
+
+  try {
+    const r = await fetch(`/api/quotations/${_adminQuoteId}/item-statuses`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ items: _adminQuoteItems })
+    });
+    if (r.ok) {
+      alert('✓ บันทึกผลลัพธ์สินค้าเรียบร้อย');
+      closeDetail();
+      await init();
+    } else {
+      const err = await r.json();
+      alert('เกิดข้อผิดพลาด: ' + err.error);
+    }
+  } catch(e) {
+    alert(e.message);
+  }
+}
+
 function openQuotationDetail(id){
   const q = _quotations.find(x => x.id === id);
   if (!q) return;
+  _adminQuoteId = q.id;
   document.getElementById('detail-title').textContent = `ใบเสนอราคา: ${q.quotation_no}`;
   
   const formatMoney = (val) => {
@@ -1125,6 +1226,15 @@ function openQuotationDetail(id){
     return parseFloat(val).toLocaleString('th-TH') + ' บาท';
   };
   
+  let items = [];
+  try {
+    items = JSON.parse(q.product || '[]');
+    if (!Array.isArray(items)) items = [];
+  } catch(e) {
+    items = q.product ? [{ product: q.product, quantity: '1', status: q.status || 'PENDING', pr_no: q.pr_no || '', po_no: q.po_no || '' }] : [];
+  }
+  _adminQuoteItems = items;
+
   document.getElementById('detail-body').innerHTML = `
     <div class="detail-section">
       <div class="detail-title">📋 ข้อมูลทั่วไป</div>
@@ -1134,7 +1244,7 @@ function openQuotationDetail(id){
         <div class="info-item"><div class="ik">ประเภทงาน</div><div class="iv">${q.quotation_type || '—'}</div></div>
         <div class="info-item"><div class="ik">วันที่เปิดบอร์ด</div><div class="iv">${q.start_date || '—'}</div></div>
         <div class="info-item"><div class="ik">กำหนดส่ง</div><div class="iv">${q.due_date || '—'}</div></div>
-        <div class="info-item"><div class="ik">สถานะ</div><div class="iv"><span class="badge ${q.status === 'WIN' ? 'b-win' : q.status === 'PENDING' ? 'b-pending' : q.status === 'LOST' ? 'b-lost' : 'b-pending'}">${q.status || 'PENDING'}</span></div></div>
+        <div class="info-item"><div class="ik">สถานะรวม</div><div class="iv"><span class="badge b-${q.status ? q.status.toLowerCase() : 'pending'}">${q.status || 'PENDING'}</span></div></div>
       </div>
     </div>
     <div class="detail-section">
@@ -1157,14 +1267,20 @@ function openQuotationDetail(id){
       </div>
     </div>
     <div class="detail-section">
-      <div class="detail-title">📦 รายละเอียดสินค้า</div>
-      <div style="padding:10px;background:var(--sur3);border-radius:var(--r);font-size:13px;white-space:pre-wrap;border:1px solid var(--bd)">${esc(q.product) || 'ไม่มีรายละเอียดสินค้า'}</div>
+      <div class="detail-title">📦 รายละเอียดสินค้า & สถานะแต่ละรายการ</div>
+      <div id="admin-quote-items-container"></div>
     </div>
     <div class="detail-section">
       <div class="detail-title">💬 หมายเหตุ</div>
       <div style="padding:10px;background:var(--sur3);border-radius:var(--r);font-size:13px;white-space:pre-wrap;border:1px solid var(--bd)">${esc(q.remark) || 'ไม่มีหมายเหตุ'}</div>
     </div>
+    
+    <div style="margin-top:20px; display:flex; justify-content:flex-end; gap:10px">
+      <button class="btn btn-primary" onclick="saveAdminQuotationStatuses()" style="background:linear-gradient(135deg, var(--spec), var(--blue))">💾 บันทึกผลลัพธ์ (Save Item Statuses)</button>
+      <button class="btn btn-secondary" onclick="closeDetail()">ปิด (Close)</button>
+    </div>
   `;
+  renderAdminItemsList();
   document.getElementById('detail-modal').classList.add('open');
 }
 

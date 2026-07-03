@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Quotation Manager — Wisco</title>
+<title>Quotation Manager 鈥� Wisco</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700;800;900&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -225,8 +225,8 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--spec)}
     <div class="logo-name">Quotation <span style="color:var(--spec)">Manager</span></div>
   </div>
   <div style="display:flex;align-items:center;gap:12px">
-    <a href="quotations.html" style="font-size:12px;color:var(--tx);text-decoration:none;padding:5px 12px;border:1px solid var(--bd);border-radius:99px;background:var(--s1)" target="_blank">📊 Corporate Dashboard</a>
-    <a href="edit.html" style="font-size:12px;color:var(--tx);text-decoration:none;padding:5px 12px;border:1px solid var(--bd);border-radius:99px;background:var(--s1)" target="_blank">✏️ PO Tracker Edit</a>
+    <a href="quotations.html" style="font-size:12px;color:var(--tx);text-decoration:none;padding:5px 12px;border:1px solid var(--bd);border-radius:99px;background:var(--s1)" target="_blank">馃搳 Corporate Dashboard</a>
+    <a href="edit.html" style="font-size:12px;color:var(--tx);text-decoration:none;padding:5px 12px;border:1px solid var(--bd);border-radius:99px;background:var(--s1)" target="_blank">鉁忥笍 PO Tracker Edit</a>
     <button class="btn btn-primary" onclick="openCreateModal()">+ Open Quotation</button>
   </div>
 </header>
@@ -234,13 +234,14 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--spec)}
   <!-- LEFT SIDE: QUOTATIONS LIST -->
   <div class="list-panel">
     <div class="search-box">
-      <input type="text" id="q-search" class="search-inp" placeholder="ค้นหาใบเสนอราคา..." oninput="rList()">
+      <input type="text" id="q-search" class="search-inp" placeholder="喔勦箟喔權斧喔侧箖喔氞箑喔�笝喔�福喔侧竸喔�..." oninput="rList()">
       <div class="filter-bar">
-        <button class="fchip active" id="f-all" onclick="setFilter('all')">ทั้งหมด</button>
-        <button class="fchip" id="f-pending" onclick="setFilter('PENDING')">🟡 รอราคา</button>
-        <button class="fchip" id="f-win" onclick="setFilter('WIN')">🟢 ชนะ (WIN)</button>
-        <button class="fchip" id="f-lost" onclick="setFilter('LOST')">🔴 LOST</button>
-        <button class="fchip" id="f-hold" onclick="setFilter('HOLD')">⚪ HOLD</button>
+        <button class="fchip active" id="f-all" onclick="setFilter('all')">All</button>
+        <button class="fchip" id="f-pending" onclick="setFilter('PENDING')">馃煛 PENDING</button>
+        <button class="fchip" id="f-win" onclick="setFilter('WIN')">馃煝 WIN</button>
+        <button class="fchip" id="f-lost" onclick="setFilter('LOST')">馃敶 LOST</button>
+        <button class="fchip" id="f-hold" onclick="setFilter('HOLD')">鈿� HOLD</button>
+        <button class="fchip" id="f-cancel" onclick="setFilter('CANCEL')">馃毇 CANCEL</button>
       </div>
     </div>
     <div class="qlist" id="q-list"></div>
@@ -249,34 +250,34 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--spec)}
   <!-- RIGHT SIDE: WORKSPACE -->
   <div class="work-panel" id="work-pane">
     <div class="empty-view">
-      <div class="empty-icon">📂</div>
-      <h3>กรุณาเลือกใบเสนอราคาเพื่อเปิดบอร์ดบริหาร</h3>
-      <p style="margin-top:6px;font-size:13px">หรือกดปุ่ม "+ Open Quotation" เพื่อเริ่มงานใหม่</p>
+      <div class="empty-icon">馃搨</div>
+      <h3>喔佮福喔膏笓喔侧箑喔ム阜喔�竵喙冟笟喙€喔�笝喔�福喔侧竸喔侧箑喔炧阜喙堗腑喙€喔涏复喔斷笟喔�福喙屶笖喔氞福喔脆斧喔侧福</h3>
+      <p style="margin-top:6px;font-size:13px">喔�福喔粪腑喔佮笖喔涏父喙堗浮 "+ Open Quotation" 喙€喔炧阜喙堗腑喙€喔｀复喙堗浮喔囙覆喔權箖喔�浮喙�</p>
     </div>
   </div>
 </main>
 </div>
 
 <!-- CREATE/EDIT MODAL -->
-<div class="ov" id="modal" onclick="if(event.target===this)closeModal()">
+<div class="ov" id="modal">
   <div class="modal">
     <div class="modal-hdr">
       <span class="modal-title" id="m-title">Open New Quotation</span>
-      <button class="modal-close" onclick="closeModal()">✕</button>
+      <button class="modal-close" onclick="closeModal()">鉁�</button>
     </div>
     <div class="modal-body">
       <form id="q-form" onsubmit="event.preventDefault(); saveQuotation();">
         <div class="form-grid">
           <div class="fg">
             <label>LD No.</label>
-            <input id="f-ld" placeholder="เช่น LD69001">
+            <input id="f-ld" placeholder="喙€喔娻箞喔� LD69001">
           </div>
           <div class="fg">
             <label>Quotation No. <span class="req">*</span></label>
-            <input id="f-qno" required placeholder="เช่น Q6905-001">
+            <input id="f-qno" required placeholder="喙€喔娻箞喔� Q6905-001">
           </div>
           <div class="fg">
-            <label>ประเภทงานใบเสนอราคา (Job Type) <span class="req">*</span></label>
+            <label>喔涏福喔班箑喔犩笚喔囙覆喔權箖喔氞箑喔�笝喔�福喔侧竸喔� (Job Type) <span class="req">*</span></label>
             <select id="f-type" required onchange="calculateQuotationLeadTime()">
               <option value="MRO">MRO</option>
               <option value="Project">Project</option>
@@ -284,7 +285,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--spec)}
             </select>
           </div>
           <div class="fg">
-            <label>แบรนด์ (Brand) <span class="req">*</span></label>
+            <label>喙佮笟喔｀笝喔斷箤 (Brand) <span class="req">*</span></label>
             <select id="f-brand" required onchange="calculateQuotationLeadTime()">
               <option value="Platinum brand">Platinum brand</option>
               <option value="Golden brand">Golden brand</option>
@@ -292,29 +293,29 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--spec)}
             </select>
           </div>
           <div class="fg">
-            <label>ประเภทวาล์ว (Valve Type) <span class="req">*</span></label>
+            <label>喔涏福喔班箑喔犩笚喔о覆喔ム箤喔� (Valve Type) <span class="req">*</span></label>
             <select id="f-valve-type" required onchange="calculateQuotationLeadTime()">
               <option value="Manual valve & Accessory">Manual valve & Accessory</option>
               <option value="Special valve & Accessory">Special valve & Accessory</option>
             </select>
           </div>
           <div class="fg">
-            <label>วันที่เปิดบอร์ด <span class="req">*</span></label>
+            <label>喔о副喔權笚喔掂箞喙€喔涏复喔斷笟喔�福喙屶笖 <span class="req">*</span></label>
             <input id="f-start" type="date" required onchange="calculateQuotationLeadTime()">
           </div>
           <div class="fg">
-            <label>กำหนดส่ง <span class="req">*</span></label>
+            <label>喔佮赋喔�笝喔斷釜喙堗竾 <span class="req">*</span></label>
             <input id="f-due" type="date" required readonly style="background:var(--s1); opacity:0.8; cursor:not-allowed">
           </div>
           <div class="fg">
-            <label>ลูกค้า <span class="req">*</span></label>
+            <label>喔ム腹喔佮竸喙夃覆 <span class="req">*</span></label>
             <div class="autocomplete-wrap">
-              <input id="f-cust" required placeholder="พิมพ์เพื่อค้นหาลูกค้า..." autocomplete="off" oninput="showCustDrop(this.value)" onfocus="showCustDrop(this.value)" onblur="setTimeout(hideCustDrop,200)">
+              <input id="f-cust" required placeholder="喔炧复喔∴笧喙屶箑喔炧阜喙堗腑喔勦箟喔權斧喔侧弗喔灌竵喔勦箟喔�..." autocomplete="off" oninput="showCustDrop(this.value)" onfocus="showCustDrop(this.value)" onblur="setTimeout(hideCustDrop,200)">
               <div class="autocomplete-drop" id="cust-drop"></div>
             </div>
           </div>
           <div class="fg">
-            <label>ประเภทลูกค้า (Customer Type) <span class="req">*</span></label>
+            <label>喔涏福喔班箑喔犩笚喔ム腹喔佮竸喙夃覆 (Customer Type) <span class="req">*</span></label>
             <select id="f-cust-type" required>
               <option value="End-user">End-user</option>
               <option value="Trading">Trading</option>
@@ -328,44 +329,79 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--spec)}
             </select>
           </div>
           <div class="fg">
-            <label>ผู้เสนอขาย (Sale) <span class="req">*</span></label>
+            <label>喔溹腹喙夃箑喔�笝喔�競喔侧涪 (Sale) <span class="req">*</span></label>
             <select id="f-sale" required>
               <!-- Options loaded from config -->
             </select>
           </div>
           <div class="fg">
-            <label>มูลค่าเสนอราคา (บาท)</label>
+            <label>喔∴腹喔ム竸喙堗覆喙€喔�笝喔�福喔侧竸喔� (喔氞覆喔�)</label>
             <input id="f-offer" type="number" step="0.01" min="0" placeholder="0.00">
           </div>
           <div class="fg">
-            <label>วันที่เสนอราคา (Offer Date)</label>
+            <label>喔о副喔權笚喔掂箞喙€喔�笝喔�福喔侧竸喔� (Offer Date)</label>
             <input id="f-offer-date" type="date">
           </div>
           <div class="fg">
-            <label>วันที่จัดทำเสร็จ (Completed Date)</label>
+            <label>喔о副喔權笚喔掂箞喔堗副喔斷笚喔赤箑喔�福喙囙笀 (Completed Date)</label>
             <input id="f-completed-date" type="date">
           </div>
           <div class="fg fg-span">
-            <label>หมายเหตุ (Remark)</label>
-            <textarea id="f-remark" rows="2" placeholder="ระบุหมายเหตุความเห็นของทีม..."></textarea>
+            <label>喔�浮喔侧涪喙€喔�笗喔� (Remark)</label>
+            <textarea id="f-remark" rows="2" placeholder="喔｀赴喔氞父喔�浮喔侧涪喙€喔�笗喔膏竸喔о覆喔∴箑喔�箛喔權競喔�竾喔椸傅喔�..."></textarea>
           </div>
           <div class="fg fg-span">
-            <label>รายละเอียดสินค้า / Product</label>
-            <textarea id="f-product" rows="3" placeholder="ระบุแบรนด์ รุ่น ข้อมูลทางเทคนิค..."></textarea>
+            <label style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 6px;">
+              <span style="font-weight: 600;">喔｀覆喔⑧弗喔班箑喔�傅喔⑧笖喔�复喔權竸喙夃覆 / Product *</span>
+              <button type="button" class="btn btn-sm" onclick="addQuoteItemRow()" style="padding: 2px 8px; font-size: 11px; background: var(--spec); color: #000; border: none; border-radius: 4px; font-weight: 700; cursor: pointer;">+ 喙€喔炧复喙堗浮喔�复喔權竸喙夃覆</button>
+            </label>
+            <div id="quote-items-list" style="display:flex; flex-direction:column; gap:8px;">
+              <!-- populated dynamically -->
+            </div>
           </div>
         </div>
       </form>
     </div>
     <div class="modal-ftr">
-      <button class="btn btn-secondary" onclick="closeModal()">ยกเลิก</button>
-      <button class="btn btn-primary" type="submit" form="q-form">บันทึกข้อมูล</button>
+      <button class="btn btn-secondary" onclick="closeModal()">喔⑧竵喙€喔ム复喔�</button>
+      <button class="btn btn-primary" type="submit" form="q-form">喔氞副喔權笚喔多竵喔傕箟喔�浮喔灌弗</button>
     </div>
   </div>
 </div>
 
 <script>
-const PROGRESS_STEPS = ["ตรวจสอบข้อมูล", "รอราคาเมืองนอก / เคลียเสปค", "ตรวจสอบเสปค ดำเนินการภายใน", "Quotation Submitted"];
-let _quotations = [], _config = {}, _selected = null, _filter = 'all', _editId = null;
+const PROGRESS_STEPS = ["喔曕福喔о笀喔�腑喔氞競喙夃腑喔∴腹喔�", "喔｀腑喔｀覆喔勦覆喙€喔∴阜喔�竾喔權腑喔� / 喙€喔勦弗喔掂涪喙€喔�笡喔�", "喔曕福喔о笀喔�腑喔氞箑喔�笡喔� 喔斷赋喙€喔權复喔權竵喔侧福喔犩覆喔⑧箖喔�", "Quotation Submitted"];
+let _quotations = [], _config = {}, _selected = null, _filter = 'all', _editId = null, _quoteItems = [];
+
+function esc(str){
+  if(!str) return '';
+  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function renderQuoteItemsList() {
+  const container = document.getElementById('quote-items-list');
+  if (!container) return;
+  container.innerHTML = _quoteItems.map((it, idx) => `
+    <div style="display:flex; align-items:center; gap:8px">
+      <input placeholder="喙佮笟喔｀笝喔斷箤 喔｀父喙堗笝 喔�福喔粪腑喔｀覆喔⑧弗喔班箑喔�傅喔⑧笖喔�复喔權竸喙夃覆..." value="${esc(it.product || '')}" 
+             oninput="_quoteItems[${idx}].product=this.value" 
+             style="flex:1; font-size:13px; padding:6px 10px; border:1px solid var(--bd); border-radius:var(--r); background:var(--sur); color:var(--tx); font-family:'Sarabun',sans-serif" required>
+      <input placeholder="喔堗赋喔權抚喔�" value="${esc(it.quantity || '')}" 
+             oninput="_quoteItems[${idx}].quantity=this.value" 
+             style="width:80px; font-size:13px; padding:6px 10px; border:1px solid var(--bd); border-radius:var(--r); background:var(--sur); color:var(--tx); font-family:'Sarabun',sans-serif" required>
+      <button type="button" onclick="removeQuoteItemRow(${idx})" 
+              style="background:none; border:none; color:var(--late); font-size:18px; cursor:pointer; padding:0 4px">鉁�</button>
+    </div>
+  `).join('') || '<div style="font-size:12px; color:var(--mu); padding:4px 0">喙勦浮喙堗浮喔掂福喔侧涪喔佮覆喔｀釜喔脆笝喔勦箟喔� 鈥� 喔佮福喔膏笓喔侧竵喔� + 喙€喔炧复喙堗浮喔�复喔權竸喙夃覆</div>';
+}
+function addQuoteItemRow() {
+  _quoteItems.push({ product: '', quantity: '1', status: 'PENDING' });
+  renderQuoteItemsList();
+}
+function removeQuoteItemRow(idx) {
+  _quoteItems.splice(idx, 1);
+  renderQuoteItemsList();
+}
 
 // Date helpers
 function addBusinessDays(startDateStr, days) {
@@ -434,7 +470,7 @@ function showCustDrop(q) {
   
   // Custom option to add as new
   if (q.trim() && !filtered.includes(q.trim())) {
-    drop.innerHTML += `<div class="ac-option" style="color:var(--spec)" onmousedown="selectCust('${q.trim().replace(/'/g, "\\'")}')">+ เพิ่มลูกค้าใหม่: "${q.trim()}"</div>`;
+    drop.innerHTML += `<div class="ac-option" style="color:var(--spec)" onmousedown="selectCust('${q.trim().replace(/'/g, "\\'")}')">+ 喙€喔炧复喙堗浮喔ム腹喔佮竸喙夃覆喙冟斧喔∴箞: "${q.trim()}"</div>`;
   }
   drop.classList.add('show');
 }
@@ -456,7 +492,7 @@ function initFormDropdowns() {
 
 function openCreateModal() {
   _editId = null;
-  document.getElementById('m-title').textContent = 'เปิดบอร์ดใบเสนอราคาใหม่ (Open Quotation)';
+  document.getElementById('m-title').textContent = '喙€喔涏复喔斷笟喔�福喙屶笖喙冟笟喙€喔�笝喔�福喔侧竸喔侧箖喔�浮喙� (Open Quotation)';
   document.getElementById('q-form').reset();
   
   // Default values
@@ -470,6 +506,9 @@ function openCreateModal() {
   document.getElementById('f-completed-date').value = '';
   document.getElementById('f-remark').value = '';
   
+  _quoteItems = [{ product: '', quantity: '1', status: 'PENDING' }];
+  renderQuoteItemsList();
+  
   initFormDropdowns();
   calculateQuotationLeadTime();
   
@@ -478,7 +517,7 @@ function openCreateModal() {
 
 function openEditModal(q) {
   _editId = q.id;
-  document.getElementById('m-title').textContent = 'แก้ไขรายละเอียดใบเสนอราคา (' + q.quotation_no + ')';
+  document.getElementById('m-title').textContent = '喙佮竵喙夃箘喔傕福喔侧涪喔ム赴喙€喔�傅喔⑧笖喙冟笟喙€喔�笝喔�福喔侧竸喔� (' + q.quotation_no + ')';
   
   initFormDropdowns();
   
@@ -497,7 +536,17 @@ function openEditModal(q) {
   document.getElementById('f-offer-date').value = q.offer_date || '';
   document.getElementById('f-completed-date').value = q.completed_date || '';
   document.getElementById('f-remark').value = q.remark || '';
-  document.getElementById('f-product').value = q.product;
+  
+  try {
+    _quoteItems = JSON.parse(q.product || '[]');
+    if (!Array.isArray(_quoteItems)) _quoteItems = [];
+  } catch(e) {
+    _quoteItems = q.product ? [{ product: q.product, quantity: '1', status: q.status || 'PENDING' }] : [];
+  }
+  _quoteItems.forEach(it => {
+    if (!it.status) it.status = 'PENDING';
+  });
+  renderQuoteItemsList();
   
   calculateQuotationLeadTime();
   document.getElementById('modal').classList.add('open');
@@ -520,6 +569,15 @@ async function saveQuotation() {
     }).catch(console.error);
   }
 
+  if (_quoteItems.length === 0) {
+    alert('喔佮福喔膏笓喔侧箑喔炧复喙堗浮喔｀覆喔⑧竵喔侧福喔�复喔權竸喙夃覆喔�涪喙堗覆喔囙笝喙夃腑喔� 1 喔｀覆喔⑧竵喔侧福');
+    return;
+  }
+  if (_quoteItems.some(it => !it.product.trim())) {
+    alert('喔佮福喔膏笓喔侧竵喔｀腑喔佮福喔侧涪喔ム赴喙€喔�傅喔⑧笖喔�复喔權竸喙夃覆喙冟斧喙夃竸喔｀笟喔椸父喔佮笂喙堗腑喔�');
+    return;
+  }
+
   const payload = {
     quotationNo: document.getElementById('f-qno').value.trim(),
     quotationType: document.getElementById('f-type').value,
@@ -536,7 +594,7 @@ async function saveQuotation() {
     offerDate: document.getElementById('f-offer-date').value || '',
     completedDate: document.getElementById('f-completed-date').value || '',
     remark: document.getElementById('f-remark').value.trim(),
-    product: document.getElementById('f-product').value.trim()
+    product: JSON.stringify(_quoteItems)
   };
 
   try {
@@ -566,22 +624,22 @@ async function saveQuotation() {
       if (_editId) selectQuote(_editId);
     } else {
       const err = await r.json();
-      alert('เกิดข้อผิดพลาด: ' + (err.error || 'ไม่สามารถบันทึกได้'));
+      alert('喙€喔佮复喔斷競喙夃腑喔溹复喔斷笧喔ム覆喔�: ' + (err.error || '喙勦浮喙堗釜喔侧浮喔侧福喔栢笟喔编笝喔椸付喔佮箘喔斷箟'));
     }
   } catch(e) {
-    alert('ข้อผิดพลาดการเชื่อมต่อ: ' + e.message);
+    alert('喔傕箟喔�笢喔脆笖喔炧弗喔侧笖喔佮覆喔｀箑喔娻阜喙堗腑喔∴笗喙堗腑: ' + e.message);
   }
 }
 
 async function deleteQuotation(id) {
-  if (!confirm('ต้องการลบข้อมูลใบเสนอราคานี้อย่างถาวร?')) return;
+  if (!confirm('喔曕箟喔�竾喔佮覆喔｀弗喔氞競喙夃腑喔∴腹喔ム箖喔氞箑喔�笝喔�福喔侧竸喔侧笝喔掂箟喔�涪喙堗覆喔囙笘喔侧抚喔�?')) return;
   try {
     const r = await fetch(`/api/quotations/${id}`, { method: 'DELETE' });
     if (r.ok) {
       _selected = null;
       await refresh();
     } else {
-      alert('เกิดข้อผิดพลาดในการลบข้อมูล');
+      alert('喙€喔佮复喔斷競喙夃腑喔溹复喔斷笧喔ム覆喔斷箖喔權竵喔侧福喔ム笟喔傕箟喔�浮喔灌弗');
     }
   } catch(e) {
     alert(e.message);
@@ -596,43 +654,37 @@ function rList() {
     
     // search
     return x.quotation_no.toLowerCase().includes(q) ||
-           x.customer.toLowerCase().includes(q) ||
-           (x.ld_no && x.ld_no.toLowerCase().includes(q)) ||
-           (x.product && x.product.toLowerCase().includes(q));
-  });
-  
-  const container = document.getElementById('q-list');
-  if (!list.length) {
-    container.innerHTML = `<div style="text-align:center;padding:24px;color:var(--mu);font-size:13px">ไม่พบข้อมูล</div>`;
+           x.customer.toLowerCase(function renderReadonlyCloseout(q) {
+  const container = document.getElementById('closeout-readonly-list');
+  if (!container) return;
+  let items = [];
+  try {
+    items = JSON.parse(q.product || '[]');
+    if (!Array.isArray(items)) items = [];
+  } catch(e) {
+    items = q.product ? [{ product: q.product, quantity: '1', status: q.status || 'PENDING' }] : [];
+  }
+  if (items.length === 0) {
+    container.innerHTML = `<div style="font-size:12px; color:var(--mu)">喙勦浮喙堗浮喔掂福喔侧涪喔佮覆喔｀釜喔脆笝喔勦箟喔�</div>`;
+    container.innerHTML = `<div style="font-size:12px; color:var(--mu)">ไม่มีรายการสินค้า</div>`;
     return;
   }
-  
-  container.innerHTML = list.map(x => `
-    <div class="qcard st-${x.status} ${(_selected && _selected.id === x.id) ? 'active' : ''}" onclick="selectQuote(${x.id})">
-      <div class="qc-hdr">
-        <span class="qc-no">${x.ld_no ? x.ld_no : '—'} <span style="font-size:11px;font-weight:400;color:var(--mu)">(${x.quotation_no})</span></span>
-        <span class="badge b-${x.status.toLowerCase()}">${x.status}</span>
+  container.innerHTML = items.map(it => {
+    const badgeClass = `b-${(it.status || 'PENDING').toLowerCase()}`;
+    const prInfo = it.status === 'WIN' && it.pr_no ? `
+      <div style="font-size:11px; color:var(--mu); margin-top:4px">
+        PR: <strong>${it.pr_no}</strong>${it.po_no ? ` | PO: <strong>${it.po_no}</strong>` : ''}
+      </div>` : '';
+    return `
+      <div style="padding:10px; background:var(--s2); border:1px solid var(--bd); border-radius:var(--r)">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px">
+          <span style="font-size:13px; font-weight:600; color:#fff">${esc(it.product)} (x${esc(it.quantity)})</span>
+          <span class="badge ${badgeClass}">${it.status || 'PENDING'}</span>
+        </div>
+        ${prInfo}
       </div>
-      <div class="qc-cust">🏭 ${x.customer}</div>
-      <div class="qc-info">
-        <span>👤 ${x.responsible.split('-')[0] || 'ยังไม่ได้มอบหมาย'}</span>
-        <span style="font-weight:700">${x.progress_status}</span>
-      </div>
-    </div>
-  `).join('');
-}
-
-function setFilter(f) {
-  _filter = f;
-  document.querySelectorAll('.fchip').forEach(c => c.classList.remove('active'));
-  document.getElementById(`f-${f.toLowerCase()}`).classList.add('active');
-  rList();
-}
-
-function getProgressPercent(statusText) {
-  const idx = PROGRESS_STEPS.indexOf(statusText);
-  if (idx < 0) return 0;
-  return Math.round(((idx + 1) / PROGRESS_STEPS.length) * 100);
+    `;
+  }).join('');
 }
 
 function selectQuote(id) {
@@ -659,6 +711,25 @@ function selectQuote(id) {
   
   const widthPct = curIdx >= 0 ? Math.round((curIdx / (PROGRESS_STEPS.length - 1)) * 100) : 0;
   
+  let productHtml = '';
+  try {
+    const items = JSON.parse(q.product || '[]');
+    if (Array.isArray(items) && items.length > 0) {
+      productHtml = items.map(it => {
+        const badgeClass = `b-${(it.status || 'PENDING').toLowerCase()}`;
+        const prInfo = it.status === 'WIN' && it.pr_no ? ` <span style="color:var(--mu); font-size:11px">(PR: ${it.pr_no}${it.po_no ? ` | PO: ${it.po_no}` : ''})</span>` : '';
+        return `<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--bd2); padding: 4px 0;">
+          <span>${esc(it.product)} (x${esc(it.quantity)}) ${prInfo}</span>
+          <span class="badge ${badgeClass}">${it.status || 'PENDING'}</span>
+        </div>`;
+      }).join('');
+    } else {
+      productHtml = esc(q.product) || '—';
+    }
+  } catch(e) {
+    productHtml = esc(q.product) || '—';
+  }
+
   pane.innerHTML = `
     <!-- Header Summary -->
     <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:20px;">
@@ -697,7 +768,7 @@ function selectQuote(id) {
         <div class="detail-item"><div class="detail-lbl">วันที่จัดทำเสร็จ</div><div class="detail-val">${q.completed_date || '—'}</div></div>
         <div class="detail-item"><div class="detail-lbl">ทีมผู้ขาย</div><div class="detail-val">${q.sale_team} / ${q.sale}</div></div>
         <div class="detail-item" style="grid-column: span 2"><div class="detail-lbl">หมายเหตุ (Remark)</div><div class="detail-val" style="white-space:pre-wrap">${q.remark || '—'}</div></div>
-        <div class="detail-item" style="grid-column: span 2"><div class="detail-lbl">รายละเอียดงาน / Product</div><div class="detail-val" style="white-space:pre-wrap">${q.product || '—'}</div></div>
+        <div class="detail-item" style="grid-column: span 2"><div class="detail-lbl">รายละเอียดงาน / Product</div><div class="detail-val">${productHtml}</div></div>
       </div>
     </div>
     
@@ -735,6 +806,7 @@ function selectQuote(id) {
             <input type="number" step="0.01" min="0" id="act-offer" value="${q.total_offer || ''}" placeholder="0.00">
           </div>
           <div class="fg" style="margin-top:10px">
+
             <label>หมายเหตุ (Remark)</label>
             <textarea id="act-remark" rows="2" placeholder="ระบุหมายเหตุความเห็นของทีม...">${q.remark || ''}</textarea>
           </div>
@@ -746,36 +818,15 @@ function selectQuote(id) {
       <div style="display:flex; flex-direction:column; gap:20px">
         <!-- Closeout -->
         <div class="section-card" style="margin-bottom:0; height:100%">
-          <div class="section-title">🟢 ปิดบอร์ดและลิงก์ประวัติ (Close Out)</div>
-          <div class="fg">
-            <label>สถานะของใบเสนอราคา</label>
-            <select id="act-status" onchange="toggleCloseoutFields(this.value)" style="margin-top:8px">
-              <option value="PENDING" ${q.status === 'PENDING' ? 'selected' : ''}>🟡 รอเสนอราคา (PENDING)</option>
-              <option value="WIN" ${q.status === 'WIN' ? 'selected' : ''}>🟢 ได้รับใบสั่งซื้อ (WIN)</option>
-              <option value="LOST" ${q.status === 'LOST' ? 'selected' : ''}>🔴 ไม่สำเร็จ (LOST)</option>
-              <option value="HOLD" ${q.status === 'HOLD' ? 'selected' : ''}>⚪ พักงานชั่วคราว (HOLD)</option>
-            </select>
+          <div class="section-title">🟢 ผลการนำเสนอ (Close Out)</div>
+          <div id="closeout-readonly-list" style="display:flex; flex-direction:column; gap:10px; margin-top:8px">
+            <!-- populated dynamically -->
           </div>
-          
-          <div id="closeout-win-fields" style="display:${q.status === 'WIN' ? 'block' : 'none'}; margin-top:12px">
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px">
-              <div class="fg" style="margin-bottom:0">
-                <label>PR Number <span class="req">*</span></label>
-                <input id="act-pr" placeholder="เช่น PR6905-001" value="${q.pr_no || ''}">
-              </div>
-              <div class="fg" style="margin-bottom:0">
-                <label>PO Number</label>
-                <input id="act-po" placeholder="เช่น PO6905-001" value="${q.po_no || ''}">
-              </div>
-            </div>
-            <p style="font-size:11px; color:var(--mu); line-height:1.4">💡 เมื่อบันทึกเป็น <b>WIN</b> ระบบจะนำข้อมูลนี้ไปสร้างใบงานใน <b>PO Tracker (PR List)</b> โดยอัตโนมัติ ไม่ต้องทำซ้ำ</p>
-          </div>
-          
-          <button class="btn btn-primary" onclick="saveCloseout(${q.id})" style="margin-top:20px; width:100%; justify-content:center">💾 บันทึกผลลัพธ์การนำเสนอ</button>
         </div>
       </div>
     </div>
   `;
+  renderReadonlyCloseout(q);
 }
 
 async function updateProposalInfo(id) {
@@ -791,11 +842,11 @@ async function updateProposalInfo(id) {
       body: JSON.stringify({ offerDate, completedDate, totalOffer, remark })
     });
     if (r.ok) {
-      alert('✓ บันทึกรายละเอียดเสนอราคาเรียบร้อย');
+      alert('鉁� 喔氞副喔權笚喔多竵喔｀覆喔⑧弗喔班箑喔�傅喔⑧笖喙€喔�笝喔�福喔侧竸喔侧箑喔｀傅喔⑧笟喔｀箟喔�涪');
       await refresh();
       selectQuote(id);
     } else {
-      alert('อัปเดตล้มเหลว');
+      alert('喔�副喔涏箑喔斷笗喔ム箟喔∴箑喔�弗喔�');
     }
   } catch (err) {
     alert(err.message);
@@ -856,7 +907,7 @@ async function saveCloseout(id) {
   const poNo = document.getElementById('act-po') ? document.getElementById('act-po').value.trim() : '';
 
   if (status === 'WIN' && !prNo) {
-    alert('กรุณาระบุเลขที่ PR เพื่อลิงก์ระบบ PO Tracker');
+    alert('喔佮福喔膏笓喔侧福喔班笟喔膏箑喔ム競喔椸傅喙� PR 喙€喔炧阜喙堗腑喔ム复喔囙竵喙屶福喔班笟喔� PO Tracker');
     return;
   }
 
@@ -867,12 +918,12 @@ async function saveCloseout(id) {
       body: JSON.stringify({ status, prNo, poNo })
     });
     if (r.ok) {
-      alert('✓ บันทึกผลลัพธ์และอัปเดตระบบ PO Tracker สำเร็จ');
+      alert('鉁� 喔氞副喔權笚喔多竵喔溹弗喔ム副喔炧笜喙屶箒喔ム赴喔�副喔涏箑喔斷笗喔｀赴喔氞笟 PO Tracker 喔�赋喙€喔｀箛喔�');
       await refresh();
       selectQuote(id);
     } else {
       const err = await r.json();
-      alert('เกิดข้อผิดพลาด: ' + (err.error || 'ไม่สามารถอัปเดตสถานะได้'));
+      alert('喙€喔佮复喔斷競喙夃腑喔溹复喔斷笧喔ム覆喔�: ' + (err.error || '喙勦浮喙堗釜喔侧浮喔侧福喔栢腑喔编笡喙€喔斷笗喔�笘喔侧笝喔班箘喔斷箟'));
     }
   } catch(e) {
     alert(e.message);
@@ -929,8 +980,8 @@ function toggleTheme(){
 function updateToggleState(theme){
   const icon = document.getElementById('theme-icon');
   const text = document.getElementById('theme-text');
-  if (icon) icon.textContent = theme === 'light' ? '☀️' : '🌙';
-  if (text) text.textContent = theme === 'light' ? 'สว่าง' : 'มืด';
+  if (icon) icon.textContent = theme === 'light' ? '鈽€锔�' : '馃寵';
+  if (text) text.textContent = theme === 'light' ? '喔�抚喙堗覆喔�' : '喔∴阜喔�';
 }
 function injectThemeButton(){
   const header = document.querySelector('header');
@@ -943,7 +994,7 @@ function injectThemeButton(){
   btn.style.cssText = "padding: 4px 10px; border-radius: 20px; font-size: 14px; background: var(--sur2); border: 1px solid var(--bd); cursor: pointer; display: flex; align-items: center; gap: 6px; font-family:'Sarabun',sans-serif; margin-right: 10px; flex-shrink: 0;";
   
   const saved = localStorage.getItem('wisco-theme') || 'dark';
-  btn.innerHTML = `<span id="theme-icon">${saved === 'light' ? '☀️' : '🌙'}</span> <span id="theme-text" style="font-size: 11px; font-weight: 600; color: var(--mu)">${saved === 'light' ? 'สว่าง' : 'มืด'}</span>`;
+  btn.innerHTML = `<span id="theme-icon">${saved === 'light' ? '鈽€锔�' : '馃寵'}</span> <span id="theme-text" style="font-size: 11px; font-weight: 600; color: var(--mu)">${saved === 'light' ? '喔�抚喙堗覆喔�' : '喔∴阜喔�'}</span>`;
   
   // Find where to append
   const right = header.querySelector('.header-right') || header.querySelector('div[style*="align-items:center"]') || header.querySelector('.logo + div') || header;

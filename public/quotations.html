@@ -95,6 +95,7 @@ main{display:grid;grid-template-columns:280px 1fr 280px;overflow:hidden;height:c
 .b-pending{background:var(--pend-dim);color:var(--pend);border:1px solid rgba(234,179,8,.3)}
 .b-lost{background:var(--late-dim);color:var(--late);border:1px solid var(--late-bd)}
 .b-hold{background:rgba(100,116,139,.1);color:var(--canc);border:1px solid rgba(100,116,139,.3)}
+.b-cancel{background:rgba(239,68,68,.1);color:var(--late);border:1px solid rgba(239,68,68,.2)}
 
 .cp{padding:12px 16px 10px;border-bottom:1px solid var(--bd2)}
 .cp-hdr{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
@@ -106,6 +107,7 @@ main{display:grid;grid-template-columns:280px 1fr 280px;overflow:hidden;height:c
 .pb-pending{background:var(--pend)}
 .pb-lost{background:var(--late)}
 .pb-hold{background:var(--canc)}
+.pb-cancel{background:var(--late)}
 
 .nodes{display:flex;justify-content:space-between;position:relative;padding:0 2px}
 .node{width:8px;height:8px;border-radius:50%;background:var(--s3);border:1px solid var(--bd)}
@@ -305,10 +307,11 @@ main{display:grid;grid-template-columns:280px 1fr 280px;overflow:hidden;height:c
 <div class="middle">
   <div class="filter-bar">
     <button class="fchip active f-all" onclick="setF('all',this)">ทั้งหมด</button>
-    <button class="fchip f-pending" onclick="setF('PENDING',this)">🟡 รอเสนอราคา</button>
-    <button class="fchip f-win" onclick="setF('WIN',this)">🟢 งานที่ชนะ (WIN)</button>
-    <button class="fchip f-lost" onclick="setF('LOST',this)">🔴 ไม่สำเร็จ (LOST)</button>
-    <button class="fchip f-hold" onclick="setF('HOLD',this)">⚪ พักงาน (HOLD)</button>
+    <button class="fchip f-pending" onclick="setF('PENDING',this)">🟡 PENDING</button>
+    <button class="fchip f-win" onclick="setF('WIN',this)">🟢 WIN</button>
+    <button class="fchip f-lost" onclick="setF('LOST',this)">🔴 LOST</button>
+    <button class="fchip f-hold" onclick="setF('HOLD',this)">⚪ HOLD</button>
+    <button class="fchip f-canc" onclick="setF('CANCEL',this)">🚫 CANCEL</button>
     <button class="fchip f-overdue" onclick="setF('overdue',this)">🚨 เลยกำหนดส่ง</button>
   </div>
   <div class="cards" id="cards"></div>
@@ -317,12 +320,12 @@ main{display:grid;grid-template-columns:280px 1fr 280px;overflow:hidden;height:c
   <!-- Charts Summary -->
   <div class="section-block">
     <div class="section-head" onclick="togSection('charts')">
-      <span>📊 สถิติอัตราส่วน</span>
+      <span>📊 Ratio Statistics</span>
       <span class="section-toggle" id="charts-toggle">▼</span>
     </div>
     <div class="section-content" id="charts-content">
       <div style="background:var(--s2); border:1px solid var(--bd2); border-radius:8px; padding:10px; margin-bottom:12px;">
-        <div style="font-size:10px; color:var(--mu); font-weight:700; margin-bottom:8px; text-transform:uppercase;">อัตราส่วนสถานะ WIN / PENDING</div>
+        <div style="font-size:10px; color:var(--mu); font-weight:700; margin-bottom:8px; text-transform:uppercase;">WIN / PENDING Ratio</div>
         <canvas id="ratioChart" style="max-height:140px;"></canvas>
       </div>
     </div>
@@ -330,7 +333,7 @@ main{display:grid;grid-template-columns:280px 1fr 280px;overflow:hidden;height:c
   <!-- Performance Metrics -->
   <div class="section-block">
     <div class="section-head" onclick="togSection('metrics')">
-      <span>📈 ตัวชี้วัดผลงาน (KPI Metrics)</span>
+      <span>📈 Performance KPI Metrics</span>
       <span class="section-toggle" id="metrics-toggle">▼</span>
     </div>
     <div class="section-content" id="metrics-content">
@@ -340,7 +343,7 @@ main{display:grid;grid-template-columns:280px 1fr 280px;overflow:hidden;height:c
   <!-- Individual Stats -->
   <div class="section-block">
     <div class="section-head" onclick="togSection('individual')">
-      <span>🧑‍💼 ผลงาน Proposal</span>
+      <span>🧑‍💼 Proposal Team Performance</span>
       <span class="section-toggle" id="individual-toggle">▼</span>
     </div>
     <div class="section-content" id="individual-content"><div id="list-individual"></div></div>
@@ -348,7 +351,7 @@ main{display:grid;grid-template-columns:280px 1fr 280px;overflow:hidden;height:c
   <!-- Sale Team Stats -->
   <div class="section-block">
     <div class="section-head" onclick="togSection('saleteam')">
-      <span>👔 สรุปตามทีม Sales</span>
+      <span>👔 Sales Team Performance</span>
       <span class="section-toggle" id="saleteam-toggle">▼</span>
     </div>
     <div class="section-content" id="saleteam-content"><div id="list-saleteam"></div></div>
@@ -356,7 +359,7 @@ main{display:grid;grid-template-columns:280px 1fr 280px;overflow:hidden;height:c
   <!-- Due soon -->
   <div class="section-block">
     <div class="section-head" onclick="togSection('due')">
-      <span>⏰ ใกล้กำหนดส่งมอบ (5 วัน)</span>
+      <span>⏰ Due Soon (5 Days)</span>
       <span class="section-toggle" id="due-toggle">▼</span>
     </div>
     <div class="section-content" id="due-content"><div id="list-due"></div></div>
@@ -377,6 +380,10 @@ main{display:grid;grid-template-columns:280px 1fr 280px;overflow:hidden;height:c
 <script>
 const PROGRESS_STEPS = ["ตรวจสอบข้อมูล", "รอราคาเมืองนอก / เคลียเสปค", "ตรวจสอบเสปค ดำเนินการภายใน", "Quotation Submitted"];
 let _quotations = [], _config = {}, _flt = 'all', _view = 'org';
+function esc(str){
+  if(!str) return '';
+  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
 let ratioChartInstance = null;
 
 async function loadAll(){
@@ -417,10 +424,10 @@ function renderKPIs() {
   const overduePct = Math.round((overdue / total) * 100);
   
   document.getElementById('kpis').innerHTML = `
-    <div class="kpi k-total"><div class="kpi-n">${visible.length}</div><div class="kpi-l">Quotation ทั้งหมด</div><div class="kpi-glow"></div></div>
-    <div class="kpi k-win"><div class="kpi-n" style="color:var(--done)">${win} <span style="font-size:16px;font-weight:normal;color:var(--mu)">(${winPct}%)</span></div><div class="kpi-l">ชนะ (WIN)</div><div class="kpi-glow"></div></div>
-    <div class="kpi k-pending"><div class="kpi-n" style="color:var(--pend)">${pending} <span style="font-size:16px;font-weight:normal;color:var(--mu)">(${pendingPct}%)</span></div><div class="kpi-l">รอเสนอราคา</div><div class="kpi-glow"></div></div>
-    <div class="kpi k-overdue"><div class="kpi-n" style="color:var(--late)">${overdue} <span style="font-size:16px;font-weight:normal;color:var(--mu)">(${overduePct}%)</span></div><div class="kpi-l">เลยกำหนดส่ง</div><div class="kpi-glow"></div></div>
+    <div class="kpi k-total"><div class="kpi-n">${visible.length}</div><div class="kpi-l">Total Quotations</div><div class="kpi-glow"></div></div>
+    <div class="kpi k-win"><div class="kpi-n" style="color:var(--done)">${win} <span style="font-size:16px;font-weight:normal;color:var(--mu)">(${winPct}%)</span></div><div class="kpi-l">WIN</div><div class="kpi-glow"></div></div>
+    <div class="kpi k-pending"><div class="kpi-n" style="color:var(--pend)">${pending} <span style="font-size:16px;font-weight:normal;color:var(--mu)">(${pendingPct}%)</span></div><div class="kpi-l">PENDING</div><div class="kpi-glow"></div></div>
+    <div class="kpi k-overdue"><div class="kpi-n" style="color:var(--late)">${overdue} <span style="font-size:16px;font-weight:normal;color:var(--mu)">(${overduePct}%)</span></div><div class="kpi-l">OVERDUE</div><div class="kpi-glow"></div></div>
   `;
 }
 
@@ -471,6 +478,17 @@ function renderCards() {
       return `<div class="node ${cls}" title="${step}"></div>`;
     }).join('');
     
+    let productSummary = '';
+    try {
+      const items = JSON.parse(q.product || '[]');
+      if (Array.isArray(items) && items.length > 0) {
+        productSummary = items.map(it => `${it.product} (x${it.quantity})`).join(', ');
+      } else {
+        productSummary = q.product || '—';
+      }
+    } catch(e) {
+      productSummary = q.product || '—';
+    }
     const price = q.total_offer ? parseFloat(q.total_offer).toLocaleString('th-TH') + ' บาท' : '—';
     
     return `
@@ -481,7 +499,7 @@ function renderCards() {
             <span class="badge b-${q.status.toLowerCase()}">${q.status}</span>
           </div>
           <div class="ct-cust">🏭 ${q.customer}</div>
-          <div style="font-size:11px; color:var(--mu); margin-top:2px;">Product: ${q.product || '—'}</div>
+          <div style="font-size:11px; color:var(--mu); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${esc(productSummary)}">Product: ${esc(productSummary)}</div>
         </div>
         <div class="cp">
           <div class="cp-hdr">
@@ -657,6 +675,25 @@ function openDetail(id) {
     `;
   }).join('');
 
+  let productHtml = '';
+  try {
+    const items = JSON.parse(q.product || '[]');
+    if (Array.isArray(items) && items.length > 0) {
+      productHtml = items.map(it => {
+        const badgeClass = `b-${(it.status || 'PENDING').toLowerCase()}`;
+        const prInfo = it.status === 'WIN' && it.pr_no ? ` <span style="color:var(--mu); font-size:11px">(PR: ${it.pr_no}${it.po_no ? ` | PO: ${it.po_no}` : ''})</span>` : '';
+        return `<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--bd2); padding: 4px 0; font-size:12px;">
+          <span>${esc(it.product)} (x${esc(it.quantity)}) ${prInfo}</span>
+          <span class="badge ${badgeClass}">${it.status || 'PENDING'}</span>
+        </div>`;
+      }).join('');
+    } else {
+      productHtml = esc(q.product) || '—';
+    }
+  } catch(e) {
+    productHtml = esc(q.product) || '—';
+  }
+
   document.getElementById('m-body').innerHTML = `
     <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px;">
       <div class="mmi"><div class="mmil">ลูกค้า</div><div class="mmiv">${q.customer}</div></div>
@@ -669,7 +706,7 @@ function openDetail(id) {
       <div class="mmi"><div class="mmil">แบรนด์</div><div class="mmiv">${q.brand || 'Platinum brand'}</div></div>
       <div class="mmi"><div class="mmil">ประเภทวาล์ว</div><div class="mmiv">${q.valve_type || 'Manual valve & Accessory'}</div></div>
       <div class="mmi" style="grid-column: span 2;"><div class="mmil">PR / PO (เมื่อชนะ)</div><div class="mmiv">${q.pr_no ? `PR: ${q.pr_no}` : ''} ${q.po_no ? `| PO: ${q.po_no}` : ''} ${(!q.pr_no && !q.po_no) ? '—' : ''}</div></div>
-      <div class="mmi" style="grid-column: span 2;"><div class="mmil">รายละเอียดสินค้า</div><div class="mmiv">${q.product || '—'}</div></div>
+      <div class="mmi" style="grid-column: span 2;"><div class="mmil">รายละเอียดสินค้า</div><div class="mmiv">${productHtml}</div></div>
       <div class="mmi" style="grid-column: span 2;"><div class="mmil">ยอดรวมที่เสนอราคา</div><div class="mmiv" style="font-size:16px;color:var(--spec)">${q.total_offer ? parseFloat(q.total_offer).toLocaleString('th-TH') + ' บาท' : '—'}</div></div>
     </div>
     <div style="font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase;margin-bottom:10px;">ความคืบหน้าของงาน</div>
@@ -795,12 +832,12 @@ function renderMetrics() {
   
   document.getElementById('performance-metrics').innerHTML = `
     <div style="display:flex; flex-direction:column; gap:8px;">
-      <div class="sup-row"><span class="sup-lbl">📋 จำนวนงานที่ได้รับทั้งหมด</span><span class="sup-val">${totalReceived} งาน</span></div>
-      <div class="sup-row"><span class="sup-lbl">📤 งานที่เสนอราคาแล้ว</span><span class="sup-val" style="color:var(--spec)">${totalSubmitted} งาน (${submittedPct}%)</span></div>
-      <div class="sup-row"><span class="sup-lbl">⏱️ เสนอราคาได้ทันกำหนด</span><span class="sup-val" style="color:var(--done)">${onTime} งาน (${onTimePct}%)</span></div>
-      <div class="sup-row"><span class="sup-lbl">🚨 เสนอราคาไม่ทันกำหนด</span><span class="sup-val" style="color:var(--late)">${late} งาน (${latePct}%)</span></div>
-      <div class="sup-row"><span class="sup-lbl">💰 ยอดรวมที่เสนอราคา</span><span class="sup-val" style="color:var(--blue)">${totalOfferedVal.toLocaleString('th-TH')} ฿</span></div>
-      <div class="sup-row"><span class="sup-lbl">🟢 ยอด PO ที่ได้รับ (WIN)</span><span class="sup-val v-win">${totalWonVal.toLocaleString('th-TH')} ฿</span></div>
+      <div class="sup-row"><span class="sup-lbl">📋 Total Received Quotations</span><span class="sup-val">${totalReceived} items</span></div>
+      <div class="sup-row"><span class="sup-lbl">📤 Submitted Quotations</span><span class="sup-val" style="color:var(--spec)">${totalSubmitted} items (${submittedPct}%)</span></div>
+      <div class="sup-row"><span class="sup-lbl">⏱️ On-Time Quotations</span><span class="sup-val" style="color:var(--done)">${onTime} items (${onTimePct}%)</span></div>
+      <div class="sup-row"><span class="sup-lbl">🚨 Late Quotations</span><span class="sup-val" style="color:var(--late)">${late} items (${latePct}%)</span></div>
+      <div class="sup-row"><span class="sup-lbl">💰 Total Offered Value</span><span class="sup-val" style="color:var(--blue)">${totalOfferedVal.toLocaleString('th-TH')} ฿</span></div>
+      <div class="sup-row"><span class="sup-lbl">🟢 Total Won Value (WIN)</span><span class="sup-val v-win">${totalWonVal.toLocaleString('th-TH')} ฿</span></div>
     </div>
   `;
 }
