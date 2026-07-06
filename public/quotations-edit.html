@@ -403,6 +403,21 @@ function removeQuoteItemRow(idx) {
   renderQuoteItemsList();
 }
 
+function setFilter(val) {
+  _filter = val;
+  document.querySelectorAll('.fchip').forEach(b => b.classList.remove('active'));
+  const btn = document.getElementById('f-' + val.toLowerCase());
+  if (btn) btn.classList.add('active');
+  rList();
+}
+
+function getProgressPercent(status) {
+  if (!status) return 0;
+  const idx = PROGRESS_STEPS.indexOf(status);
+  if (idx < 0) return 0;
+  return Math.round(((idx + 1) / PROGRESS_STEPS.length) * 100);
+}
+
 // Date helpers
 function addBusinessDays(startDateStr, days) {
   if (!startDateStr || isNaN(days)) return '';
