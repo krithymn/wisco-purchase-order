@@ -45,6 +45,10 @@ main{display:grid;grid-template-columns:380px 1fr;overflow:hidden;height:calc(10
 .fchip.active{background:var(--s3);border-color:var(--spec);color:#fff}
 
 .qlist{flex:1;overflow-y:auto;padding:12px}
+.q-item{background:var(--s2);border:1px solid var(--bd2);border-radius:10px;padding:12px 14px;margin-bottom:10px;cursor:pointer;transition:all .15s;position:relative}
+.q-item:hover{border-color:var(--spec);transform:translateX(2px);background:var(--s3)}
+.q-item.active{background:var(--s3);border-color:var(--spec);box-shadow:0 0 12px rgba(187,134,252,.15)}
+.q-item.active::before{content:'';position:absolute;left:0;top:8px;bottom:8px;width:3px;background:var(--spec);border-radius:0 3px 3px 0}
 .qcard{background:var(--s2);border:1px solid var(--bd2);border-radius:10px;padding:12px 14px;margin-bottom:10px;cursor:pointer;transition:all .15s;position:relative}
 .qcard:hover{border-color:var(--spec);transform:translateX(2px)}
 .qcard.active{background:var(--s3);border-color:var(--spec);box-shadow:0 0 10px rgba(187,134,252,.1)}
