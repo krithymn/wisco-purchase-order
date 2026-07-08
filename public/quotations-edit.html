@@ -65,6 +65,11 @@ main{display:grid;grid-template-columns:380px 1fr;overflow:hidden;height:calc(10
 .b-pending{background:var(--pend-dim);color:var(--pend)}
 .b-lost{background:var(--late-dim);color:var(--late)}
 .b-hold{background:rgba(100,116,139,.15);color:var(--hold)}
+.b-on_process{background:rgba(59,130,246,.12);color:#60a5fa}
+.b-submit{background:var(--done-dim);color:var(--done)}
+.b-cancel{background:var(--late-dim);color:var(--late)}
+.b-not_enough_info{background:var(--pend-dim);color:var(--pend)}
+.b-customer_canceled{background:rgba(100,116,139,.15);color:var(--hold)}
 
 .qc-cust{font-size:12px;color:var(--mu);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .qc-info{display:flex;justify-content:space-between;font-size:11px;color:var(--mu);margin-top:8px}
@@ -241,11 +246,11 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--spec)}
       <input type="text" id="q-search" class="search-inp" placeholder="ค้นหาใบเสนอราคา..." oninput="rList()">
       <div class="filter-bar">
         <button class="fchip active" id="f-all" onclick="setFilter('all')">All</button>
-        <button class="fchip" id="f-pending" onclick="setFilter('PENDING')">🟡 PENDING</button>
-        <button class="fchip" id="f-win" onclick="setFilter('WIN')">🟢 WIN</button>
-        <button class="fchip" id="f-lost" onclick="setFilter('LOST')">🔴 LOST</button>
-        <button class="fchip" id="f-hold" onclick="setFilter('HOLD')">⚪ HOLD</button>
-        <button class="fchip" id="f-cancel" onclick="setFilter('CANCEL')">🚫 CANCEL</button>
+        <button class="fchip" id="f-on_process" onclick="setFilter('ON_PROCESS')">🔵 On Process</button>
+        <button class="fchip" id="f-submit" onclick="setFilter('SUBMIT')">🟢 Submit</button>
+        <button class="fchip" id="f-cancel" onclick="setFilter('CANCEL')">🔴 Cancel</button>
+        <button class="fchip" id="f-not_enough_info" onclick="setFilter('NOT_ENOUGH_INFO')">🟡 Not Enough Info</button>
+        <button class="fchip" id="f-customer_canceled" onclick="setFilter('CUSTOMER_CANCELED')">🚫 Customer Canceled</button>
       </div>
     </div>
     <div class="qlist" id="q-list"></div>
@@ -339,8 +344,26 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--spec)}
             </select>
           </div>
           <div class="fg">
-            <label>มูลค่าเสนอราคา (บาท)</label>
-            <input id="f-offer" type="number" step="0.01" min="0" placeholder="0.00">
+            <label>สถานะ (Status) <span class="req">*</span></label>
+            <select id="f-status" required>
+              <option value="ON_PROCESS">On Process</option>
+              <option value="SUBMIT">Submit</option>
+              <option value="CANCEL">Cancel</option>
+              <option value="NOT_ENOUGH_INFO">Not Enough Information</option>
+              <option value="CUSTOMER_CANCELED">Customer Canceled</option>
+            </select>
+          </div>
+          <div class="fg">
+            <label>มูลค่าเสนอราคา (Offer Value)</label>
+            <div style="display: flex; gap: 8px;">
+              <select id="f-currency" style="width: 80px; flex-shrink: 0; background: var(--sur); color: var(--tx); border: 1px solid var(--bd); border-radius: 8px;">
+                <option value="THB">THB</option>
+                <option value="USD">USD</option>
+                <option value="GBP">GBP</option>
+                <option value="EUR">EUR</option>
+              </select>
+              <input id="f-offer" type="number" step="0.01" min="0" placeholder="0.00" style="flex: 1;">
+            </div>
           </div>
           <div class="fg">
             <label>วันที่เสนอราคา (Offer Date)</label>
@@ -524,6 +547,8 @@ function openCreateModal() {
   document.getElementById('f-offer-date').value = '';
   document.getElementById('f-completed-date').value = '';
   document.getElementById('f-remark').value = '';
+  document.getElementById('f-status').value = 'ON_PROCESS';
+  document.getElementById('f-currency').value = 'THB';
   
   _quoteItems = [{ product: '', quantity: '1', status: 'PENDING' }];
   renderQuoteItemsList();
@@ -555,6 +580,8 @@ function openEditModal(q) {
   document.getElementById('f-offer-date').value = q.offer_date || '';
   document.getElementById('f-completed-date').value = q.completed_date || '';
   document.getElementById('f-remark').value = q.remark || '';
+  document.getElementById('f-status').value = q.status || 'ON_PROCESS';
+  document.getElementById('f-currency').value = q.offer_currency || 'THB';
   
   try {
     _quoteItems = JSON.parse(q.product || '[]');
@@ -610,6 +637,8 @@ async function saveQuotation() {
     saleTeam: document.getElementById('f-saleteam').value,
     sale: document.getElementById('f-sale').value,
     totalOffer: parseFloat(document.getElementById('f-offer').value) || 0.0,
+    offerCurrency: document.getElementById('f-currency').value,
+    status: document.getElementById('f-status').value,
     offerDate: document.getElementById('f-offer-date').value || '',
     completedDate: document.getElementById('f-completed-date').value || '',
     remark: document.getElementById('f-remark').value.trim(),
@@ -627,8 +656,14 @@ async function saveQuotation() {
     // Add default values for new ones
     if (!_editId) {
       payload.progressStatus = PROGRESS_STEPS[0];
-      payload.status = 'PENDING';
       payload.responsible = '';
+      payload.prNo = '';
+      payload.poNo = '';
+    } else if (_selected) {
+      payload.progressStatus = _selected.progress_status || PROGRESS_STEPS[0];
+      payload.responsible = _selected.responsible || '';
+      payload.prNo = _selected.pr_no || '';
+      payload.poNo = _selected.po_no || '';
     }
 
     const r = await fetch(url, {
@@ -685,12 +720,12 @@ function rList() {
   }
   sidebar.innerHTML = list.map(x => {
     const active = _selected && _selected.id === x.id ? 'active' : '';
-    const badgeClass = `b-${(x.status || 'PENDING').toLowerCase()}`;
+    const badgeClass = `b-${(x.status || 'ON_PROCESS').toLowerCase()}`;
     return `
       <div class="q-item ${active}" onclick="selectQuote(${x.id})">
         <div style="display:flex; justify-content:space-between; align-items:center">
           <strong style="font-size:13px">${x.ld_no || x.quotation_no}</strong>
-          <span class="badge ${badgeClass}" style="font-size:9px">${x.status || 'PENDING'}</span>
+          <span class="badge ${badgeClass}" style="font-size:9px">${x.status || 'ON_PROCESS'}</span>
         </div>
         <div style="font-size:11px; color:var(--mu); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">${x.customer}</div>
       </div>
@@ -758,14 +793,32 @@ function selectQuote(id) {
   try {
     const items = JSON.parse(q.product || '[]');
     if (Array.isArray(items) && items.length > 0) {
-      productHtml = items.map(it => {
-        const badgeClass = `b-${(it.status || 'PENDING').toLowerCase()}`;
-        const prInfo = it.status === 'WIN' && it.pr_no ? ` <span style="color:var(--mu); font-size:11px">(PR: ${it.pr_no}${it.po_no ? ` | PO: ${it.po_no}` : ''})</span>` : '';
-        return `<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--bd2); padding: 4px 0;">
-          <span>${esc(it.product)} (x${esc(it.quantity)}) ${prInfo}</span>
-          <span class="badge ${badgeClass}">${it.status || 'PENDING'}</span>
-        </div>`;
-      }).join('');
+      productHtml = `
+        <table style="width:100%; border-collapse:collapse; margin-top:8px; font-size:13px; color:var(--tx);">
+          <thead>
+            <tr style="border-bottom:1px solid var(--bd); text-align:left; color:var(--mu);">
+              <th style="padding:6px 4px; font-weight:600;">สินค้า / VALVE</th>
+              <th style="padding:6px 4px; font-weight:600; width:80px; text-align:center;">จำนวน</th>
+              <th style="padding:6px 4px; font-weight:600; width:100px; text-align:center;">สถานะ</th>
+              <th style="padding:6px 4px; font-weight:600; width:180px;">ข้อมูล PR / PO</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${items.map(it => {
+              const badgeClass = `b-${(it.status || 'PENDING').toLowerCase()}`;
+              const prInfo = it.status === 'WIN' && it.pr_no ? `PR: ${it.pr_no}${it.po_no ? ` | PO: ${it.po_no}` : ''}` : '—';
+              return `
+                <tr style="border-bottom:1px solid var(--bd2);">
+                  <td style="padding:6px 4px;">${esc(it.product)}</td>
+                  <td style="padding:6px 4px; text-align:center;">${esc(it.quantity)}</td>
+                  <td style="padding:6px 4px; text-align:center;"><span class="badge ${badgeClass}">${it.status || 'PENDING'}</span></td>
+                  <td style="padding:6px 4px; font-size:11px; color:var(--mu);">${prInfo}</td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      `;
     } else {
       productHtml = esc(q.product) || '—';
     }
@@ -777,7 +830,7 @@ function selectQuote(id) {
     <!-- Header Summary -->
     <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:20px;">
       <div>
-        <h2 style="font-size:24px; font-weight:800; font-family:'Inter',sans-serif; color:#fff">${q.ld_no || '—'}</h2>
+        <h2 style="font-size:24px; font-weight:800; font-family:'Inter',sans-serif; color:var(--tx)">${q.ld_no || '—'}</h2>
         <p style="color:var(--mu); font-size:13px; margin-top:4px;">Quotation No: ${q.quotation_no} · ประเภทงาน: ${q.quotation_type} · ลูกค้า: ${q.customer}</p>
       </div>
       <div style="display:flex; gap:10px;">
@@ -806,7 +859,7 @@ function selectQuote(id) {
         <div class="detail-item"><div class="detail-lbl">แบรนด์</div><div class="detail-val">${q.brand || 'Platinum brand'}</div></div>
         <div class="detail-item"><div class="detail-lbl">ประเภทวาล์ว</div><div class="detail-val">${q.valve_type || 'Manual valve & Accessory'}</div></div>
         <div class="detail-item"><div class="detail-lbl">ประเภทลูกค้า</div><div class="detail-val">${q.customer_type}</div></div>
-        <div class="detail-item"><div class="detail-lbl">ยอดเงินที่เสนอ</div><div class="detail-val" style="color:var(--spec)">${q.total_offer ? parseFloat(q.total_offer).toLocaleString() + ' บาท' : '—'}</div></div>
+        <div class="detail-item"><div class="detail-lbl">ยอดเงินที่เสนอ</div><div class="detail-val" style="color:var(--spec)">${q.total_offer ? parseFloat(q.total_offer).toLocaleString('th-TH', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' ' + (q.offer_currency || 'THB') : '—'}</div></div>
         <div class="detail-item"><div class="detail-lbl">วันที่เสนอราคา</div><div class="detail-val">${q.offer_date || '—'}</div></div>
         <div class="detail-item"><div class="detail-lbl">วันที่จัดทำเสร็จ</div><div class="detail-val">${q.completed_date || '—'}</div></div>
         <div class="detail-item"><div class="detail-lbl">ทีมผู้ขาย</div><div class="detail-val">${q.sale_team} / ${q.sale}</div></div>
@@ -845,11 +898,28 @@ function selectQuote(id) {
             </div>
           </div>
           <div class="fg" style="margin-top:10px">
-            <label>มูลค่าเสนอราคา (บาท)</label>
-            <input type="number" step="0.01" min="0" id="act-offer" value="${q.total_offer || ''}" placeholder="0.00">
+            <label>สถานะ (Status)</label>
+            <select id="act-status" style="width: 100%; background: var(--sur); color: var(--tx); border: 1px solid var(--bd); border-radius: 8px; padding: 8px;">
+              <option value="ON_PROCESS" ${q.status === 'ON_PROCESS' ? 'selected' : ''}>On Process</option>
+              <option value="SUBMIT" ${q.status === 'SUBMIT' ? 'selected' : ''}>Submit</option>
+              <option value="CANCEL" ${q.status === 'CANCEL' ? 'selected' : ''}>Cancel</option>
+              <option value="NOT_ENOUGH_INFO" ${q.status === 'NOT_ENOUGH_INFO' ? 'selected' : ''}>Not Enough Information</option>
+              <option value="CUSTOMER_CANCELED" ${q.status === 'CUSTOMER_CANCELED' ? 'selected' : ''}>Customer Canceled</option>
+            </select>
           </div>
           <div class="fg" style="margin-top:10px">
-
+            <label>มูลค่าเสนอราคา (Offer Value)</label>
+            <div style="display: flex; gap: 8px;">
+              <select id="act-currency" style="width: 80px; flex-shrink: 0; background: var(--sur); color: var(--tx); border: 1px solid var(--bd); border-radius: 8px; padding: 8px;">
+                <option value="THB" ${q.offer_currency === 'THB' || !q.offer_currency ? 'selected' : ''}>THB</option>
+                <option value="USD" ${q.offer_currency === 'USD' ? 'selected' : ''}>USD</option>
+                <option value="GBP" ${q.offer_currency === 'GBP' ? 'selected' : ''}>GBP</option>
+                <option value="EUR" ${q.offer_currency === 'EUR' ? 'selected' : ''}>EUR</option>
+              </select>
+              <input type="number" step="0.01" min="0" id="act-offer" value="${q.total_offer || ''}" placeholder="0.00" style="flex: 1;">
+            </div>
+          </div>
+          <div class="fg" style="margin-top:10px">
             <label>หมายเหตุ (Remark)</label>
             <textarea id="act-remark" rows="2" placeholder="ระบุหมายเหตุความเห็นของทีม...">${q.remark || ''}</textarea>
           </div>
@@ -876,13 +946,15 @@ async function updateProposalInfo(id) {
   const offerDate = document.getElementById('act-offer-date').value;
   const completedDate = document.getElementById('act-completed-date').value;
   const totalOffer = document.getElementById('act-offer').value;
+  const offerCurrency = document.getElementById('act-currency').value;
+  const status = document.getElementById('act-status').value;
   const remark = document.getElementById('act-remark').value.trim();
   
   try {
     const r = await fetch(`/api/quotations/${id}/progress`, {
       method: 'PATCH',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ offerDate, completedDate, totalOffer, remark })
+      body: JSON.stringify({ offerDate, completedDate, totalOffer, offerCurrency, status, remark })
     });
     if (r.ok) {
       alert('✓ บันทึกรายละเอียดเสนอราคาเรียบร้อย');
@@ -940,38 +1012,6 @@ async function assignResponsible(id, name) {
   }
 }
 
-function toggleCloseoutFields(val) {
-  document.getElementById('closeout-win-fields').style.display = val === 'WIN' ? 'block' : 'none';
-}
-
-async function saveCloseout(id) {
-  const status = document.getElementById('act-status').value;
-  const prNo = document.getElementById('act-pr') ? document.getElementById('act-pr').value.trim() : '';
-  const poNo = document.getElementById('act-po') ? document.getElementById('act-po').value.trim() : '';
-
-  if (status === 'WIN' && !prNo) {
-    alert('กรุณาระบุเลขที่ PR เพื่อลิงค์ระบบ PO Tracker');
-    return;
-  }
-
-  try {
-    const r = await fetch(`/api/quotations/${id}/status`, {
-      method: 'PATCH',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ status, prNo, poNo })
-    });
-    if (r.ok) {
-      alert('✓ บันทึกผลลัพธ์และอัปเดตระบบ PO Tracker สำเร็จ');
-      await refresh();
-      selectQuote(id);
-    } else {
-      const err = await r.json();
-      alert('เกิดข้อผิดพลาด: ' + (err.error || 'ไม่สามารถอัปเดตสถานะได้'));
-    }
-  } catch(e) {
-    alert(e.message);
-  }
-}
 
 async function refresh() {
   await loadData();

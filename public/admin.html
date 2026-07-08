@@ -129,6 +129,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--spec);bo
         <option value="fine">มีค่าปรับ</option>
         <option value="cancelled">🚫 ยกเลิกแล้ว</option>
       </select>
+      <button class="btn" style="background:var(--sur3);border:1px solid var(--bd);color:var(--tx)" onclick="exportPRsCSV()">📥 Export CSV</button>
       <button class="btn btn-primary" onclick="openAddModal()">+ เพิ่ม PR ใหม่</button>
     </div>
   </div>
@@ -152,6 +153,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--spec);bo
         <th>มูลค่า PO</th>
         <th>ค่าปรับ</th>
         <th>Sale</th>
+        <th>Sale Team</th>
         <th>สถานะ POI</th>
         <th>📦 ETA Wisco</th>
         <th>Action</th>
@@ -678,6 +680,7 @@ function updateLayoutForTab() {
         <th>มูลค่า PO</th>
         <th>ค่าปรับ</th>
         <th>Sale</th>
+        <th>Sale Team</th>
         <th>สถานะ POI</th>
         <th>📦 ETA Wisco</th>
         <th>Action</th>
@@ -810,6 +813,7 @@ function renderTable(){
     <td style="font-size:12px">${p.poValue||'—'}</td>
     <td>${p.fineYN==='yes'?`<span class="badge b-fine">⚠️ ${p.finePct||''}%</span>`:'<span style="font-size:12px;color:var(--mu)">—</span>'}</td>
     <td style="font-size:12px">${hl(p.sale,q)||'—'}</td>
+    <td style="font-size:12px">${hl(p.saleTeam,q)||'—'}</td>
     <td>${poiCell}</td>
     <td>${etaCell}</td>
     <td><div style="display:flex;gap:4px">
@@ -821,6 +825,57 @@ function renderTable(){
     </div></td>
   </tr>`;
   }).join('');
+}
+
+function exportPRsCSV(){
+  const q=(document.getElementById('q').value||'').trim().toLowerCase();
+  const fs=document.getElementById('f-status').value;
+  let list=_prs.filter(p=>{
+    const ids=p.linkedPOIs&&p.linkedPOIs.length?p.linkedPOIs:(p.linkedPOI?[p.linkedPOI]:[]);
+    const linked=ids.length>0;
+    const done=linked && ids.every(id=>{
+      const o = _orders.find(x=>x.id===id);
+      return o && isOrderDone(o);
+    });
+    if (_dTab === 'done') {
+      if (!done) return false;
+    } else if (_dTab !== 'quotes') {
+      if (done) return false;
+      if (_dTab === 'นปท.' && p.domestic !== 'นปท.') return false;
+      if (_dTab === 'ตปท.' && p.domestic !== 'ตปท.') return false;
+    }
+    if(fs==='pending'&&linked)return false;
+    if(fs==='linked'&&(!linked||done))return false;
+    if(fs==='done'&&!done)return false;
+    if(fs==='fine'&&p.fineYN!=='yes')return false;
+    if(fs==='cancelled'&&!p.isCancelled)return false;
+    if(fs!==''&&fs!=='cancelled'&&p.isCancelled)return false;
+    if(!q)return true;
+    return[p.prNo,p.customerName,p.customerPO,p.sale,p.saleTeam,p.quotationNo,p.poNo,p.ldNo]
+      .filter(Boolean).join(' ').toLowerCase().includes(q);
+  });
+  const headers=['PR No','Open Date','Customer','Customer PO','Due Date','PO Value','Fine','Sale Team','Sale','Quotation No','LD No','Domestic','POI Status','ETA Wisco'];
+  const csvEsc=v=>{const s=String(v==null?'':v);return s.includes(',')||s.includes('"')||s.includes('\n')?'"'+s.replace(/"/g,'""')+'"':s;};
+  const rows=list.map(p=>{
+    const ids=p.linkedPOIs&&p.linkedPOIs.length?p.linkedPOIs:(p.linkedPOI?[p.linkedPOI]:[]);
+    const linked=ids.length>0;
+    const done=linked && ids.every(id=>{const o=_orders.find(x=>x.id===id);return o&&isOrderDone(o);});
+    let poiStatus='รอเปิด POI';
+    if(done)poiStatus='เสร็จแล้ว';
+    else if(linked)poiStatus=ids.join(', ');
+    let eta='';
+    if(ids.length){
+      eta=ids.map(id=>{const o=_orders.find(x=>x.id===id);if(!o)return'';if(isOrderDone(o))return'ส่งมอบแล้ว';return o.etaWisco||'ยังไม่ระบุ';}).join(', ');
+    }
+    return[p.prNo,p.openDate,p.customerName,p.customerPO,p.dueDate,p.poValue,p.fineYN==='yes'?(p.finePct||'')+'%':'ไม่มี',p.saleTeam,p.sale,p.quotationNo,p.ldNo,p.domestic,poiStatus,eta].map(csvEsc).join(',');
+  });
+  const bom='\uFEFF';
+  const csv=bom+headers.map(csvEsc).join(',')+"\n"+rows.join("\n");
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download='pr_export.csv';a.click();
+  URL.revokeObjectURL(url);
 }
 
 function isPastDue(d){return d&&new Date(isoFrom(d))<new Date();}
