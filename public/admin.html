@@ -8,8 +8,10 @@
 @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{--bg:#08090e;--sur:#0e1018;--sur2:#13161f;--sur3:#181c28;--sur4:#1e2330;--bd:#2e344b;--bd2:#1b1f2e;--tx:#e8eaf2;--mu:#8e9cb2;--ac:#d42030;--red2:#e84050;--red3:#ff6070;--done:#22c55e;--late:#ef4444;--prog:#3a7bd5;--warn:#f97316;--spec:#a78bfa;--done-bg:rgba(34,197,94,.1);--late-bg:rgba(239,68,68,.1);--prog-bg:rgba(58,123,213,.12);--warn-bg:rgba(249,115,22,.15);--spec-bg:rgba(167,139,250,.1);--done-bd:rgba(34,197,94,.3);--late-bd:rgba(239,68,68,.3);--prog-bd:rgba(58,123,213,.35);--warn-bd:rgba(249,115,22,.3);--spec-bd:rgba(167,139,250,.3);--r:6px;--rl:12px;--shadow:0 2px 8px rgba(0,0,0,.4);--shadow-lg:0 8px 24px rgba(0,0,0,.4);--shadow-xl:0 24px 64px rgba(0,0,0,.6)}
-:root[data-theme="light"]{--bg:#f4f5f8;--sur:#ffffff;--sur2:#f8f9fa;--sur3:#edf2f7;--sur4:#e2e8f0;--bd:#d1d5db;--bd2:#e5e7eb;--tx:#0f172a;--mu:#64748b;--done:#10b981;--late:#ef4444;--prog:#3b82f6;--warn:#f59e0b;--spec:#8b5cf6;--done-bg:rgba(16,185,129,.08);--late-bg:rgba(239,68,68,.08);--prog-bg:rgba(59,130,246,.08);--warn-bg:rgba(245,158,11,.08);--spec-bg:rgba(139,92,246,.08);--done-bd:rgba(16,185,129,.25);--late-bd:rgba(239,68,68,.25);--prog-bd:rgba(59,130,246,.25);--warn-bd:rgba(245,158,11,.25);--spec-bd:rgba(139,92,246,.25);--shadow:0 2px 8px rgba(0,0,0,.06);--shadow-lg:0 8px 24px rgba(0,0,0,.08);--shadow-xl:0 24px 64px rgba(15,23,42,.12)}
+:root[data-theme="light"]{--bg:#f4f5f8;--sur:#ffffff;--sur2:#f8f9fa;--sur3:#edf2f7;--sur4:#e2e8f0;--bd:#d1d5db;--bd2:#e5e7eb;--tx:#0f172a;--mu:#475569;--done:#10b981;--late:#ef4444;--prog:#3b82f6;--warn:#f59e0b;--spec:#8b5cf6;--done-bg:rgba(16,185,129,.08);--late-bg:rgba(239,68,68,.08);--prog-bg:rgba(59,130,246,.08);--warn-bg:rgba(245,158,11,.08);--spec-bg:rgba(139,92,246,.08);--done-bd:rgba(16,185,129,.25);--late-bd:rgba(239,68,68,.25);--prog-bd:rgba(59,130,246,.25);--warn-bd:rgba(245,158,11,.25);--spec-bd:rgba(139,92,246,.25);--shadow:0 2px 8px rgba(0,0,0,.06);--shadow-lg:0 8px 24px rgba(0,0,0,.08);--shadow-xl:0 24px 64px rgba(15,23,42,.12)}
 :root[data-theme="light"] header{background:linear-gradient(90deg,var(--bg) 0%,var(--sur) 50%,var(--bg) 100%) !important;box-shadow:var(--shadow) !important;border-bottom:1px solid var(--bd) !important}
+:root[data-theme="light"] .logo{color:var(--tx) !important}
+:root[data-theme="light"] .modal-title{color:var(--tx) !important}
 :root[data-theme="light"] header .logo span{color:var(--spec) !important}
 :root[data-theme="light"] header #last-update{color:var(--spec) !important}
 :root[data-theme="light"] header div[style*="color:#9575cd"]{color:var(--mu) !important}
@@ -1203,7 +1205,7 @@ function renderAdminItemsList() {
       const isWin = it.status === 'WIN';
       html += `
         <tr style="border-bottom:1px solid var(--bd); background:var(--sur)">
-          <td style="padding:10px; border-right:1px solid var(--bd); color:#fff; font-weight:600;">${esc(it.product)}</td>
+          <td style="padding:10px; border-right:1px solid var(--bd); color:var(--tx); font-weight:600;">${esc(it.product)}</td>
           <td style="padding:10px; text-align:center; border-right:1px solid var(--bd)">${esc(it.quantity || '1')}</td>
           <td style="padding:10px; border-right:1px solid var(--bd)">
             <select onchange="updateAdminItemField(${idx}, 'status', this.value); renderAdminItemsList();" style="width:100%; font-size:12px; padding:4px; border-radius:4px; border:1px solid var(--bd); background:var(--sur2); color:var(--tx)">
