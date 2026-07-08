@@ -915,8 +915,14 @@ function selectQuote(id) {
         <div class="detail-item"><div class="detail-lbl">วันที่เสนอราคา</div><div class="detail-val">${q.offer_date || '—'}</div></div>
         <div class="detail-item"><div class="detail-lbl">วันที่จัดทำเสร็จ</div><div class="detail-val">${q.completed_date || '—'}</div></div>
         <div class="detail-item"><div class="detail-lbl">ทีมผู้ขาย</div><div class="detail-val">${q.sale_team} / ${q.sale}</div></div>
-        <div class="detail-item" style="grid-column: span 2"><div class="detail-lbl">หมายเหตุ (Remark)</div><div class="detail-val" style="white-space:pre-wrap">${q.remark || '—'}</div></div>
-        <div class="detail-item" style="grid-column: span 2"><div class="detail-lbl">รายละเอียดงาน / Product</div><div style="max-height: 250px; overflow-y: auto; border: 1px solid var(--bd2); border-radius: 6px; padding: 4px 8px; margin-top: 8px;">${productHtml}</div></div>
+        <div class="detail-item"><div class="detail-lbl">หมายเหตุ (Remark)</div><div class="detail-val" style="white-space:pre-wrap">${q.remark || '—'}</div></div>
+      </div>
+      <div style="height:16px"></div>
+      <div class="detail-item">
+        <div class="detail-lbl" style="margin-bottom:8px">รายละเอียดงาน / Product</div>
+        <div style="max-height: 350px; overflow-y: auto; border: 1px solid var(--bd2); border-radius: 6px; padding: 4px 8px;">
+          ${productHtml}
+        </div>
       </div>
     </div>
     
