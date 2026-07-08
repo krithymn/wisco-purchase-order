@@ -21,7 +21,7 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:'Sarabun'
 header{background:linear-gradient(90deg,#07080d 0%,#0c0e17 50%,#07080d 100%);border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:relative}
 header::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,#bb86fc,#3a7bd5,#7888a7,#ef4444,transparent)}
 .logo{display:flex;align-items:center;gap:12px}
-.logo-name{font-size:18px;font-weight:800;font-family:'Inter',sans-serif;color:#fff}
+.logo-name{font-size:18px;font-weight:800;font-family:'Inter',sans-serif;color:var(--tx)}
 .logo-name span{color:var(--spec)}
 
 .btn{font-family:'Sarabun',sans-serif;font-size:13px;font-weight:600;padding:8px 16px;border-radius:8px;border:none;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all .15s}
@@ -103,7 +103,7 @@ main{display:grid;grid-template-columns:380px 1fr;overflow:hidden;height:calc(10
 .ov.open{display:flex}
 .modal{background:var(--s2);border:1px solid var(--bd);border-radius:14px;width:640px;max-width:96vw;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 32px 80px rgba(0,0,0,.7)}
 .modal-hdr{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--bd);background:var(--s1);border-radius:14px 14px 0 0}
-.modal-title{font-size:16px;font-weight:700;color:#fff}
+.modal-title{font-size:16px;font-weight:700;color:var(--tx)}
 .modal-close{background:none;border:none;color:var(--mu);font-size:22px;cursor:pointer;line-height:1}
 .modal-body{overflow-y:auto;padding:20px}
 .modal-ftr{padding:14px 20px;border-top:1px solid var(--bd);display:flex;justify-content:flex-end;gap:10px;background:var(--s1);border-radius:0 0 14px 14px}
@@ -177,6 +177,11 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--spec)}
   --warn-dim:rgba(234,179,8,.08);--warn-bd:rgba(234,179,8,.25);
 }
 /* General fixes for light mode */
+:root[data-theme="light"] .fchip.active {
+  background: var(--spec) !important;
+  color: #ffffff !important;
+  border-color: var(--spec) !important;
+}
 :root[data-theme="light"] .detail-lbl {
   color: #475569 !important;
 }
@@ -591,6 +596,21 @@ function openEditModal(q) {
   
   initFormDropdowns();
   
+  // Read current draft values from Proposal Entry if they exist, otherwise fallback to database values
+  const actOfferDate = document.getElementById('act-offer-date');
+  const actCompletedDate = document.getElementById('act-completed-date');
+  const actOffer = document.getElementById('act-offer');
+  const actCurrency = document.getElementById('act-currency');
+  const actStatus = document.getElementById('act-status');
+  const actRemark = document.getElementById('act-remark');
+  
+  const offerDateVal = actOfferDate ? actOfferDate.value : (q.offer_date || '');
+  const completedDateVal = actCompletedDate ? actCompletedDate.value : (q.completed_date || '');
+  const offerVal = actOffer ? actOffer.value : (q.total_offer || 0.0);
+  const currencyVal = actCurrency ? actCurrency.value : (q.offer_currency || 'THB');
+  const statusVal = actStatus ? actStatus.value : (STATUS_MAP_DB_TO_UI[q.status] || q.status || 'ON_PROCESS');
+  const remarkVal = actRemark ? actRemark.value.trim() : (q.remark || '');
+
   document.getElementById('f-qno').value = q.quotation_no;
   document.getElementById('f-type').value = q.quotation_type || 'MRO';
   document.getElementById('f-brand').value = q.brand || 'Platinum brand';
@@ -602,12 +622,13 @@ function openEditModal(q) {
   document.getElementById('f-cust-type').value = q.customer_type;
   document.getElementById('f-saleteam').value = q.sale_team;
   document.getElementById('f-sale').value = q.sale;
-  document.getElementById('f-offer').value = q.total_offer;
-  document.getElementById('f-offer-date').value = q.offer_date || '';
-  document.getElementById('f-completed-date').value = q.completed_date || '';
-  document.getElementById('f-remark').value = q.remark || '';
-  document.getElementById('f-status').value = STATUS_MAP_DB_TO_UI[q.status] || q.status || 'ON_PROCESS';
-  document.getElementById('f-currency').value = q.offer_currency || 'THB';
+  
+  document.getElementById('f-offer').value = offerVal;
+  document.getElementById('f-offer-date').value = offerDateVal;
+  document.getElementById('f-completed-date').value = completedDateVal;
+  document.getElementById('f-remark').value = remarkVal;
+  document.getElementById('f-status').value = statusVal;
+  document.getElementById('f-currency').value = currencyVal;
   
   try {
     _quoteItems = JSON.parse(q.product || '[]');
@@ -620,7 +641,6 @@ function openEditModal(q) {
   });
   renderQuoteItemsList();
   
-  calculateQuotationLeadTime();
   document.getElementById('modal').classList.add('open');
 }
 
@@ -685,11 +705,14 @@ async function saveQuotation() {
       payload.responsible = '';
       payload.prNo = '';
       payload.poNo = '';
-    } else if (_selected) {
-      payload.progressStatus = _selected.progress_status || PROGRESS_STEPS[0];
-      payload.responsible = _selected.responsible || '';
-      payload.prNo = _selected.pr_no || '';
-      payload.poNo = _selected.po_no || '';
+    } else {
+      const q = _quotations.find(x => x.id === _editId);
+      if (q) {
+        payload.progressStatus = q.progress_status || PROGRESS_STEPS[0];
+        payload.responsible = q.responsible || '';
+        payload.prNo = q.pr_no || '';
+        payload.poNo = q.po_no || '';
+      }
     }
 
     const r = await fetch(url, {
@@ -803,6 +826,7 @@ function selectQuote(id) {
   
   const pct = getProgressPercent(q.progress_status);
   const curIdx = PROGRESS_STEPS.indexOf(q.progress_status);
+  const uiStatus = STATUS_MAP_DB_TO_UI[q.status] || q.status || 'ON_PROCESS';
   const nodes = PROGRESS_STEPS.map((step, idx) => {
     let cls = '';
     if (idx < curIdx) cls = 'done';
@@ -892,7 +916,7 @@ function selectQuote(id) {
         <div class="detail-item"><div class="detail-lbl">วันที่จัดทำเสร็จ</div><div class="detail-val">${q.completed_date || '—'}</div></div>
         <div class="detail-item"><div class="detail-lbl">ทีมผู้ขาย</div><div class="detail-val">${q.sale_team} / ${q.sale}</div></div>
         <div class="detail-item" style="grid-column: span 2"><div class="detail-lbl">หมายเหตุ (Remark)</div><div class="detail-val" style="white-space:pre-wrap">${q.remark || '—'}</div></div>
-        <div class="detail-item" style="grid-column: span 2"><div class="detail-lbl">รายละเอียดงาน / Product</div><div class="detail-val">${productHtml}</div></div>
+        <div class="detail-item" style="grid-column: span 2"><div class="detail-lbl">รายละเอียดงาน / Product</div><div style="max-height: 250px; overflow-y: auto; border: 1px solid var(--bd2); border-radius: 6px; padding: 4px 8px; margin-top: 8px;">${productHtml}</div></div>
       </div>
     </div>
     
@@ -928,11 +952,11 @@ function selectQuote(id) {
           <div class="fg" style="margin-top:10px">
             <label>สถานะ (Status)</label>
             <select id="act-status" style="width: 100%; background: var(--sur); color: var(--tx); border: 1px solid var(--bd); border-radius: 8px; padding: 8px;">
-              <option value="ON_PROCESS" ${q.status === 'ON_PROCESS' ? 'selected' : ''}>On Process</option>
-              <option value="SUBMIT" ${q.status === 'SUBMIT' ? 'selected' : ''}>Submit</option>
-              <option value="CANCEL" ${q.status === 'CANCEL' ? 'selected' : ''}>Cancel</option>
-              <option value="NOT_ENOUGH_INFO" ${q.status === 'NOT_ENOUGH_INFO' ? 'selected' : ''}>Not Enough Information</option>
-              <option value="CUSTOMER_CANCELED" ${q.status === 'CUSTOMER_CANCELED' ? 'selected' : ''}>Customer Canceled</option>
+              <option value="ON_PROCESS" ${uiStatus === 'ON_PROCESS' ? 'selected' : ''}>On Process</option>
+              <option value="SUBMIT" ${uiStatus === 'SUBMIT' ? 'selected' : ''}>Submit</option>
+              <option value="CANCEL" ${uiStatus === 'CANCEL' ? 'selected' : ''}>Cancel</option>
+              <option value="NOT_ENOUGH_INFO" ${uiStatus === 'NOT_ENOUGH_INFO' ? 'selected' : ''}>Not Enough Information</option>
+              <option value="CUSTOMER_CANCELED" ${uiStatus === 'CUSTOMER_CANCELED' ? 'selected' : ''}>Customer Canceled</option>
             </select>
           </div>
           <div class="fg" style="margin-top:10px">
@@ -975,7 +999,7 @@ async function updateProposalInfo(id) {
   const completedDate = document.getElementById('act-completed-date').value;
   const totalOffer = document.getElementById('act-offer').value;
   const offerCurrency = document.getElementById('act-currency').value;
-  const status = document.getElementById('act-status').value;
+  const status = STATUS_MAP_UI_TO_DB[document.getElementById('act-status').value] || document.getElementById('act-status').value;
   const remark = document.getElementById('act-remark').value.trim();
   
   try {
@@ -996,18 +1020,35 @@ async function updateProposalInfo(id) {
   }
 }
 
+function getCurrentProposalEntryData() {
+  const offerDateEl = document.getElementById('act-offer-date');
+  const completedDateEl = document.getElementById('act-completed-date');
+  const offerEl = document.getElementById('act-offer');
+  const currencyEl = document.getElementById('act-currency');
+  const statusEl = document.getElementById('act-status');
+  const remarkEl = document.getElementById('act-remark');
+  
+  const data = {};
+  if (offerDateEl) data.offerDate = offerDateEl.value;
+  if (completedDateEl) data.completedDate = completedDateEl.value;
+  if (offerEl) data.totalOffer = parseFloat(offerEl.value) || 0.0;
+  if (currencyEl) data.offerCurrency = currencyEl.value;
+  if (statusEl) data.status = STATUS_MAP_UI_TO_DB[statusEl.value] || statusEl.value;
+  if (remarkEl) data.remark = remarkEl.value.trim();
+  
+  return data;
+}
+
 async function updateProgress(id, step) {
   try {
-    const payload = { progressStatus: step };
+    const entryData = getCurrentProposalEntryData();
+    const payload = { ...entryData, progressStatus: step };
     
-    // Autocompleted date if it is final step
+    // Autocompleted date if it is final step and they are currently empty
     if (step === PROGRESS_STEPS[PROGRESS_STEPS.length - 1]) {
       const today = new Date().toISOString().split('T')[0];
-      payload.completedDate = today;
-      payload.offerDate = today;
-    } else {
-      payload.completedDate = '';
-      payload.offerDate = '';
+      if (!payload.completedDate) payload.completedDate = today;
+      if (!payload.offerDate) payload.offerDate = today;
     }
 
     const r = await fetch(`/api/quotations/${id}/progress`, {
@@ -1026,10 +1067,13 @@ async function updateProgress(id, step) {
 
 async function assignResponsible(id, name) {
   try {
+    const entryData = getCurrentProposalEntryData();
+    const payload = { ...entryData, responsible: name };
+    
     const r = await fetch(`/api/quotations/${id}/progress`, {
       method: 'PATCH',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ responsible: name })
+      body: JSON.stringify(payload)
     });
     if (r.ok) {
       await refresh();
