@@ -277,10 +277,12 @@ async function initDB() {
   try { db.run("ALTER TABLE quotations ADD COLUMN remark TEXT DEFAULT ''"); } catch(e) {}
   try { db.run("ALTER TABLE quotations ADD COLUMN offer_currency TEXT DEFAULT 'THB'"); } catch(e) {}
   
-  // Migrate quotation statuses to new system
+  // Revert/Restore quotation statuses to old system for admin compatibility
   try {
-    db.run("UPDATE quotations SET status='ON_PROCESS' WHERE status='PENDING'");
-    db.run("UPDATE quotations SET status='NOT_ENOUGH_INFO' WHERE status='HOLD'");
+    db.run("UPDATE quotations SET status='PENDING' WHERE status='ON_PROCESS'");
+    db.run("UPDATE quotations SET status='HOLD' WHERE status='NOT_ENOUGH_INFO'");
+    db.run("UPDATE quotations SET status='WIN' WHERE status='SUBMIT'");
+    db.run("UPDATE quotations SET status='CANCEL' WHERE status='CUSTOMER_CANCELED'");
   } catch(e) { console.error('Status migration error:', e.message); }
   // Migration for empty brand/valve_type in quotations
   try {
@@ -1175,7 +1177,7 @@ app.put('/api/quotations/:id', (req, res) => {
       finalDueDate = addBusinessDaysHelper(startDate, days);
     }
 
-    let finalStatus = status || 'ON_PROCESS';
+    let finalStatus = status || 'PENDING';
     let finalPrNo = prNo || '';
     let finalPoNo = poNo || '';
     if (product) {
