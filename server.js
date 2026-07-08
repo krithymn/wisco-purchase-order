@@ -275,6 +275,13 @@ async function initDB() {
   try { db.run("ALTER TABLE quotations ADD COLUMN brand TEXT DEFAULT ''"); } catch(e) {}
   try { db.run("ALTER TABLE quotations ADD COLUMN valve_type TEXT DEFAULT ''"); } catch(e) {}
   try { db.run("ALTER TABLE quotations ADD COLUMN remark TEXT DEFAULT ''"); } catch(e) {}
+  try { db.run("ALTER TABLE quotations ADD COLUMN offer_currency TEXT DEFAULT 'THB'"); } catch(e) {}
+  
+  // Migrate quotation statuses to new system
+  try {
+    db.run("UPDATE quotations SET status='ON_PROCESS' WHERE status='PENDING'");
+    db.run("UPDATE quotations SET status='NOT_ENOUGH_INFO' WHERE status='HOLD'");
+  } catch(e) { console.error('Status migration error:', e.message); }
   // Migration for empty brand/valve_type in quotations
   try {
     db.run(`
@@ -1080,7 +1087,7 @@ app.get('/api/quotations', (req, res) => {
 
 app.post('/api/quotations', (req, res) => {
   try {
-    const {startDate, quotationType, completedDate, dueDate, ldNo, quotationNo, saleTeam, sale, customer, customerType, prNo, poNo, product, responsible, progressStatus, status, offerDate, totalOffer, brand, valveType, remark} = req.body;
+    const {startDate, quotationType, completedDate, dueDate, ldNo, quotationNo, saleTeam, sale, customer, customerType, prNo, poNo, product, responsible, progressStatus, status, offerDate, totalOffer, brand, valveType, remark, offerCurrency} = req.body;
     if (!quotationNo) return res.status(400).json({error:'Quotation No. required'});
     const dup = query("SELECT id FROM quotations WHERE LOWER(quotation_no)=LOWER(?)", [quotationNo]);
     if (dup.length) return res.status(409).json({error:'Quotation No. already exists'});
@@ -1126,9 +1133,9 @@ app.post('/api/quotations', (req, res) => {
       } catch(e) {}
     }
 
-    run(`INSERT INTO quotations(start_date, quotation_type, completed_date, due_date, ld_no, quotation_no, sale_team, sale, customer, customer_type, pr_no, po_no, product, responsible, progress_status, status, offer_date, total_offer, brand, valve_type, remark)
-         VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
-      [startDate||'', quotationType||'', completedDate||'', finalDueDate||'', ldNo||'', quotationNo, saleTeam||'', sale||'', customer||'', customerType||'', finalPrNo, finalPoNo, product||'', responsible||'', progressStatus||'ตรวจสอบข้อมูล', finalStatus, offerDate||'', parseFloat(totalOffer)||0.0, finalBrand, finalValveType, remark||'']);
+    run(`INSERT INTO quotations(start_date, quotation_type, completed_date, due_date, ld_no, quotation_no, sale_team, sale, customer, customer_type, pr_no, po_no, product, responsible, progress_status, status, offer_date, total_offer, brand, valve_type, remark, offer_currency)
+         VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+      [startDate||'', quotationType||'', completedDate||'', finalDueDate||'', ldNo||'', quotationNo, saleTeam||'', sale||'', customer||'', customerType||'', finalPrNo, finalPoNo, product||'', responsible||'', progressStatus||'ตรวจสอบข้อมูล', finalStatus, offerDate||'', parseFloat(totalOffer)||0.0, finalBrand, finalValveType, remark||'', offerCurrency||'THB']);
     
     const inserted = query("SELECT * FROM quotations WHERE quotation_no=?", [quotationNo])[0];
     if (inserted && inserted.status === 'WIN') {
@@ -1140,7 +1147,7 @@ app.post('/api/quotations', (req, res) => {
 
 app.put('/api/quotations/:id', (req, res) => {
   try {
-    const {startDate, quotationType, completedDate, dueDate, ldNo, quotationNo, saleTeam, sale, customer, customerType, prNo, poNo, product, responsible, progressStatus, status, offerDate, totalOffer, brand, valveType, remark} = req.body;
+    const {startDate, quotationType, completedDate, dueDate, ldNo, quotationNo, saleTeam, sale, customer, customerType, prNo, poNo, product, responsible, progressStatus, status, offerDate, totalOffer, brand, valveType, remark, offerCurrency} = req.body;
     
     const finalBrand = brand || 'Platinum brand';
     const finalValveType = valveType || 'Manual valve & Accessory';
@@ -1168,7 +1175,7 @@ app.put('/api/quotations/:id', (req, res) => {
       finalDueDate = addBusinessDaysHelper(startDate, days);
     }
 
-    let finalStatus = status || 'PENDING';
+    let finalStatus = status || 'ON_PROCESS';
     let finalPrNo = prNo || '';
     let finalPoNo = poNo || '';
     if (product) {
@@ -1183,8 +1190,8 @@ app.put('/api/quotations/:id', (req, res) => {
       } catch(e) {}
     }
 
-    run(`UPDATE quotations SET start_date=?, quotation_type=?, completed_date=?, due_date=?, ld_no=?, quotation_no=?, sale_team=?, sale=?, customer=?, customer_type=?, pr_no=?, po_no=?, product=?, responsible=?, progress_status=?, status=?, offer_date=?, total_offer=?, brand=?, valve_type=?, remark=? WHERE id=?`,
-      [startDate||'', quotationType||'', completedDate||'', finalDueDate||'', ldNo||'', quotationNo||'', saleTeam||'', sale||'', customer||'', customerType||'', finalPrNo, finalPoNo, product||'', responsible||'', progressStatus||'ตรวจสอบข้อมูล', finalStatus, offerDate||'', parseFloat(totalOffer)||0.0, finalBrand, finalValveType, remark||'', req.params.id]);
+    run(`UPDATE quotations SET start_date=?, quotation_type=?, completed_date=?, due_date=?, ld_no=?, quotation_no=?, sale_team=?, sale=?, customer=?, customer_type=?, pr_no=?, po_no=?, product=?, responsible=?, progress_status=?, status=?, offer_date=?, total_offer=?, brand=?, valve_type=?, remark=?, offer_currency=? WHERE id=?`,
+      [startDate||'', quotationType||'', completedDate||'', finalDueDate||'', ldNo||'', quotationNo||'', saleTeam||'', sale||'', customer||'', customerType||'', finalPrNo, finalPoNo, product||'', responsible||'', progressStatus||'ตรวจสอบข้อมูล', finalStatus, offerDate||'', parseFloat(totalOffer)||0.0, finalBrand, finalValveType, remark||'', offerCurrency||'THB', req.params.id]);
     
     if (finalStatus === 'WIN') {
       syncPRFromQuotation(req.params.id);
@@ -1195,13 +1202,15 @@ app.put('/api/quotations/:id', (req, res) => {
 
 app.patch('/api/quotations/:id/progress', (req, res) => {
   try {
-    const {progressStatus, completedDate, responsible, offerDate, remark, totalOffer} = req.body;
+    const {progressStatus, completedDate, responsible, offerDate, remark, totalOffer, offerCurrency, status} = req.body;
     if (progressStatus !== undefined) run("UPDATE quotations SET progress_status=? WHERE id=?", [progressStatus, req.params.id]);
     if (completedDate !== undefined) run("UPDATE quotations SET completed_date=? WHERE id=?", [completedDate, req.params.id]);
     if (responsible !== undefined) run("UPDATE quotations SET responsible=? WHERE id=?", [responsible, req.params.id]);
     if (offerDate !== undefined) run("UPDATE quotations SET offer_date=? WHERE id=?", [offerDate, req.params.id]);
     if (remark !== undefined) run("UPDATE quotations SET remark=? WHERE id=?", [remark, req.params.id]);
     if (totalOffer !== undefined) run("UPDATE quotations SET total_offer=? WHERE id=?", [parseFloat(totalOffer)||0.0, req.params.id]);
+    if (offerCurrency !== undefined) run("UPDATE quotations SET offer_currency=? WHERE id=?", [offerCurrency, req.params.id]);
+    if (status !== undefined) run("UPDATE quotations SET status=? WHERE id=?", [status, req.params.id]);
     res.json({ok:true});
   } catch(e) { res.status(500).json({error:e.message}); }
 });
