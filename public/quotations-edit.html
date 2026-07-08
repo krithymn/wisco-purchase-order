@@ -141,7 +141,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--spec)}
   --bd:#d1d5db;
   --bd2:#e5e7eb;
   --tx:#0f172a;
-  --mu:#64748b;
+  --mu:#475569;
   --shadow: 0 2px 8px rgba(0,0,0,.06);
   --shadow-lg: 0 8px 24px rgba(0,0,0,.08);
   --shadow-xl: 0 24px 64px rgba(15,23,42,.12);
@@ -177,6 +177,18 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--spec)}
   --warn-dim:rgba(234,179,8,.08);--warn-bd:rgba(234,179,8,.25);
 }
 /* General fixes for light mode */
+:root[data-theme="light"] .detail-lbl {
+  color: #475569 !important;
+}
+:root[data-theme="light"] .detail-val {
+  color: #0f172a !important;
+}
+:root[data-theme="light"] .fg label {
+  color: #475569 !important;
+}
+:root[data-theme="light"] .t-lbl {
+  color: #475569 !important;
+}
 :root[data-theme="light"] header {
   background: linear-gradient(90deg, var(--bg) 0%, var(--sur) 50%, var(--bg) 100%) !important;
   box-shadow: var(--shadow) !important;
@@ -398,6 +410,20 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--spec)}
 
 <script>
 const PROGRESS_STEPS = ["ตรวจสอบข้อมูล", "รอราคาเมืองนอก / เคลียเสปค", "ตรวจสอบเสปค ดำเนินการภายใน", "Quotation Submitted"];
+const STATUS_MAP_UI_TO_DB = {
+  'ON_PROCESS': 'PENDING',
+  'SUBMIT': 'WIN',
+  'CANCEL': 'LOST',
+  'NOT_ENOUGH_INFO': 'HOLD',
+  'CUSTOMER_CANCELED': 'CANCEL'
+};
+const STATUS_MAP_DB_TO_UI = {
+  'PENDING': 'ON_PROCESS',
+  'WIN': 'SUBMIT',
+  'LOST': 'CANCEL',
+  'HOLD': 'NOT_ENOUGH_INFO',
+  'CANCEL': 'CUSTOMER_CANCELED'
+};
 let _quotations = [], _config = {}, _selected = null, _filter = 'all', _editId = null, _quoteItems = [];
 
 function esc(str){
@@ -580,7 +606,7 @@ function openEditModal(q) {
   document.getElementById('f-offer-date').value = q.offer_date || '';
   document.getElementById('f-completed-date').value = q.completed_date || '';
   document.getElementById('f-remark').value = q.remark || '';
-  document.getElementById('f-status').value = q.status || 'ON_PROCESS';
+  document.getElementById('f-status').value = STATUS_MAP_DB_TO_UI[q.status] || q.status || 'ON_PROCESS';
   document.getElementById('f-currency').value = q.offer_currency || 'THB';
   
   try {
@@ -638,7 +664,7 @@ async function saveQuotation() {
     sale: document.getElementById('f-sale').value,
     totalOffer: parseFloat(document.getElementById('f-offer').value) || 0.0,
     offerCurrency: document.getElementById('f-currency').value,
-    status: document.getElementById('f-status').value,
+    status: STATUS_MAP_UI_TO_DB[document.getElementById('f-status').value] || document.getElementById('f-status').value,
     offerDate: document.getElementById('f-offer-date').value || '',
     completedDate: document.getElementById('f-completed-date').value || '',
     remark: document.getElementById('f-remark').value.trim(),
@@ -704,7 +730,8 @@ function rList() {
   const q = document.getElementById('q-search').value.toLowerCase();
   const list = _quotations.filter(x => {
     // filter
-    if (_filter !== 'all' && x.status !== _filter) return false;
+    const dbFilter = STATUS_MAP_UI_TO_DB[_filter] || _filter;
+    if (_filter !== 'all' && x.status !== dbFilter) return false;
     
     // search
     return x.quotation_no.toLowerCase().includes(q) ||
@@ -720,12 +747,13 @@ function rList() {
   }
   sidebar.innerHTML = list.map(x => {
     const active = _selected && _selected.id === x.id ? 'active' : '';
-    const badgeClass = `b-${(x.status || 'ON_PROCESS').toLowerCase()}`;
+    const uiStatus = STATUS_MAP_DB_TO_UI[x.status] || x.status || 'ON_PROCESS';
+    const badgeClass = `b-${uiStatus.toLowerCase()}`;
     return `
       <div class="q-item ${active}" onclick="selectQuote(${x.id})">
         <div style="display:flex; justify-content:space-between; align-items:center">
           <strong style="font-size:13px">${x.ld_no || x.quotation_no}</strong>
-          <span class="badge ${badgeClass}" style="font-size:9px">${x.status || 'ON_PROCESS'}</span>
+          <span class="badge ${badgeClass}" style="font-size:9px">${uiStatus}</span>
         </div>
         <div style="font-size:11px; color:var(--mu); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">${x.customer}</div>
       </div>
@@ -756,7 +784,7 @@ function renderReadonlyCloseout(q) {
     return `
       <div style="padding:10px; background:var(--s2); border:1px solid var(--bd); border-radius:var(--r)">
         <div style="display:flex; justify-content:space-between; align-items:center; gap:8px">
-          <span style="font-size:13px; font-weight:600; color:#fff">${esc(it.product)} (x${esc(it.quantity)})</span>
+          <span style="font-size:13px; font-weight:600; color:var(--tx)">${esc(it.product)} (x${esc(it.quantity)})</span>
           <span class="badge ${badgeClass}">${it.status || 'PENDING'}</span>
         </div>
         ${prInfo}
