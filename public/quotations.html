@@ -160,6 +160,156 @@ main{display:grid;grid-template-columns:280px 1fr 280px;overflow:hidden;height:c
 .tl-right{text-align:right;padding-top:6px;font-size:11px;color:var(--mu)}
 
 ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:var(--bd);border-radius:99px}
+
+/* Card size selector */
+.size-selector {
+  display: flex;
+  background: var(--s3);
+  padding: 3px;
+  border-radius: 8px;
+  border: 1px solid var(--bd);
+  gap: 2px;
+}
+.size-btn {
+  background: transparent;
+  border: none;
+  color: var(--mu);
+  font-family: 'Inter', sans-serif;
+  font-weight: 700;
+  font-size: 11px;
+  width: 28px;
+  height: 30px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.size-btn:hover {
+  color: var(--tx);
+}
+.size-btn.active {
+  background: var(--s4);
+  color: var(--spec);
+  border: 1px solid rgba(255,255,255,0.05);
+}
+
+/* Card sizing grid templates */
+.cards.sz-s {
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 8px;
+  padding: 10px 14px;
+}
+.cards.sz-m {
+  grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+  gap: 14px;
+}
+.cards.sz-l {
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  gap: 20px;
+  padding: 20px 24px;
+}
+
+/* Card overrides for Small size (S) */
+.cards.sz-s .qcard {
+  border-radius: 8px;
+}
+.cards.sz-s .ct {
+  padding: 10px 12px 8px;
+}
+.cards.sz-s .ct-id {
+  font-size: 13px;
+}
+.cards.sz-s .ct-cust {
+  font-size: 11px;
+  margin-top: 1px;
+}
+.cards.sz-s .badge {
+  font-size: 9px;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+.cards.sz-s .cp {
+  padding: 10px 12px 8px;
+}
+.cards.sz-s .cp-title {
+  font-size: 8px;
+}
+.cards.sz-s .cp-status {
+  font-size: 11px;
+}
+.cards.sz-s .pbar {
+  height: 4px;
+  margin-bottom: 6px;
+}
+.cards.sz-s .nodes {
+  padding: 0;
+}
+.cards.sz-s .node {
+  width: 5px;
+  height: 5px;
+}
+.cards.sz-s .cb {
+  padding: 8px 12px;
+  gap: 4px;
+}
+.cards.sz-s .cbl {
+  font-size: 8px;
+}
+.cards.sz-s .cbv {
+  font-size: 11px;
+}
+
+/* Card overrides for Large size (L) */
+.cards.sz-l .qcard {
+  border-radius: 16px;
+}
+.cards.sz-l .ct {
+  padding: 18px 20px 14px;
+}
+.cards.sz-l .ct-id {
+  font-size: 17px;
+}
+.cards.sz-l .ct-cust {
+  font-size: 13px;
+  margin-top: 3px;
+}
+.cards.sz-l .badge {
+  font-size: 11px;
+  padding: 5px 12px;
+  border-radius: 8px;
+}
+.cards.sz-l .cp {
+  padding: 14px 20px 12px;
+}
+.cards.sz-l .cp-title {
+  font-size: 12px;
+}
+.cards.sz-l .cp-status {
+  font-size: 13px;
+}
+.cards.sz-l .pbar {
+  height: 8px;
+  margin-bottom: 10px;
+}
+.cards.sz-l .nodes {
+  padding: 0 4px;
+}
+.cards.sz-l .node {
+  width: 10px;
+  height: 10px;
+}
+.cards.sz-l .cb {
+  padding: 12px 20px;
+  gap: 8px;
+}
+.cards.sz-l .cbl {
+  font-size: 11px;
+}
+.cards.sz-l .cbv {
+  font-size: 13px;
+}
 </style>
 
 
@@ -305,14 +455,21 @@ main{display:grid;grid-template-columns:280px 1fr 280px;overflow:hidden;height:c
   <div class="checklist-list" id="chk-list" style="display:none"></div>
 </div>
 <div class="middle">
-  <div class="filter-bar">
-    <button class="fchip active f-all" onclick="setF('all',this)">ทั้งหมด</button>
-    <button class="fchip f-pending" onclick="setF('PENDING',this)">🟡 PENDING</button>
-    <button class="fchip f-win" onclick="setF('WIN',this)">🟢 WIN</button>
-    <button class="fchip f-lost" onclick="setF('LOST',this)">🔴 LOST</button>
-    <button class="fchip f-hold" onclick="setF('HOLD',this)">⚪ HOLD</button>
-    <button class="fchip f-canc" onclick="setF('CANCEL',this)">🚫 CANCEL</button>
-    <button class="fchip f-overdue" onclick="setF('overdue',this)">🚨 เลยกำหนดส่ง</button>
+  <div class="filter-bar" style="display:flex; justify-content:space-between; align-items:center; gap:16px;">
+    <div style="display:flex; gap:8px; overflow-x:auto; flex:1; padding-bottom:2px;">
+      <button class="fchip active f-all" onclick="setF('all',this)">ทั้งหมด</button>
+      <button class="fchip f-pending" onclick="setF('PENDING',this)">🟡 PENDING</button>
+      <button class="fchip f-win" onclick="setF('WIN',this)">🟢 WIN</button>
+      <button class="fchip f-lost" onclick="setF('LOST',this)">🔴 LOST</button>
+      <button class="fchip f-hold" onclick="setF('HOLD',this)">⚪ HOLD</button>
+      <button class="fchip f-canc" onclick="setF('CANCEL',this)">🚫 CANCEL</button>
+      <button class="fchip f-overdue" onclick="setF('overdue',this)">🚨 เลยกำหนดส่ง</button>
+    </div>
+    <div class="size-selector" id="size-selector" style="display:flex; flex-shrink:0;">
+      <button class="size-btn" id="size-s" onclick="setCardSize('s')" title="ขนาดเล็ก">S</button>
+      <button class="size-btn active" id="size-m" onclick="setCardSize('m')" title="ขนาดปกติ">M</button>
+      <button class="size-btn" id="size-l" onclick="setCardSize('l')" title="ขนาดใหญ่">L</button>
+    </div>
   </div>
   <div class="cards" id="cards"></div>
 </div>
@@ -379,7 +536,7 @@ main{display:grid;grid-template-columns:280px 1fr 280px;overflow:hidden;height:c
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 const PROGRESS_STEPS = ["ตรวจสอบข้อมูล", "รอราคาเมืองนอก / เคลียเสปค", "ตรวจสอบเสปค ดำเนินการภายใน", "Quotation Submitted"];
-let _quotations = [], _config = {}, _flt = 'all', _view = 'org';
+let _quotations = [], _config = {}, _flt = 'all', _view = 'org', _cardSize = localStorage.getItem('quotations_card_size') || 'm';
 function esc(str){
   if(!str) return '';
   return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
@@ -718,6 +875,20 @@ function openDetail(id) {
 
 function closeM(){document.getElementById('modal').classList.remove('open')}
 
+function setCardSize(size) {
+  _cardSize = size;
+  document.querySelectorAll('.size-btn').forEach(btn => btn.classList.remove('active'));
+  const activeBtn = document.getElementById('size-' + size);
+  if (activeBtn) activeBtn.classList.add('active');
+
+  const cardsContainer = document.getElementById('cards');
+  if (cardsContainer) {
+    cardsContainer.classList.remove('sz-s', 'sz-m', 'sz-l');
+    cardsContainer.classList.add('sz-' + size);
+  }
+  localStorage.setItem('quotations_card_size', size);
+}
+
 function setF(f,el){
   _flt=f;
   document.querySelectorAll('.fchip').forEach(c=>c.classList.remove('active'));
@@ -865,6 +1036,7 @@ async function refresh(){
 }
 
 // Init
+setCardSize(_cardSize);
 autoOpenSections();
 refresh();
 setInterval(refresh, 20000);
