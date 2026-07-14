@@ -688,8 +688,10 @@ function rDetail(id){
         <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
           <input class="num-in" type="number" min="0" value="${curDays}" ${done?'disabled':''} onchange="updStepDays('${id}',${i},+this.value)" title="จำนวนวันที่วางแผน (0 = ข้ามขั้นตอนนี้)">
           <span style="font-size:10px;color:var(--mu)">วัน</span>
-          ${!done?`<button class="spec-toggle ${isSpec?'on':''}" onclick="togSpec('${id}',${i})">${isSpec?'⚡ Special':'+ Special'}</button>
-          <button class="spec-toggle ${(o.skippedSteps&&o.skippedSteps[i])?'on skip-on':''}" onclick="togSkip('${id}',${i})" style="${(o.skippedSteps&&o.skippedSteps[i])?'background:var(--mu);color:#fff;border-color:var(--mu)':'color:var(--mu);border-color:var(--bd)'}" title="ข้ามขั้นตอนนี้">⏭ ข้าม</button>`:''}
+          ${(!o.doneDates[i] || isSkipped) ? `
+            ${!isSkipped ? `<button class="spec-toggle ${isSpec?'on':''}" onclick="togSpec('${id}',${i})">${isSpec?'⚡ Special':'+ Special'}</button>` : ''}
+            <button class="spec-toggle ${isSkipped?'on skip-on':''}" onclick="togSkip('${id}',${i})" style="${isSkipped?'background:var(--mu);color:#fff;border-color:var(--mu)':'color:var(--mu);border-color:var(--bd)'}" title="${isSkipped?'ยกเลิกข้ามขั้นตอนนี้':'ข้ามขั้นตอนนี้'}">${isSkipped?'↩ เลิกข้าม':'⏭ ข้าม'}</button>
+          ` : ''}
         </div>
         ${isSpec&&!done?`<input style="margin-top:4px;font-size:11px;padding:3px 6px;border:1px solid var(--spec-bd);border-radius:4px;width:100%;font-family:'Sarabun',sans-serif;background:var(--spec-bg)" placeholder="เหตุผล special case..." value="${reason}" onchange="updStep('${id}',${i},'specialReason',this.value)">`:''}
         ${isSkipped?'':deadlineInfo}
@@ -720,12 +722,13 @@ function rDetail(id){
       </td>
       <td><input class="date-display step-date-input" data-step="${i}" style="font-size:12px;padding:4px 6px;width:130px" placeholder="วว/ดด/ปปปป" maxlength="10" value="${fromISO(dd)}" ${isConsecDone?'disabled':''} oninput="fmtDate(this)" onchange="updStep('${id}',${i},'doneDate',toISO(this.value))" title="วันที่เสร็จจริง"></td>
       <td style="white-space:nowrap">${
-        isConsecDone
-          ? `<button class="btn btn-sm btn-danger" onclick="undoStep('${id}',${i})" title="ย้อนกลับ">↩ ย้อน</button>`
-          : isSkipped ? ''
-          : done
-            ? `<button class="btn btn-sm btn-secondary" style="font-size:11px" onclick="clearStep('${id}',${i})">✕ ยกเลิก</button>`
-            : `<button class="btn btn-sm btn-success" onclick="doneStep('${id}',${i})">✓ เสร็จ</button>`
+        isSkipped
+          ? `<button class="btn btn-sm btn-secondary" onclick="togSkip('${id}',${i})" title="ยกเลิกการข้าม">↩ เลิกข้าม</button>`
+          : isConsecDone
+            ? `<button class="btn btn-sm btn-danger" onclick="undoStep('${id}',${i})" title="ย้อนกลับ">↩ ย้อน</button>`
+            : done
+              ? `<button class="btn btn-sm btn-secondary" style="font-size:11px" onclick="clearStep('${id}',${i})">✕ ยกเลิก</button>`
+              : `<button class="btn btn-sm btn-success" onclick="doneStep('${id}',${i})">✓ เสร็จ</button>`
       }</td>
     </tr>`;
   }).join('');

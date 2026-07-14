@@ -132,7 +132,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--spec);bo
         <option value="cancelled">🚫 ยกเลิกแล้ว</option>
       </select>
       <button class="btn" style="background:var(--sur3);border:1px solid var(--bd);color:var(--tx)" onclick="exportPRsCSV()">📥 Export CSV</button>
-      <button class="btn btn-primary" onclick="openAddModal()">+ เพิ่ม PR ใหม่</button>
+      <button id="add-btn" class="btn btn-primary" onclick="openAddModal()">+ เพิ่ม PR ใหม่</button>
     </div>
   </div>
   <!-- Domestic tabs -->
@@ -649,7 +649,7 @@ function updateLayoutForTab() {
     }
   }
   
-  const addBtn = document.querySelector('.section-hdr button');
+  const addBtn = document.getElementById('add-btn');
   if (addBtn) {
     addBtn.textContent = isQuotes ? '+ เพิ่มใบเสนอราคาใหม่' : '+ เพิ่ม PR ใหม่';
     addBtn.setAttribute('onclick', isQuotes ? 'openAddQuotationModal()' : 'openAddModal()');
