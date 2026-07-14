@@ -891,7 +891,7 @@ function dmyFrom(iso){if(!iso||iso.length<10)return iso||'';const p=iso.split('-
 function renderItems(){
   document.getElementById('items-list').innerHTML=_items.map((it,i)=>`
     <div class="item-row">
-      <input placeholder="สินค้า / Valve" value="${it.product||''}" oninput="_items[${i}].product=this.value">
+      <input placeholder="สินค้า / Valve" value="${esc(it.product||'')}" oninput="_items[${i}].product=this.value">
       <input placeholder="จำนวน" value="${it.quantity||''}" oninput="_items[${i}].quantity=this.value">
       <button class="del-btn" onclick="removeItem(${i})">×</button>
     </div>`).join('');

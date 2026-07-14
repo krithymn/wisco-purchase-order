@@ -515,6 +515,8 @@ const NOTIFY_SUB=['ใบแจ้งสินค้าเข้า','Cer.','Dra
 function getMfgStepIndex(o){ return o.prepayment ? 12 : 11; }
 let _orders=[],_prs=[],_team=[],_steps=[],_suppliers=[],_customers=[],_saleTeams=[],_sales=[],_active=null,_editId=null,_sfilt='',_pwUnlocked=false,_pwShow=false,_orderType='poi',_selectedSupplier='';
 
+function esc(str){if(!str)return '';return String(str).replace(/"/g,'&quot;');}
+
 async function get(p){const r=await fetch(API+p);return r.json()}
 async function post(p,b){const r=await fetch(API+p,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)});return r.json()}
 async function put(p,b){const r=await fetch(API+p,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)});return r.json()}
@@ -1058,7 +1060,7 @@ function renderItemsList(items){
     const subs=(it.subItems&&it.subItems.length)?it.subItems:[{product:it.product||'',quantity:it.quantity||''}];
     const subRows=subs.map((s,j)=>`
       <div class="sub-item-row" id="sub-${i}-${j}">
-        <input placeholder="สินค้า / Valve" value="${s.product||''}" onchange="updSub(${i},${j},'product',this.value)">
+        <input placeholder="สินค้า / Valve" value="${esc(s.product||'')}" onchange="updSub(${i},${j},'product',this.value)">
         <input placeholder="จำนวน" value="${s.quantity||''}" onchange="updSub(${i},${j},'quantity',this.value)">
         <button class="sub-item-del" onclick="removeSub(${i},${j})" title="ลบ">×</button>
       </div>`).join('');
@@ -1066,7 +1068,7 @@ function renderItemsList(items){
     return`<div class="item-row" id="item-row-${i}">
       <div class="item-row-top">
         <div style="flex:1;position:relative">
-          <input placeholder="ชื่อลูกค้า (พิมพ์หรือเลือก)" value="${it.customer||''}" 
+          <input placeholder="ชื่อลูกค้า (พิมพ์หรือเลือก)" value="${esc(it.customer||'')}" 
             oninput="showCustDrop(${i},this.value)"
             onfocus="showCustDrop(${i},this.value)"
             onblur="setTimeout(()=>hideCustDrop(${i}),200)"

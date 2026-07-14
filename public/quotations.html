@@ -85,6 +85,11 @@ main{display:grid;grid-template-columns:280px 1fr 280px;overflow:hidden;height:c
 .qcard.st-PENDING::before{background:var(--pend)}
 .qcard.st-LOST::before{background:var(--late)}
 .qcard.st-HOLD::before{background:var(--canc)}
+.qcard.st-submit::before{background:var(--done)}
+.qcard.st-on_process::before{background:#3b82f6}
+.qcard.st-cancel::before{background:var(--late)}
+.qcard.st-not_enough_info::before{background:var(--pend)}
+.qcard.st-customer_canceled::before{background:#64748b}
 
 .ct{padding:14px 16px 10px;border-bottom:1px solid var(--bd2)}
 .ct-hdr{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
@@ -96,6 +101,10 @@ main{display:grid;grid-template-columns:280px 1fr 280px;overflow:hidden;height:c
 .b-lost{background:var(--late-dim);color:var(--late);border:1px solid var(--late-bd)}
 .b-hold{background:rgba(100,116,139,.1);color:var(--canc);border:1px solid rgba(100,116,139,.3)}
 .b-cancel{background:rgba(239,68,68,.1);color:var(--late);border:1px solid rgba(239,68,68,.2)}
+.b-on_process{background:rgba(59,130,246,.12);color:#60a5fa;border:1px solid rgba(59,130,246,.3)}
+.b-submit{background:var(--done-dim);color:var(--done);border:1px solid var(--done-bd)}
+.b-not_enough_info{background:var(--pend-dim);color:var(--pend);border:1px solid rgba(234,179,8,.3)}
+.b-customer_canceled{background:rgba(100,116,139,.15);color:var(--mu);border:1px solid rgba(100,116,139,.3)}
 
 .cp{padding:12px 16px 10px;border-bottom:1px solid var(--bd2)}
 .cp-hdr{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
@@ -108,6 +117,10 @@ main{display:grid;grid-template-columns:280px 1fr 280px;overflow:hidden;height:c
 .pb-lost{background:var(--late)}
 .pb-hold{background:var(--canc)}
 .pb-cancel{background:var(--late)}
+.pb-on_process{background:#3b82f6}
+.pb-submit{background:var(--done)}
+.pb-not_enough_info{background:var(--pend)}
+.pb-customer_canceled{background:rgba(100,116,139,.5)}
 
 .nodes{display:flex;justify-content:space-between;position:relative;padding:0 2px}
 .node{width:8px;height:8px;border-radius:50%;background:var(--s3);border:1px solid var(--bd)}
@@ -592,11 +605,11 @@ main{display:grid;grid-template-columns:280px 1fr 280px;overflow:hidden;height:c
   <div class="filter-bar" style="display:flex; justify-content:space-between; align-items:center; gap:16px;">
     <div style="display:flex; gap:8px; overflow-x:auto; flex:1; padding-bottom:2px;">
       <button class="fchip active f-all" onclick="setF('all',this)">ทั้งหมด</button>
-      <button class="fchip f-pending" onclick="setF('PENDING',this)">🟡 PENDING</button>
-      <button class="fchip f-win" onclick="setF('WIN',this)">🟢 WIN</button>
-      <button class="fchip f-lost" onclick="setF('LOST',this)">🔴 LOST</button>
-      <button class="fchip f-hold" onclick="setF('HOLD',this)">⚪ HOLD</button>
-      <button class="fchip f-canc" onclick="setF('CANCEL',this)">🚫 CANCEL</button>
+      <button class="fchip f-on_process" onclick="setF('PENDING',this)">🔵 On Process</button>
+      <button class="fchip f-submit" onclick="setF('WIN',this)">🟢 Submit</button>
+      <button class="fchip f-cancel" onclick="setF('LOST',this)">🔴 Cancel</button>
+      <button class="fchip f-not_enough_info" onclick="setF('HOLD',this)">🟡 Not Enough Info</button>
+      <button class="fchip f-customer_canceled" onclick="setF('CANCEL',this)">🚫 Customer Canceled</button>
       <button class="fchip f-overdue" onclick="setF('overdue',this)">🚨 เลยกำหนดส่ง</button>
     </div>
     <div style="display:flex; gap:8px; align-items:center; flex-shrink:0;">
@@ -681,6 +694,20 @@ main{display:grid;grid-template-columns:280px 1fr 280px;overflow:hidden;height:c
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 const PROGRESS_STEPS = ["ตรวจสอบข้อมูล", "รอราคาเมืองนอก / เคลียเสปค", "ตรวจสอบเสปค ดำเนินการภายใน", "Quotation Submitted"];
+const STATUS_MAP_DB_TO_UI = {
+  'PENDING': 'ON_PROCESS',
+  'WIN': 'SUBMIT',
+  'LOST': 'CANCEL',
+  'HOLD': 'NOT_ENOUGH_INFO',
+  'CANCEL': 'CUSTOMER_CANCELED'
+};
+const STATUS_MAP_UI_TO_DB = {
+  'ON_PROCESS': 'PENDING',
+  'SUBMIT': 'WIN',
+  'CANCEL': 'LOST',
+  'NOT_ENOUGH_INFO': 'HOLD',
+  'CUSTOMER_CANCELED': 'CANCEL'
+};
 let _quotations = [], _config = {}, _flt = 'all', _view = 'org', _cardSize = localStorage.getItem('quotations_card_size') || 'm', _currentPage = 1, _pageSize = 9, _viewMode = localStorage.getItem('quotations_view_mode') || 'grid';
 function esc(str){
   if(!str) return '';
@@ -768,10 +795,11 @@ function renderCards() {
   if (_viewMode === 'grid') {
     container.innerHTML = pageItems.map(q => {
       const days = calculateLeadTime(q);
+      const uiStatus = STATUS_MAP_DB_TO_UI[q.status] || q.status || 'ON_PROCESS';
       let dueHtml = '—';
       if (days !== null) {
         if (q.status !== 'PENDING') {
-          dueHtml = `<span class="cbv done">${q.status}</span>`;
+          dueHtml = `<span class="cbv done">${uiStatus}</span>`;
         } else if (days < 0) {
           dueHtml = `<span class="cbv overdue">เลยกำหนด ${Math.abs(days)} วัน</span>`;
         } else {
@@ -802,11 +830,11 @@ function renderCards() {
       const price = q.total_offer ? parseFloat(q.total_offer).toLocaleString('th-TH') + ' ' + (q.offer_currency || 'THB') : '—';
       
       return `
-        <div class="qcard st-${q.status}" onclick="openDetail(${q.id})">
+        <div class="qcard st-${uiStatus.toLowerCase()}" onclick="openDetail(${q.id})">
           <div class="ct">
             <div class="ct-hdr">
               <span class="ct-id">${q.ld_no ? q.ld_no : '—'} <span style="font-size:12px;font-weight:400;color:var(--mu)">(${q.quotation_no})</span></span>
-              <span class="badge b-${q.status.toLowerCase()}">${q.status}</span>
+              <span class="badge b-${uiStatus.toLowerCase()}">${uiStatus}</span>
             </div>
             <div class="ct-cust">🏭 ${q.customer}</div>
             <div style="font-size:11px; color:var(--mu); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${esc(productSummary)}">Product: ${esc(productSummary)}</div>
@@ -816,7 +844,7 @@ function renderCards() {
               <span class="cp-title">ความคืบหน้า</span>
               <span class="cp-status" style="color:var(--spec)">${q.progress_status} (${pct}%)</span>
             </div>
-            <div class="pbar"><div class="pbar-fill pb-${q.status}" style="width:${pct}%"></div></div>
+            <div class="pbar"><div class="pbar-fill pb-${uiStatus.toLowerCase()}" style="width:${pct}%"></div></div>
             <div class="nodes">${nodes}</div>
           </div>
           <div class="cb">
@@ -831,11 +859,12 @@ function renderCards() {
     // List View Mode
     const rows = pageItems.map(q => {
       const days = calculateLeadTime(q);
+      const uiStatus = STATUS_MAP_DB_TO_UI[q.status] || q.status || 'ON_PROCESS';
       let dueHtml = '—';
       const dueColor = q.status !== 'PENDING' ? 'v-done' : days < 0 ? 'v-late' : 'v-done';
       if (days !== null) {
         if (q.status !== 'PENDING') {
-          dueHtml = q.status;
+          dueHtml = uiStatus;
         } else if (days < 0) {
           dueHtml = `เลยกำหนด ${Math.abs(days)} วัน`;
         } else {
@@ -844,18 +873,18 @@ function renderCards() {
       }
       const pct = getProgressPercent(q.progress_status);
       const price = q.total_offer ? parseFloat(q.total_offer).toLocaleString('th-TH') + ' ' + (q.offer_currency || 'THB') : '—';
-      const badgeCls = `b-${q.status.toLowerCase()}`;
+      const badgeCls = `b-${uiStatus.toLowerCase()}`;
       
       return `<tr onclick="openDetail(${q.id})">
         <td style="font-weight:700; font-family:'Inter',sans-serif;">${q.ld_no || '—'}</td>
         <td style="font-family:'Inter',sans-serif;">${q.quotation_no}</td>
         <td>${q.customer}</td>
-        <td><span class="badge ${badgeCls}">${q.status}</span></td>
+        <td><span class="badge ${badgeCls}">${uiStatus}</span></td>
         <td>
           <div style="display: flex; align-items: center; gap: 8px; min-width: 100px;">
             <span style="font-size: 12px; font-weight: 700; color: var(--spec); min-width: 32px;">${pct}%</span>
             <div style="flex: 1; height: 6px; background: var(--s3); border-radius: 99px; overflow: hidden; max-width: 60px;">
-              <div class="pbar-fill pb-${q.status}" style="width: ${pct}%"></div>
+              <div class="pbar-fill pb-${uiStatus.toLowerCase()}" style="width: ${pct}%"></div>
             </div>
           </div>
         </td>
@@ -1016,8 +1045,9 @@ function openDetail(id) {
   if (!q) return;
   
   document.getElementById('m-id').textContent = q.ld_no ? `${q.ld_no} (${q.quotation_no})` : q.quotation_no;
+  const uiStatus = STATUS_MAP_DB_TO_UI[q.status] || q.status || 'ON_PROCESS';
   document.getElementById('m-badges').innerHTML = `
-    <span class="badge b-${q.status.toLowerCase()}">${q.status}</span>
+    <span class="badge b-${uiStatus.toLowerCase()}">${uiStatus}</span>
     <span class="badge" style="background:var(--s3);color:var(--silver2)">Type: ${q.quotation_type}</span>
     <span class="badge" style="background:var(--s3);color:var(--spec)">Customer Type: ${q.customer_type}</span>
   `;
