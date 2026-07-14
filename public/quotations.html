@@ -310,6 +310,140 @@ main{display:grid;grid-template-columns:280px 1fr 280px;overflow:hidden;height:c
 .cards.sz-l .cbv {
   font-size: 13px;
 }
+
+/* Box/List View Mode Selector */
+.mode-selector {
+  display: flex;
+  background: var(--s3);
+  padding: 3px;
+  border-radius: 8px;
+  border: 1px solid var(--bd);
+  gap: 2px;
+}
+.mode-btn {
+  background: transparent;
+  border: none;
+  color: var(--mu);
+  width: 32px;
+  height: 30px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.mode-btn:hover {
+  color: var(--tx);
+}
+.mode-btn.active {
+  background: var(--s4);
+  color: var(--spec);
+  border: 1px solid rgba(255,255,255,0.05);
+}
+
+/* LIST VIEW TABLE */
+.list-table-container {
+  width: 100%;
+  overflow-x: auto;
+}
+.list-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  background: var(--s1);
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--bd);
+}
+.list-table th {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--mu);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  padding: 12px 16px;
+  background: var(--s2);
+  border-bottom: 1px solid var(--bd);
+}
+.list-table td {
+  padding: 12px 16px;
+  font-size: 13px;
+  border-bottom: 1px solid var(--bd2);
+  vertical-align: middle;
+  color: var(--tx);
+}
+.list-table tr {
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.list-table tr:hover {
+  background: var(--s3);
+}
+.list-table tr:last-child td {
+  border-bottom: none;
+}
+
+/* PAGINATION */
+.pagination-bar {
+  background: var(--s1);
+  border-top: 1px solid var(--bd);
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  gap: 12px;
+}
+.pg-info {
+  font-size: 12px;
+  color: var(--mu);
+}
+.pg-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.pg-btn {
+  background: var(--s2);
+  border: 1px solid var(--bd);
+  color: var(--mu);
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.pg-btn:hover:not(:disabled) {
+  border-color: var(--tx);
+  color: var(--tx);
+  background: var(--s3);
+}
+.pg-btn.active {
+  background: var(--spec);
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 0 8px rgba(167,139,250,.3);
+}
+:root:not([data-theme="light"]) .pg-btn.active {
+  color: #000;
+}
+.pg-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.cards.list-mode {
+  display: block !important;
+}
+.cards.grid-mode {
+  display: grid;
+}
 </style>
 
 
@@ -465,13 +599,24 @@ main{display:grid;grid-template-columns:280px 1fr 280px;overflow:hidden;height:c
       <button class="fchip f-canc" onclick="setF('CANCEL',this)">🚫 CANCEL</button>
       <button class="fchip f-overdue" onclick="setF('overdue',this)">🚨 เลยกำหนดส่ง</button>
     </div>
-    <div class="size-selector" id="size-selector" style="display:flex; flex-shrink:0;">
-      <button class="size-btn" id="size-s" onclick="setCardSize('s')" title="ขนาดเล็ก">S</button>
-      <button class="size-btn active" id="size-m" onclick="setCardSize('m')" title="ขนาดปกติ">M</button>
-      <button class="size-btn" id="size-l" onclick="setCardSize('l')" title="ขนาดใหญ่">L</button>
+    <div style="display:flex; gap:8px; align-items:center; flex-shrink:0;">
+      <div class="size-selector" id="size-selector" style="display:flex;">
+        <button class="size-btn" id="size-s" onclick="setCardSize('s')" title="ขนาดเล็ก">S</button>
+        <button class="size-btn active" id="size-m" onclick="setCardSize('m')" title="ขนาดปกติ">M</button>
+        <button class="size-btn" id="size-l" onclick="setCardSize('l')" title="ขนาดใหญ่">L</button>
+      </div>
+      <div class="mode-selector" id="mode-selector" style="display:flex;">
+        <button class="mode-btn active" id="view-grid" onclick="setViewMode('grid')" title="แสดงแบบบล็อก">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+        </button>
+        <button class="mode-btn" id="view-list" onclick="setViewMode('list')" title="แสดงแบบตาราง">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+        </button>
+      </div>
     </div>
   </div>
   <div class="cards" id="cards"></div>
+  <div class="pagination-bar" id="pagination"></div>
 </div>
 <div class="right">
   <!-- Charts Summary -->
@@ -536,7 +681,7 @@ main{display:grid;grid-template-columns:280px 1fr 280px;overflow:hidden;height:c
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 const PROGRESS_STEPS = ["ตรวจสอบข้อมูล", "รอราคาเมืองนอก / เคลียเสปค", "ตรวจสอบเสปค ดำเนินการภายใน", "Quotation Submitted"];
-let _quotations = [], _config = {}, _flt = 'all', _view = 'org', _cardSize = localStorage.getItem('quotations_card_size') || 'm';
+let _quotations = [], _config = {}, _flt = 'all', _view = 'org', _cardSize = localStorage.getItem('quotations_card_size') || 'm', _currentPage = 1, _pageSize = 9, _viewMode = localStorage.getItem('quotations_view_mode') || 'grid';
 function esc(str){
   if(!str) return '';
   return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
@@ -607,73 +752,143 @@ function getFilteredList() {
 function renderCards() {
   const list = getFilteredList();
   const container = document.getElementById('cards');
+  const totalItems = list.length;
   
-  if (!list.length) {
+  if (!totalItems) {
     container.innerHTML = `<div class="empty"><div class="empty-icon">📭</div><div style="font-size:14px">ไม่มีข้อมูลใบเสนอราคา</div></div>`;
+    renderPagination(0);
     return;
   }
   
-  container.innerHTML = list.map(q => {
-    const days = calculateLeadTime(q);
-    let dueHtml = '—';
-    if (days !== null) {
-      if (q.status !== 'PENDING') {
-        dueHtml = `<span class="cbv done">${q.status}</span>`;
-      } else if (days < 0) {
-        dueHtml = `<span class="cbv overdue">เลยกำหนด ${Math.abs(days)} วัน</span>`;
-      } else {
-        dueHtml = `<span class="cbv days-left">เหลือ ${days} วัน</span>`;
+  const totalPages = Math.ceil(totalItems / _pageSize) || 1;
+  if (_currentPage > totalPages) _currentPage = totalPages;
+  const startIndex = (_currentPage - 1) * _pageSize;
+  const pageItems = list.slice(startIndex, startIndex + _pageSize);
+  
+  if (_viewMode === 'grid') {
+    container.innerHTML = pageItems.map(q => {
+      const days = calculateLeadTime(q);
+      let dueHtml = '—';
+      if (days !== null) {
+        if (q.status !== 'PENDING') {
+          dueHtml = `<span class="cbv done">${q.status}</span>`;
+        } else if (days < 0) {
+          dueHtml = `<span class="cbv overdue">เลยกำหนด ${Math.abs(days)} วัน</span>`;
+        } else {
+          dueHtml = `<span class="cbv days-left">เหลือ ${days} วัน</span>`;
+        }
       }
-    }
-    
-    const pct = getProgressPercent(q.progress_status);
-    const curIdx = PROGRESS_STEPS.indexOf(q.progress_status);
-    const nodes = PROGRESS_STEPS.map((step, idx) => {
-      let cls = '';
-      if (idx < curIdx) cls = 'done';
-      else if (idx === curIdx) cls = 'active';
-      return `<div class="node ${cls}" title="${step}"></div>`;
-    }).join('');
-    
-    let productSummary = '';
-    try {
-      const items = JSON.parse(q.product || '[]');
-      if (Array.isArray(items) && items.length > 0) {
-        productSummary = items.map(it => `${it.product} (x${it.quantity})`).join(', ');
-      } else {
+      
+      const pct = getProgressPercent(q.progress_status);
+      const curIdx = PROGRESS_STEPS.indexOf(q.progress_status);
+      const nodes = PROGRESS_STEPS.map((step, idx) => {
+        let cls = '';
+        if (idx < curIdx) cls = 'done';
+        else if (idx === curIdx) cls = 'active';
+        return `<div class="node ${cls}" title="${step}"></div>`;
+      }).join('');
+      
+      let productSummary = '';
+      try {
+        const items = JSON.parse(q.product || '[]');
+        if (Array.isArray(items) && items.length > 0) {
+          productSummary = items.map(it => `${it.product} (x${it.quantity})`).join(', ');
+        } else {
+          productSummary = q.product || '—';
+        }
+      } catch(e) {
         productSummary = q.product || '—';
       }
-    } catch(e) {
-      productSummary = q.product || '—';
-    }
-    const price = q.total_offer ? parseFloat(q.total_offer).toLocaleString('th-TH') + ' บาท' : '—';
-    
-    return `
-      <div class="qcard st-${q.status}" onclick="openDetail(${q.id})">
-        <div class="ct">
-          <div class="ct-hdr">
-            <span class="ct-id">${q.ld_no ? q.ld_no : '—'} <span style="font-size:12px;font-weight:400;color:var(--mu)">(${q.quotation_no})</span></span>
-            <span class="badge b-${q.status.toLowerCase()}">${q.status}</span>
+      const price = q.total_offer ? parseFloat(q.total_offer).toLocaleString('th-TH') + ' ' + (q.offer_currency || 'THB') : '—';
+      
+      return `
+        <div class="qcard st-${q.status}" onclick="openDetail(${q.id})">
+          <div class="ct">
+            <div class="ct-hdr">
+              <span class="ct-id">${q.ld_no ? q.ld_no : '—'} <span style="font-size:12px;font-weight:400;color:var(--mu)">(${q.quotation_no})</span></span>
+              <span class="badge b-${q.status.toLowerCase()}">${q.status}</span>
+            </div>
+            <div class="ct-cust">🏭 ${q.customer}</div>
+            <div style="font-size:11px; color:var(--mu); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${esc(productSummary)}">Product: ${esc(productSummary)}</div>
           </div>
-          <div class="ct-cust">🏭 ${q.customer}</div>
-          <div style="font-size:11px; color:var(--mu); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${esc(productSummary)}">Product: ${esc(productSummary)}</div>
-        </div>
-        <div class="cp">
-          <div class="cp-hdr">
-            <span class="cp-title">ความคืบหน้า</span>
-            <span class="cp-status" style="color:var(--spec)">${q.progress_status} (${pct}%)</span>
+          <div class="cp">
+            <div class="cp-hdr">
+              <span class="cp-title">ความคืบหน้า</span>
+              <span class="cp-status" style="color:var(--spec)">${q.progress_status} (${pct}%)</span>
+            </div>
+            <div class="pbar"><div class="pbar-fill pb-${q.status}" style="width:${pct}%"></div></div>
+            <div class="nodes">${nodes}</div>
           </div>
-          <div class="pbar"><div class="pbar-fill pb-${q.status}" style="width:${pct}%"></div></div>
-          <div class="nodes">${nodes}</div>
+          <div class="cb">
+            <div><div class="cbl">ผู้รับผิดชอบ</div><div class="cbv">${q.responsible.split('-')[0] || '—'}</div></div>
+            <div><div class="cbl">กำหนดส่ง</div><div>${dueHtml}</div></div>
+            <div style="grid-column: span 2; margin-top:4px;"><div class="cbl">มูลค่าที่เสนอ</div><div class="cbv" style="color:var(--silver2)">${price}</div></div>
+          </div>
         </div>
-        <div class="cb">
-          <div><div class="cbl">ผู้รับผิดชอบ</div><div class="cbv">${q.responsible.split('-')[0] || '—'}</div></div>
-          <div><div class="cbl">กำหนดส่ง</div><div>${dueHtml}</div></div>
-          <div style="grid-column: span 2; margin-top:4px;"><div class="cbl">มูลค่าที่เสนอ</div><div class="cbv" style="color:var(--silver2)">${price}</div></div>
-        </div>
+      `;
+    }).join('');
+  } else {
+    // List View Mode
+    const rows = pageItems.map(q => {
+      const days = calculateLeadTime(q);
+      let dueHtml = '—';
+      const dueColor = q.status !== 'PENDING' ? 'v-done' : days < 0 ? 'v-late' : 'v-done';
+      if (days !== null) {
+        if (q.status !== 'PENDING') {
+          dueHtml = q.status;
+        } else if (days < 0) {
+          dueHtml = `เลยกำหนด ${Math.abs(days)} วัน`;
+        } else {
+          dueHtml = `เหลือ ${days} วัน`;
+        }
+      }
+      const pct = getProgressPercent(q.progress_status);
+      const price = q.total_offer ? parseFloat(q.total_offer).toLocaleString('th-TH') + ' ' + (q.offer_currency || 'THB') : '—';
+      const badgeCls = `b-${q.status.toLowerCase()}`;
+      
+      return `<tr onclick="openDetail(${q.id})">
+        <td style="font-weight:700; font-family:'Inter',sans-serif;">${q.ld_no || '—'}</td>
+        <td style="font-family:'Inter',sans-serif;">${q.quotation_no}</td>
+        <td>${q.customer}</td>
+        <td><span class="badge ${badgeCls}">${q.status}</span></td>
+        <td>
+          <div style="display: flex; align-items: center; gap: 8px; min-width: 100px;">
+            <span style="font-size: 12px; font-weight: 700; color: var(--spec); min-width: 32px;">${pct}%</span>
+            <div style="flex: 1; height: 6px; background: var(--s3); border-radius: 99px; overflow: hidden; max-width: 60px;">
+              <div class="pbar-fill pb-${q.status}" style="width: ${pct}%"></div>
+            </div>
+          </div>
+        </td>
+        <td>${q.responsible.split('-')[0] || '—'}</td>
+        <td><span class="${dueColor}" style="font-weight: 600;">${dueHtml}</span></td>
+        <td style="font-family:'Inter',sans-serif; text-align:right;">${price}</td>
+      </tr>`;
+    }).join('');
+
+    container.innerHTML = `
+      <div class="list-table-container">
+        <table class="list-table">
+          <thead>
+            <tr>
+              <th>LD No.</th>
+              <th>Quotation No.</th>
+              <th>ลูกค้า</th>
+              <th>สถานะ</th>
+              <th>ความคืบหน้า</th>
+              <th>ผู้รับผิดชอบ</th>
+              <th>กำหนดส่ง</th>
+              <th style="text-align:right;">ยอดเงินที่เสนอ</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows}
+          </tbody>
+        </table>
       </div>
     `;
-  }).join('');
+  }
+  
+  renderPagination(totalItems);
 }
 
 function renderSidebars() {
@@ -882,15 +1097,75 @@ function setCardSize(size) {
   if (activeBtn) activeBtn.classList.add('active');
 
   const cardsContainer = document.getElementById('cards');
-  if (cardsContainer) {
+  if (cardsContainer && _viewMode === 'grid') {
     cardsContainer.classList.remove('sz-s', 'sz-m', 'sz-l');
     cardsContainer.classList.add('sz-' + size);
   }
   localStorage.setItem('quotations_card_size', size);
 }
 
+function setViewMode(mode) {
+  _viewMode = mode;
+  document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+  const activeBtn = document.getElementById('view-' + mode);
+  if (activeBtn) activeBtn.classList.add('active');
+  
+  const cardsContainer = document.getElementById('cards');
+  const sizeSelector = document.getElementById('size-selector');
+  if (cardsContainer) {
+    if (mode === 'grid') {
+      cardsContainer.classList.remove('list-mode');
+      cardsContainer.classList.add('grid-mode');
+      cardsContainer.classList.add('sz-' + _cardSize);
+      if (sizeSelector) sizeSelector.style.display = 'flex';
+    } else {
+      cardsContainer.classList.remove('grid-mode', 'sz-s', 'sz-m', 'sz-l');
+      cardsContainer.classList.add('list-mode');
+      if (sizeSelector) sizeSelector.style.display = 'none';
+    }
+  }
+  localStorage.setItem('quotations_view_mode', mode);
+  renderCards();
+}
+
+function renderPagination(totalItems) {
+  const totalPages = Math.ceil(totalItems / _pageSize) || 1;
+  const start = totalItems > 0 ? (_currentPage - 1) * _pageSize + 1 : 0;
+  const end = Math.min(_currentPage * _pageSize, totalItems);
+  
+  const info = `แสดง ${start}-${end} จาก ${totalItems} รายการ`;
+
+  let buttonsHtml = '';
+  buttonsHtml += `<button class="pg-btn" onclick="changePage(1)" ${_currentPage === 1 ? 'disabled' : ''}>«</button>`;
+  buttonsHtml += `<button class="pg-btn" onclick="changePage(${_currentPage - 1})" ${_currentPage === 1 ? 'disabled' : ''}>‹</button>`;
+
+  const startPage = Math.max(1, _currentPage - 2);
+  const endPage = Math.min(totalPages, _currentPage + 2);
+
+  for (let i = startPage; i <= endPage; i++) {
+    buttonsHtml += `<button class="pg-btn ${i === _currentPage ? 'active' : ''}" onclick="changePage(${i})">${i}</button>`;
+  }
+
+  buttonsHtml += `<button class="pg-btn" onclick="changePage(${_currentPage + 1})" ${_currentPage === totalPages ? 'disabled' : ''}>›</button>`;
+  buttonsHtml += `<button class="pg-btn" onclick="changePage(${totalPages})" ${_currentPage === totalPages ? 'disabled' : ''}>»</button>`;
+
+  const pagEl = document.getElementById('pagination');
+  if (pagEl) {
+    pagEl.innerHTML = `
+      <div class="pg-info">${info}</div>
+      <div class="pg-controls">${buttonsHtml}</div>
+    `;
+  }
+}
+
+function changePage(page) {
+  _currentPage = page;
+  renderCards();
+}
+
 function setF(f,el){
   _flt=f;
+  _currentPage=1;
   document.querySelectorAll('.fchip').forEach(c=>c.classList.remove('active'));
   el.classList.add('active');
   renderCards();
@@ -898,6 +1173,7 @@ function setF(f,el){
 
 function changeView(view) {
   _view = view;
+  _currentPage = 1;
   document.getElementById('btn-view-org').classList.toggle('active', view === 'org');
   document.getElementById('btn-view-self').classList.toggle('active', view === 'self');
   
@@ -1037,6 +1313,7 @@ async function refresh(){
 
 // Init
 setCardSize(_cardSize);
+setViewMode(_viewMode);
 autoOpenSections();
 refresh();
 setInterval(refresh, 20000);
