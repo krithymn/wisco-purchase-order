@@ -1212,7 +1212,19 @@ app.patch('/api/quotations/:id/progress', (req, res) => {
     if (remark !== undefined) run("UPDATE quotations SET remark=? WHERE id=?", [remark, req.params.id]);
     if (totalOffer !== undefined) run("UPDATE quotations SET total_offer=? WHERE id=?", [parseFloat(totalOffer)||0.0, req.params.id]);
     if (offerCurrency !== undefined) run("UPDATE quotations SET offer_currency=? WHERE id=?", [offerCurrency, req.params.id]);
-    if (status !== undefined) run("UPDATE quotations SET status=? WHERE id=?", [status, req.params.id]);
+    if (status !== undefined) {
+      run("UPDATE quotations SET status=? WHERE id=?", [status, req.params.id]);
+      const q = query("SELECT product FROM quotations WHERE id=?", [req.params.id])[0];
+      if (q && q.product) {
+        try {
+          const items = JSON.parse(q.product);
+          if (Array.isArray(items)) {
+            items.forEach(it => { it.status = status; });
+            run("UPDATE quotations SET product=? WHERE id=?", [JSON.stringify(items), req.params.id]);
+          }
+        } catch(e) {}
+      }
+    }
     res.json({ok:true});
   } catch(e) { res.status(500).json({error:e.message}); }
 });
@@ -1220,7 +1232,19 @@ app.patch('/api/quotations/:id/progress', (req, res) => {
 app.patch('/api/quotations/:id/status', (req, res) => {
   try {
     const {status, prNo, poNo} = req.body;
-    if (status !== undefined) run("UPDATE quotations SET status=? WHERE id=?", [status, req.params.id]);
+    if (status !== undefined) {
+      run("UPDATE quotations SET status=? WHERE id=?", [status, req.params.id]);
+      const q = query("SELECT product FROM quotations WHERE id=?", [req.params.id])[0];
+      if (q && q.product) {
+        try {
+          const items = JSON.parse(q.product);
+          if (Array.isArray(items)) {
+            items.forEach(it => { it.status = status; });
+            run("UPDATE quotations SET product=? WHERE id=?", [JSON.stringify(items), req.params.id]);
+          }
+        } catch(e) {}
+      }
+    }
     if (prNo !== undefined) run("UPDATE quotations SET pr_no=? WHERE id=?", [prNo, req.params.id]);
     if (poNo !== undefined) run("UPDATE quotations SET po_no=? WHERE id=?", [poNo, req.params.id]);
     
