@@ -226,6 +226,7 @@ input:focus,select:focus{outline:none;border-color:var(--ac);box-shadow:0 0 0 3p
   <div class="logo"><img src="logo.png" style="height:32px;width:auto;object-fit:contain" alt="Wisco"><span style="color:#e84050;font-size:15px;font-weight:600;margin-left:4px">Order Tracker</span></div>
   <div style="display:flex;gap:8px">
     <a href="dashboard.html" target="_blank"><button class="btn btn-secondary">📊 Dashboard</button></a>
+    <a href="quotations.html" target="_blank"><button class="btn btn-secondary">📋 LD Tracker</button></a>
     <a href="history.html" target="_blank"><button class="btn btn-secondary">🔍 ค้นหา / History</button></a>
     <button class="btn btn-primary" onclick="openNew()">+ เพิ่ม Order ใหม่</button>
   </div>
@@ -535,7 +536,7 @@ async function loadAll(){
       ? o.mfgSteps.map(s=>Array.isArray(s)?s:Array(MFG_STEPS.length).fill(false))
       : Array(o.totalSteps||17).fill(null).map(()=>Array(MFG_STEPS.length).fill(false))
   })).sort((a,b)=>{
-    const parseId=id=>{const m=id.match(/POI(\d{4})-(\d+)/i);return m?parseInt(m[1])*10000+parseInt(m[2]):0;};
+    const parseId=id=>{const m=id.match(/POI?(\d{4})-(\d+)/i);return m?parseInt(m[1])*100000+parseInt(m[2]):0;};
     return parseId(b.id)-parseId(a.id);
   });
   _team=cfg.team||[]; _steps=cfg.steps||[]; _suppliers=cfg.suppliers||[]; _customers=cfg.customers||[];
@@ -617,7 +618,34 @@ function fcol(s){return{done:'#1a7f37',late:'#cf222e',progress:'#0969da',pending
 function filtSide(v){_sfilt=v.toLowerCase();rSide()}
 function rSide(){
   // Active list = exclude completed orders
-  let list=_orders.filter(o=>(!o.isCancelled&&o.completedSteps<o.totalSteps)&&(!_sfilt||o.id.toLowerCase().includes(_sfilt)||(o.customer||'').toLowerCase().includes(_sfilt)||(o.factory||'').toLowerCase().includes(_sfilt)));
+  let list=_orders.filter(o=>{
+    if(o.isCancelled||o.completedSteps>=o.totalSteps)return false;
+    if(!_sfilt)return true;
+    const searchTerms = [
+      o.id,
+      o.customer,
+      o.factory,
+      o.notes,
+      o.startDate,
+      o.dueDate,
+      o.responsible,
+      o.etaWisco
+    ];
+    if(Array.isArray(o.items)){
+      o.items.forEach(it=>{
+        searchTerms.push(it.customer);
+        searchTerms.push(it.prNumber);
+        if(Array.isArray(it.subItems)){
+          it.subItems.forEach(sub=>{
+            searchTerms.push(sub.product);
+          });
+        }else if(it.product){
+          searchTerms.push(it.product);
+        }
+      });
+    }
+    return searchTerms.filter(Boolean).join(' ').toLowerCase().includes(_sfilt);
+  });
   if (_orderType === 'poi') {
     list = list.filter(o => o.id.toLowerCase().startsWith('poi'));
   } else {

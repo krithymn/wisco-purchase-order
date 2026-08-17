@@ -295,8 +295,8 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--spec)}
       <form id="q-form" onsubmit="event.preventDefault(); saveQuotation();">
         <div class="form-grid">
           <div class="fg">
-            <label>LD No.</label>
-            <input id="f-ld" placeholder="เช่น LD69001">
+            <label>LD No. <span class="req">*</span></label>
+            <input id="f-ld" required placeholder="เช่น LD69001">
           </div>
           <div class="fg">
             <label>Quotation No. <span class="req">*</span></label>
@@ -382,11 +382,11 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--spec)}
               <input id="f-offer" type="number" step="0.01" min="0" placeholder="0.00" style="flex: 1;">
             </div>
           </div>
-          <div class="fg">
+          <div class="fg" style="grid-column: span 2;">
             <label>วันที่เสนอราคา (Offer Date)</label>
-            <input id="f-offer-date" type="date">
+            <input id="f-offer-date" type="date" onchange="document.getElementById('f-completed-date').value=this.value">
           </div>
-          <div class="fg">
+          <div class="fg" style="display: none;">
             <label>วันที่จัดทำเสร็จ (Completed Date)</label>
             <input id="f-completed-date" type="date">
           </div>
@@ -670,6 +670,15 @@ async function saveQuotation() {
     return;
   }
 
+  const selectedStatus = document.getElementById('f-status').value;
+  const dbStatus = STATUS_MAP_UI_TO_DB[selectedStatus] || selectedStatus;
+  _quoteItems.forEach(it => {
+    it.status = dbStatus;
+  });
+
+  const offerDateVal = document.getElementById('f-offer-date').value || '';
+  document.getElementById('f-completed-date').value = offerDateVal;
+
   const payload = {
     quotationNo: document.getElementById('f-qno').value.trim(),
     quotationType: document.getElementById('f-type').value,
@@ -684,9 +693,9 @@ async function saveQuotation() {
     sale: document.getElementById('f-sale').value,
     totalOffer: parseFloat(document.getElementById('f-offer').value) || 0.0,
     offerCurrency: document.getElementById('f-currency').value,
-    status: STATUS_MAP_UI_TO_DB[document.getElementById('f-status').value] || document.getElementById('f-status').value,
-    offerDate: document.getElementById('f-offer-date').value || '',
-    completedDate: document.getElementById('f-completed-date').value || '',
+    status: dbStatus,
+    offerDate: offerDateVal,
+    completedDate: offerDateVal,
     remark: document.getElementById('f-remark').value.trim(),
     product: JSON.stringify(_quoteItems)
   };
@@ -757,10 +766,37 @@ function rList() {
     if (_filter !== 'all' && x.status !== dbFilter) return false;
     
     // search
-    return x.quotation_no.toLowerCase().includes(q) ||
-           x.customer.toLowerCase().includes(q) ||
-           (x.ld_no || '').toLowerCase().includes(q) ||
-           (x.sale || '').toLowerCase().includes(q);
+    if (!q) return true;
+    const searchTerms = [
+      x.quotation_no,
+      x.ld_no,
+      x.customer,
+      x.sale,
+      x.sale_team,
+      x.brand,
+      x.valve_type,
+      x.remark,
+      x.responsible,
+      x.progress_status,
+      x.status,
+      x.quotation_type,
+      x.customer_type
+    ];
+    try {
+      const items = JSON.parse(x.product || '[]');
+      if (Array.isArray(items)) {
+        items.forEach(it => {
+          searchTerms.push(it.product);
+          searchTerms.push(it.brand);
+          searchTerms.push(it.model);
+        });
+      } else {
+        searchTerms.push(x.product);
+      }
+    } catch(e) {
+      searchTerms.push(x.product);
+    }
+    return searchTerms.filter(Boolean).join(' ').toLowerCase().includes(q);
   });
   
   const sidebar = document.getElementById('q-list');
@@ -946,11 +982,11 @@ function selectQuote(id) {
         <div class="section-card" style="margin-bottom:0">
           <div class="section-title">✍️ บันทึกรายละเอียดเสนอราคา (Proposal Entry)</div>
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:8px">
-            <div class="fg">
+            <div class="fg" style="grid-column: span 2;">
               <label>วันที่เสนอราคา (Offer Date)</label>
-              <input type="date" id="act-offer-date" value="${q.offer_date || ''}">
+              <input type="date" id="act-offer-date" value="${q.offer_date || ''}" onchange="document.getElementById('act-completed-date').value=this.value">
             </div>
-            <div class="fg">
+            <div class="fg" style="display: none;">
               <label>วันที่จัดทำเสร็จ (Complete Date)</label>
               <input type="date" id="act-completed-date" value="${q.completed_date || ''}">
             </div>
@@ -1002,10 +1038,11 @@ function selectQuote(id) {
 
 async function updateProposalInfo(id) {
   const offerDate = document.getElementById('act-offer-date').value;
-  const completedDate = document.getElementById('act-completed-date').value;
+  const completedDate = offerDate;
   const totalOffer = document.getElementById('act-offer').value;
   const offerCurrency = document.getElementById('act-currency').value;
-  const status = STATUS_MAP_UI_TO_DB[document.getElementById('act-status').value] || document.getElementById('act-status').value;
+  const statusVal = document.getElementById('act-status').value;
+  const status = STATUS_MAP_UI_TO_DB[statusVal] || statusVal;
   const remark = document.getElementById('act-remark').value.trim();
   
   try {
@@ -1028,15 +1065,16 @@ async function updateProposalInfo(id) {
 
 function getCurrentProposalEntryData() {
   const offerDateEl = document.getElementById('act-offer-date');
-  const completedDateEl = document.getElementById('act-completed-date');
   const offerEl = document.getElementById('act-offer');
   const currencyEl = document.getElementById('act-currency');
   const statusEl = document.getElementById('act-status');
   const remarkEl = document.getElementById('act-remark');
   
   const data = {};
-  if (offerDateEl) data.offerDate = offerDateEl.value;
-  if (completedDateEl) data.completedDate = completedDateEl.value;
+  if (offerDateEl) {
+    data.offerDate = offerDateEl.value;
+    data.completedDate = offerDateEl.value;
+  }
   if (offerEl) data.totalOffer = parseFloat(offerEl.value) || 0.0;
   if (currencyEl) data.offerCurrency = currencyEl.value;
   if (statusEl) data.status = STATUS_MAP_UI_TO_DB[statusEl.value] || statusEl.value;
