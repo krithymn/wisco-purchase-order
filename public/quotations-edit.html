@@ -297,8 +297,8 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--spec)}
             <input id="f-ld" required placeholder="เช่น LD69001">
           </div>
           <div class="fg">
-            <label>Quotation No. <span class="req">*</span></label>
-            <input id="f-qno" required placeholder="เช่น Q6905-001">
+            <label>Quotation No.</label>
+            <input id="f-qno" placeholder="เช่น Q6905-001">
           </div>
           <div class="fg">
             <label>ประเภทงานใบเสนอราคา (Job Type) <span class="req">*</span></label>
@@ -625,7 +625,7 @@ function openCreateModal() {
 
 function openEditModal(q) {
   _editId = q.id;
-  document.getElementById('m-title').textContent = 'แก้ไขรายละเอียดใบเสนอราคา (' + q.quotation_no + ')';
+  document.getElementById('m-title').textContent = 'แก้ไขรายละเอียดใบเสนอราคา (' + (q.quotation_no || q.ld_no || '') + ')';
   
   initFormDropdowns();
   
@@ -954,7 +954,7 @@ function selectQuote(id) {
     <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:20px;">
       <div>
         <h2 style="font-size:24px; font-weight:800; font-family:'Inter',sans-serif; color:var(--tx)">${q.ld_no || '—'}</h2>
-        <p style="color:var(--mu); font-size:13px; margin-top:4px;">Quotation No: ${q.quotation_no} · ประเภทงาน: ${q.quotation_type} · ลูกค้า: ${q.customer}</p>
+        <p style="color:var(--mu); font-size:13px; margin-top:4px;">Quotation No: ${q.quotation_no || '—'} · ประเภทงาน: ${q.quotation_type} · ลูกค้า: ${q.customer}</p>
       </div>
       <div style="display:flex; gap:10px;">
         <button class="btn btn-secondary" onclick="openEditModal(_selected)">✏️ แก้ไขข้อมูล</button>
