@@ -237,9 +237,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--spec)}
 }
 :root[data-theme="light"] input:focus,
 :root[data-theme="light"] select:focus,
-:root[data-theme="light"] textarea:focus {
-  border-color: var(--spec) !important;
-}
+.date-display{cursor:text;letter-spacing:.5px}
 </style>
 
 </head>
@@ -327,11 +325,11 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--spec)}
           </div>
           <div class="fg">
             <label>วันที่เปิดบอร์ด <span class="req">*</span></label>
-            <input id="f-start" type="date" required onchange="calculateQuotationLeadTime()">
+            <input id="f-start" class="date-display" placeholder="วว/ดด/ปปปป" maxlength="10" oninput="fmtDate(this); calculateQuotationLeadTime()" required autocomplete="off">
           </div>
           <div class="fg">
             <label>กำหนดส่ง <span class="req">*</span></label>
-            <input id="f-due" type="date" required readonly style="background:var(--s1); opacity:0.8; cursor:not-allowed">
+            <input id="f-due" class="date-display" placeholder="วว/ดด/ปปปป" maxlength="10" required readonly style="background:var(--s1); opacity:0.8; cursor:not-allowed">
           </div>
           <div class="fg">
             <label>ลูกค้า <span class="req">*</span></label>
@@ -382,13 +380,19 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--spec)}
               <input id="f-offer" type="number" step="0.01" min="0" placeholder="0.00" style="flex: 1;">
             </div>
           </div>
-          <div class="fg" style="grid-column: span 2;">
+          <div class="fg">
             <label>วันที่เสนอราคา (Offer Date)</label>
-            <input id="f-offer-date" type="date" onchange="document.getElementById('f-completed-date').value=this.value">
+            <input id="f-offer-date" class="date-display" placeholder="วว/ดด/ปปปป" maxlength="10" oninput="fmtDate(this); document.getElementById('f-completed-date').value=this.value" autocomplete="off">
+          </div>
+          <div class="fg">
+            <label>วิศวกรจัดทำข้อเสนอราคา (Proposal Team)</label>
+            <select id="f-responsible">
+              <!-- populated dynamically -->
+            </select>
           </div>
           <div class="fg" style="display: none;">
             <label>วันที่จัดทำเสร็จ (Completed Date)</label>
-            <input id="f-completed-date" type="date">
+            <input id="f-completed-date" class="date-display" placeholder="วว/ดด/ปปปป" maxlength="10">
           </div>
           <div class="fg fg-span">
             <label>หมายเหตุ (Remark)</label>
@@ -434,6 +438,27 @@ let _quotations = [], _config = {}, _selected = null, _filter = 'all', _editId =
 function esc(str){
   if(!str) return '';
   return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function fmtDate(el){
+  let v=el.value.replace(/[^0-9]/g,'');
+  if(v.length>2) v=v.slice(0,2)+'/'+v.slice(2);
+  if(v.length>5) v=v.slice(0,5)+'/'+v.slice(5);
+  el.value=v.slice(0,10);
+}
+function toISO(dmy){
+  if(!dmy||dmy.length<10)return dmy||'';
+  const parts=dmy.split('/');
+  if(parts.length!==3)return dmy;
+  const [d,m,y]=parts;
+  if(d.length!==2||m.length!==2||y.length!==4)return dmy;
+  return `${y}-${m}-${d}`;
+}
+function fromISO(iso){
+  if(!iso||iso.length<10)return iso||'';
+  const parts=iso.split('-');
+  if(parts.length!==3)return iso;
+  return `${parts[2]}/${parts[1]}/${parts[0]}`;
 }
 
 function renderQuoteItemsList() {
@@ -501,12 +526,13 @@ async function loadData() {
 }
 
 function calculateQuotationLeadTime() {
-  const start = document.getElementById('f-start').value;
+  const startRaw = document.getElementById('f-start').value;
+  const start = toISO(startRaw);
   const jobType = document.getElementById('f-type').value;
   const brand = document.getElementById('f-brand').value;
   const valveType = document.getElementById('f-valve-type').value;
   
-  if (!start) return;
+  if (!start || start.length < 10) return;
   
   let days = 0;
   const isPlatinum = brand === 'Platinum brand' || brand === 'Platinum & Golden brand';
@@ -530,7 +556,8 @@ function calculateQuotationLeadTime() {
   
   const dueInput = document.getElementById('f-due');
   if (dueInput) {
-    dueInput.value = addBusinessDays(start, days);
+    const dueIso = addBusinessDays(start, days);
+    dueInput.value = fromISO(dueIso);
   }
 }
 
@@ -561,6 +588,10 @@ function initFormDropdowns() {
   
   // Sales
   document.getElementById('f-sale').innerHTML = (_config.sales || []).map(s => `<option value="${s}">${s}</option>`).join('');
+
+  // Responsible (Proposal Team)
+  document.getElementById('f-responsible').innerHTML = '<option value="">-- ไม่ระบุ --</option>' + 
+    (_config.team || []).map(name => `<option value="${name}">${name}</option>`).join('');
 }
 
 function openCreateModal() {
@@ -570,7 +601,9 @@ function openCreateModal() {
   
   // Default values
   const today = new Date().toISOString().split('T')[0];
-  document.getElementById('f-start').value = today;
+  initFormDropdowns();
+  
+  document.getElementById('f-start').value = fromISO(today);
   document.getElementById('f-type').value = 'MRO';
   document.getElementById('f-brand').value = 'Platinum brand';
   document.getElementById('f-valve-type').value = 'Manual valve & Accessory';
@@ -580,11 +613,11 @@ function openCreateModal() {
   document.getElementById('f-remark').value = '';
   document.getElementById('f-status').value = 'ON_PROCESS';
   document.getElementById('f-currency').value = 'THB';
+  document.getElementById('f-responsible').value = '';
   
   _quoteItems = [{ product: '', quantity: '1', status: 'PENDING' }];
   renderQuoteItemsList();
   
-  initFormDropdowns();
   calculateQuotationLeadTime();
   
   document.getElementById('modal').classList.add('open');
@@ -596,27 +629,28 @@ function openEditModal(q) {
   
   initFormDropdowns();
   
-  // Read current draft values from Proposal Entry if they exist, otherwise fallback to database values
   const actOfferDate = document.getElementById('act-offer-date');
   const actCompletedDate = document.getElementById('act-completed-date');
   const actOffer = document.getElementById('act-offer');
   const actCurrency = document.getElementById('act-currency');
   const actStatus = document.getElementById('act-status');
   const actRemark = document.getElementById('act-remark');
+  const actResp = document.getElementById('act-resp');
   
-  const offerDateVal = actOfferDate ? actOfferDate.value : (q.offer_date || '');
-  const completedDateVal = actCompletedDate ? actCompletedDate.value : (q.completed_date || '');
+  const offerDateVal = actOfferDate ? actOfferDate.value : (q.offer_date ? fromISO(q.offer_date) : '');
+  const completedDateVal = actCompletedDate ? actCompletedDate.value : (q.completed_date ? fromISO(q.completed_date) : '');
   const offerVal = actOffer ? actOffer.value : (q.total_offer || 0.0);
   const currencyVal = actCurrency ? actCurrency.value : (q.offer_currency || 'THB');
   const statusVal = actStatus ? actStatus.value : (STATUS_MAP_DB_TO_UI[q.status] || q.status || 'ON_PROCESS');
   const remarkVal = actRemark ? actRemark.value.trim() : (q.remark || '');
+  const responsibleVal = actResp ? actResp.value : (q.responsible || '');
 
   document.getElementById('f-qno').value = q.quotation_no;
   document.getElementById('f-type').value = q.quotation_type || 'MRO';
   document.getElementById('f-brand').value = q.brand || 'Platinum brand';
   document.getElementById('f-valve-type').value = q.valve_type || 'Manual valve & Accessory';
-  document.getElementById('f-start').value = q.start_date;
-  document.getElementById('f-due').value = q.due_date;
+  document.getElementById('f-start').value = fromISO(q.start_date);
+  document.getElementById('f-due').value = fromISO(q.due_date);
   document.getElementById('f-ld').value = q.ld_no;
   document.getElementById('f-cust').value = q.customer;
   document.getElementById('f-cust-type').value = q.customer_type;
@@ -629,6 +663,7 @@ function openEditModal(q) {
   document.getElementById('f-remark').value = remarkVal;
   document.getElementById('f-status').value = statusVal;
   document.getElementById('f-currency').value = currencyVal;
+  document.getElementById('f-responsible').value = responsibleVal;
   
   try {
     _quoteItems = JSON.parse(q.product || '[]');
@@ -676,16 +711,16 @@ async function saveQuotation() {
     it.status = dbStatus;
   });
 
-  const offerDateVal = document.getElementById('f-offer-date').value || '';
-  document.getElementById('f-completed-date').value = offerDateVal;
+  const offerDateVal = toISO(document.getElementById('f-offer-date').value || '');
+  document.getElementById('f-completed-date').value = document.getElementById('f-offer-date').value;
 
   const payload = {
     quotationNo: document.getElementById('f-qno').value.trim(),
     quotationType: document.getElementById('f-type').value,
     brand: document.getElementById('f-brand').value,
     valveType: document.getElementById('f-valve-type').value,
-    startDate: document.getElementById('f-start').value,
-    dueDate: document.getElementById('f-due').value,
+    startDate: toISO(document.getElementById('f-start').value),
+    dueDate: toISO(document.getElementById('f-due').value),
     ldNo: document.getElementById('f-ld').value.trim(),
     customer: custName,
     customerType: document.getElementById('f-cust-type').value,
@@ -711,14 +746,14 @@ async function saveQuotation() {
     // Add default values for new ones
     if (!_editId) {
       payload.progressStatus = PROGRESS_STEPS[0];
-      payload.responsible = '';
+      payload.responsible = document.getElementById('f-responsible').value || '';
       payload.prNo = '';
       payload.poNo = '';
     } else {
       const q = _quotations.find(x => x.id === _editId);
       if (q) {
         payload.progressStatus = q.progress_status || PROGRESS_STEPS[0];
-        payload.responsible = q.responsible || '';
+        payload.responsible = document.getElementById('f-responsible').value || '';
         payload.prNo = q.pr_no || '';
         payload.poNo = q.po_no || '';
       }
@@ -942,14 +977,14 @@ function selectQuote(id) {
     <div class="section-card">
       <div class="section-title">📄 รายละเอียดใบเสนอราคา</div>
       <div class="detail-grid">
-        <div class="detail-item"><div class="detail-lbl">วันที่เปิดบอร์ด</div><div class="detail-val">${q.start_date || '—'}</div></div>
-        <div class="detail-item"><div class="detail-lbl">กำหนดส่ง</div><div class="detail-val" style="color:var(--pend)">${q.due_date || '—'}</div></div>
+        <div class="detail-item"><div class="detail-lbl">วันที่เปิดบอร์ด</div><div class="detail-val">${q.start_date ? fromISO(q.start_date) : '—'}</div></div>
+        <div class="detail-item"><div class="detail-lbl">กำหนดส่ง</div><div class="detail-val" style="color:var(--pend)">${q.due_date ? fromISO(q.due_date) : '—'}</div></div>
         <div class="detail-item"><div class="detail-lbl">แบรนด์</div><div class="detail-val">${q.brand || 'Platinum brand'}</div></div>
         <div class="detail-item"><div class="detail-lbl">ประเภทวาล์ว</div><div class="detail-val">${q.valve_type || 'Manual valve & Accessory'}</div></div>
         <div class="detail-item"><div class="detail-lbl">ประเภทลูกค้า</div><div class="detail-val">${q.customer_type}</div></div>
         <div class="detail-item"><div class="detail-lbl">ยอดเงินที่เสนอ</div><div class="detail-val" style="color:var(--spec)">${q.total_offer ? parseFloat(q.total_offer).toLocaleString('th-TH', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' ' + (q.offer_currency || 'THB') : '—'}</div></div>
-        <div class="detail-item"><div class="detail-lbl">วันที่เสนอราคา</div><div class="detail-val">${q.offer_date || '—'}</div></div>
-        <div class="detail-item"><div class="detail-lbl">วันที่จัดทำเสร็จ</div><div class="detail-val">${q.completed_date || '—'}</div></div>
+        <div class="detail-item"><div class="detail-lbl">วันที่เสนอราคา</div><div class="detail-val">${q.offer_date ? fromISO(q.offer_date) : '—'}</div></div>
+        <div class="detail-item"><div class="detail-lbl">วันที่จัดทำเสร็จ</div><div class="detail-val">${q.completed_date ? fromISO(q.completed_date) : '—'}</div></div>
         <div class="detail-item"><div class="detail-lbl">ทีมผู้ขาย</div><div class="detail-val">${q.sale_team} / ${q.sale}</div></div>
         <div class="detail-item"><div class="detail-lbl">หมายเหตุ (Remark)</div><div class="detail-val" style="white-space:pre-wrap">${q.remark || '—'}</div></div>
       </div>
@@ -984,11 +1019,11 @@ function selectQuote(id) {
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:8px">
             <div class="fg" style="grid-column: span 2;">
               <label>วันที่เสนอราคา (Offer Date)</label>
-              <input type="date" id="act-offer-date" value="${q.offer_date || ''}" onchange="document.getElementById('act-completed-date').value=this.value">
+              <input id="act-offer-date" class="date-display" placeholder="วว/ดด/ปปปป" maxlength="10" value="${q.offer_date ? fromISO(q.offer_date) : ''}" oninput="fmtDate(this); document.getElementById('act-completed-date').value=this.value" autocomplete="off">
             </div>
             <div class="fg" style="display: none;">
               <label>วันที่จัดทำเสร็จ (Complete Date)</label>
-              <input type="date" id="act-completed-date" value="${q.completed_date || ''}">
+              <input id="act-completed-date" class="date-display" placeholder="วว/ดด/ปปปป" maxlength="10" value="${q.completed_date ? fromISO(q.completed_date) : ''}">
             </div>
           </div>
           <div class="fg" style="margin-top:10px">
@@ -1037,7 +1072,7 @@ function selectQuote(id) {
 }
 
 async function updateProposalInfo(id) {
-  const offerDate = document.getElementById('act-offer-date').value;
+  const offerDate = toISO(document.getElementById('act-offer-date').value);
   const completedDate = offerDate;
   const totalOffer = document.getElementById('act-offer').value;
   const offerCurrency = document.getElementById('act-currency').value;
@@ -1072,8 +1107,8 @@ function getCurrentProposalEntryData() {
   
   const data = {};
   if (offerDateEl) {
-    data.offerDate = offerDateEl.value;
-    data.completedDate = offerDateEl.value;
+    data.offerDate = toISO(offerDateEl.value);
+    data.completedDate = toISO(offerDateEl.value);
   }
   if (offerEl) data.totalOffer = parseFloat(offerEl.value) || 0.0;
   if (currencyEl) data.offerCurrency = currencyEl.value;
