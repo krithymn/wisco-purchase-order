@@ -1090,8 +1090,7 @@ app.get('/api/quotations', (req, res) => {
 app.post('/api/quotations', (req, res) => {
   try {
     const {startDate, quotationType, completedDate, dueDate, ldNo, quotationNo, saleTeam, sale, customer, customerType, prNo, poNo, product, responsible, progressStatus, status, offerDate, totalOffer, brand, valveType, remark, offerCurrency} = req.body;
-    if (!quotationNo) return res.status(400).json({error:'Quotation No. required'});
-    const dup = query("SELECT id FROM quotations WHERE LOWER(quotation_no)=LOWER(?)", [quotationNo]);
+    const dup = quotationNo ? query("SELECT id FROM quotations WHERE LOWER(quotation_no)=LOWER(?)", [quotationNo]) : [];
     if (dup.length) return res.status(409).json({error:'Quotation No. already exists'});
 
     const finalBrand = brand || 'Platinum brand';
@@ -1137,9 +1136,9 @@ app.post('/api/quotations', (req, res) => {
 
     run(`INSERT INTO quotations(start_date, quotation_type, completed_date, due_date, ld_no, quotation_no, sale_team, sale, customer, customer_type, pr_no, po_no, product, responsible, progress_status, status, offer_date, total_offer, brand, valve_type, remark, offer_currency)
          VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
-      [startDate||'', quotationType||'', completedDate||'', finalDueDate||'', ldNo||'', quotationNo, saleTeam||'', sale||'', customer||'', customerType||'', finalPrNo, finalPoNo, product||'', responsible||'', progressStatus||'ตรวจสอบข้อมูล', finalStatus, offerDate||'', parseFloat(totalOffer)||0.0, finalBrand, finalValveType, remark||'', offerCurrency||'THB']);
+      [startDate||'', quotationType||'', completedDate||'', finalDueDate||'', ldNo||'', quotationNo||'', saleTeam||'', sale||'', customer||'', customerType||'', finalPrNo, finalPoNo, product||'', responsible||'', progressStatus||'ตรวจสอบข้อมูล', finalStatus, offerDate||'', parseFloat(totalOffer)||0.0, finalBrand, finalValveType, remark||'', offerCurrency||'THB']);
     
-    const inserted = query("SELECT * FROM quotations WHERE quotation_no=?", [quotationNo])[0];
+    const inserted = query("SELECT * FROM quotations WHERE id = last_insert_rowid()")[0];
     if (inserted && inserted.status === 'WIN') {
       syncPRFromQuotation(inserted.id);
     }
