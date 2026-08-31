@@ -184,11 +184,28 @@ input:focus,select:focus{outline:none;border-color:var(--ac);box-shadow:0 0 0 3p
 .welcome{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:400px;text-align:center}
 .welcome-icon{font-size:48px;margin-bottom:14px}
 /* CONFIG */
-.cfg-title{font-size:14px;font-weight:600;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--bd2)}
-.cfg-row{display:flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid var(--bd2);border-radius:var(--r);background:var(--sur2);margin-bottom:6px}
-.cfg-row-main{flex:1;font-size:13px;font-weight:500}
-.cfg-del{background:none;border:none;color:var(--mu);cursor:pointer;font-size:16px;padding:0}.cfg-del:hover{color:var(--late)}
-.step-cfg-row{display:flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid var(--bd2);border-radius:var(--r);background:var(--sur);margin-bottom:6px;font-size:12px}
+.cfg-container{padding:24px;max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+.cfg-grid-2{display:grid;grid-template-columns:repeat(auto-fit, minmax(360px, 1fr));gap:20px}
+.cfg-grid-3{display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:20px}
+.cfg-card{background:var(--sur);border:1px solid var(--bd);border-radius:var(--rl);overflow:hidden;display:flex;flex-direction:column;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.cfg-card-hdr{padding:12px 16px;background:var(--sur2);border-bottom:1px solid var(--bd2);display:flex;align-items:center;justify-content:space-between;gap:8px}
+.cfg-card-title{font-size:13.5px;font-weight:700;display:flex;align-items:center;gap:6px}
+.cfg-badge{font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;background:rgba(255,255,255,.07);color:var(--mu);border:1px solid var(--bd)}
+:root[data-theme="light"] .cfg-badge{background:rgba(0,0,0,.05)}
+.cfg-card-body{padding:14px 16px;display:flex;flex-direction:column;gap:10px;flex:1}
+.cfg-actions-bar{display:flex;gap:8px}
+.cfg-search-inp{width:100%;font-size:12.5px;padding:6px 10px;border:1px solid var(--bd);border-radius:var(--r);background:var(--sur2);color:var(--tx);font-family:'Sarabun',sans-serif}
+.cfg-search-inp:focus{outline:none;border-color:var(--ac);box-shadow:0 0 0 2px rgba(212,32,48,.15)}
+.cfg-add-bar{display:flex;gap:6px}
+.cfg-add-bar input{flex:1;font-size:12.5px;padding:6px 10px;border:1px solid var(--bd);border-radius:var(--r);background:var(--sur);color:var(--tx);font-family:'Sarabun',sans-serif}
+.cfg-add-bar input:focus{outline:none;border-color:var(--ac)}
+.cfg-list-box{max-height:280px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;padding-right:4px}
+.cfg-item-row{display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:var(--sur2);border:1px solid var(--bd2);border-radius:var(--r);font-size:12.5px;transition:all .15s}
+.cfg-item-row:hover{background:var(--sur3);border-color:var(--bd)}
+.cfg-item-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-right:8px}
+.cfg-del-btn{background:none;border:none;color:var(--mu);cursor:pointer;font-size:13px;width:22px;height:22px;display:flex;align-items:center;justify-content:center;border-radius:4px;transition:all .15s}
+.cfg-del-btn:hover{color:#fff;background:var(--late)}
+.step-cfg-row{display:flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid var(--bd2);border-radius:var(--r);background:var(--sur2);font-size:12px}
 /* PW GATE */
 #pw-gate{display:none;position:fixed;inset:0;background:rgba(8,12,18,.85);backdrop-filter:blur(6px);z-index:9999;align-items:center;justify-content:center}
 #pw-gate.show{display:flex}
@@ -356,85 +373,147 @@ input:focus,select:focus{outline:none;border-color:var(--ac);box-shadow:0 0 0 3p
 </div>
 
 <div id="tab-config">
-  <div style="padding:24px;max-width:760px">
-    <!-- TEAM -->
-    <div style="margin-bottom:28px">
-      <div class="cfg-title">👤 จัดการทีมงาน</div>
-      <div id="team-grid"></div>
-      <div style="display:flex;gap:8px;margin-top:8px">
-        <input id="new-member" placeholder="ชื่อ-ตำแหน่ง เช่น สมชาย-Engineer" style="flex:1;font-size:13px;padding:7px 10px;border:1px solid var(--bd);border-radius:var(--r);font-family:'Sarabun',sans-serif">
-        <button class="btn btn-primary" onclick="addMember()">+ เพิ่ม</button>
+  <div class="cfg-container">
+    
+    <!-- ROW 1: CUSTOMER & SUPPLIER MANAGEMENT -->
+    <div class="cfg-grid-2">
+      <!-- CUSTOMERS -->
+      <div class="cfg-card">
+        <div class="cfg-card-hdr">
+          <div class="cfg-card-title">👥 จัดการลูกค้า (Customer)</div>
+          <span class="cfg-badge" id="cust-count">0 รายการ</span>
+        </div>
+        <div class="cfg-card-body">
+          <div class="cfg-actions-bar">
+            <input id="search-cust" class="cfg-search-inp" placeholder="🔍 ค้นหาลูกค้า..." oninput="setSearchCust(this.value)">
+          </div>
+          <div class="cfg-add-bar">
+            <input id="new-cust" placeholder="+ เพิ่มชื่อลูกค้าใหม่..." onkeydown="if(event.key==='Enter')addCustomer()">
+            <button class="btn btn-primary btn-sm" onclick="addCustomer()">+ เพิ่ม</button>
+          </div>
+          <div id="cust-grid" class="cfg-list-box" style="max-height:300px"></div>
+        </div>
       </div>
-    </div>
-    <!-- SALE TEAMS -->
-    <div style="margin-bottom:28px">
-      <div class="cfg-title">👔 Sale Team</div>
-      <div id="saleteam-grid"></div>
-      <div style="display:flex;gap:8px;margin-top:8px">
-        <input id="new-saleteam" placeholder="ชื่อ Sale Team" style="flex:1;font-size:13px;padding:7px 10px;border:1px solid var(--bd);border-radius:var(--r);font-family:'Sarabun',sans-serif">
-        <button class="btn btn-primary" onclick="addSaleTeam()">+ เพิ่ม</button>
+
+      <!-- SUPPLIERS -->
+      <div class="cfg-card">
+        <div class="cfg-card-hdr">
+          <div class="cfg-card-title">🏭 จัดการ Supplier</div>
+          <span class="cfg-badge" id="sup-count">0 รายการ</span>
+        </div>
+        <div class="cfg-card-body">
+          <div class="cfg-actions-bar">
+            <input id="search-sup" class="cfg-search-inp" placeholder="🔍 ค้นหา Supplier / โรงงาน..." oninput="setSearchSup(this.value)">
+          </div>
+          <div class="cfg-add-bar">
+            <input id="new-sup" placeholder="+ เพิ่มชื่อ Supplier / โรงงาน..." onkeydown="if(event.key==='Enter')addSupplier()">
+            <button class="btn btn-primary btn-sm" onclick="addSupplier()">+ เพิ่ม</button>
+          </div>
+          <div id="sup-grid" class="cfg-list-box" style="max-height:300px"></div>
+        </div>
       </div>
-    </div>
-    <!-- SALES -->
-    <div style="margin-bottom:28px">
-      <div class="cfg-title">🧑‍💼 Sale</div>
-      <div id="sale-grid"></div>
-      <div style="display:flex;gap:8px;margin-top:8px">
-        <input id="new-sale" placeholder="ชื่อ Sale" style="flex:1;font-size:13px;padding:7px 10px;border:1px solid var(--bd);border-radius:var(--r);font-family:'Sarabun',sans-serif">
-        <button class="btn btn-primary" onclick="addSale()">+ เพิ่ม</button>
-      </div>
-    </div>
-    <!-- CUSTOMERS -->
-    <div style="margin-bottom:28px">
-      <div class="cfg-title">👥 จัดการลูกค้า (Customer)</div>
-      <div id="cust-grid"></div>
-      <div style="display:flex;gap:8px;margin-top:8px">
-        <input id="new-cust" placeholder="ชื่อลูกค้า" style="flex:1;font-size:13px;padding:7px 10px;border:1px solid var(--bd);border-radius:var(--r);font-family:'Sarabun',sans-serif">
-        <button class="btn btn-primary" onclick="addCustomer()">+ เพิ่ม</button>
-      </div>
-    </div>
-    <!-- SUPPLIERS -->
-    <div style="margin-bottom:28px">
-      <div class="cfg-title">🏭 จัดการ Supplier</div>
-      <div id="sup-grid"></div>
-      <div style="display:flex;gap:8px;margin-top:8px">
-        <input id="new-sup" placeholder="ชื่อ Supplier / โรงงาน" style="flex:1;font-size:13px;padding:7px 10px;border:1px solid var(--bd);border-radius:var(--r);font-family:'Sarabun',sans-serif">
-        <button class="btn btn-primary" onclick="addSupplier()">+ เพิ่ม</button>
-      </div>
-    </div>
-    <!-- STEPS -->
-    <div>
-      <div class="cfg-title">⏱ กำหนดเวลามาตรฐานต่อขั้นตอน (วัน)</div>
-      <p style="font-size:12px;color:var(--mu);margin-bottom:12px">เวลาปกติของแต่ละขั้นตอน — ถ้า Order มีการกำหนดเวลาที่ต่างออกไปจะแสดงเป็น ⚡ Special Case</p>
-      <div id="steps-cfg" style="display:grid;grid-template-columns:1fr 1fr;gap:6px"></div>
-      <button class="btn btn-primary" style="margin-top:12px" onclick="saveCfgSteps()">บันทึกการตั้งค่า</button>
-      <span id="cfg-saved" style="font-size:12px;color:var(--done);margin-left:10px;display:none">✓ บันทึกแล้ว</span>
     </div>
 
-    <!-- BACKUP & EXPORT -->
-    <div style="margin-top:28px">
-      <div class="cfg-title">💾 สำรองข้อมูล & Export</div>
+    <!-- ROW 2: TEAM & SALES MANAGEMENT -->
+    <div class="cfg-grid-3">
+      <!-- TEAM -->
+      <div class="cfg-card">
+        <div class="cfg-card-hdr">
+          <div class="cfg-card-title">👤 จัดการทีมงาน</div>
+          <span class="cfg-badge" id="team-count">0 คน</span>
+        </div>
+        <div class="cfg-card-body">
+          <div class="cfg-actions-bar">
+            <input id="search-team" class="cfg-search-inp" placeholder="🔍 ค้นหาชื่อทีมงาน..." oninput="setSearchTeam(this.value)">
+          </div>
+          <div class="cfg-add-bar">
+            <input id="new-member" placeholder="ชื่อ-ตำแหน่ง เช่น สมชาย-Engineer" onkeydown="if(event.key==='Enter')addMember()">
+            <button class="btn btn-primary btn-sm" onclick="addMember()">+ เพิ่ม</button>
+          </div>
+          <div id="team-grid" class="cfg-list-box" style="max-height:220px"></div>
+        </div>
+      </div>
 
+      <!-- SALE TEAMS -->
+      <div class="cfg-card">
+        <div class="cfg-card-hdr">
+          <div class="cfg-card-title">👔 Sale Team</div>
+          <span class="cfg-badge" id="saleteam-count">0 ทีม</span>
+        </div>
+        <div class="cfg-card-body">
+          <div class="cfg-actions-bar">
+            <input id="search-saleteam" class="cfg-search-inp" placeholder="🔍 ค้นหา Sale Team..." oninput="setSearchSaleTeam(this.value)">
+          </div>
+          <div class="cfg-add-bar">
+            <input id="new-saleteam" placeholder="ชื่อ Sale Team" onkeydown="if(event.key==='Enter')addSaleTeam()">
+            <button class="btn btn-primary btn-sm" onclick="addSaleTeam()">+ เพิ่ม</button>
+          </div>
+          <div id="saleteam-grid" class="cfg-list-box" style="max-height:220px"></div>
+        </div>
+      </div>
+
+      <!-- SALES -->
+      <div class="cfg-card">
+        <div class="cfg-card-hdr">
+          <div class="cfg-card-title">🧑‍💼 Sale</div>
+          <span class="cfg-badge" id="sale-count">0 คน</span>
+        </div>
+        <div class="cfg-card-body">
+          <div class="cfg-actions-bar">
+            <input id="search-sale" class="cfg-search-inp" placeholder="🔍 ค้นหา Sale..." oninput="setSearchSale(this.value)">
+          </div>
+          <div class="cfg-add-bar">
+            <input id="new-sale" placeholder="ชื่อ Sale" onkeydown="if(event.key==='Enter')addSale()">
+            <button class="btn btn-primary btn-sm" onclick="addSale()">+ เพิ่ม</button>
+          </div>
+          <div id="sale-grid" class="cfg-list-box" style="max-height:220px"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ROW 3: STEPS LEAD TIME -->
+    <div class="cfg-card">
+      <div class="cfg-card-hdr">
+        <div class="cfg-card-title">⏱ กำหนดเวลามาตรฐานต่อขั้นตอน (วัน)</div>
+      </div>
+      <div class="cfg-card-body">
+        <p style="font-size:12px;color:var(--mu);margin-bottom:6px">เวลาปกติของแต่ละขั้นตอน — ถ้า Order มีการกำหนดเวลาที่ต่างออกไปจะแสดงเป็น ⚡ Special Case</p>
+        <div id="steps-cfg" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:8px"></div>
+        <div style="display:flex;align-items:center;gap:10px;margin-top:10px">
+          <button class="btn btn-primary" onclick="saveCfgSteps()">💾 บันทึกการตั้งค่าเวลา</button>
+          <span id="cfg-saved" style="font-size:12px;color:var(--done);display:none">✓ บันทึกแล้ว</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ROW 4: BACKUP & MIGRATION -->
+    <div class="cfg-grid-2">
       <!-- MIGRATION -->
-      <div style="background:#fff7ed;border:1px solid #f59e0b;border-radius:var(--r);padding:16px;margin-bottom:12px">
-        <div style="font-size:13px;font-weight:600;margin-bottom:4px">🔄 อัปเกรด Order เก่าเป็น 19 ขั้นตอน</div>
-        <div style="font-size:12px;color:var(--mu);margin-bottom:12px">Order ที่สร้างก่อนการอัปเดตยังมี 17 ขั้นตอน — กดปุ่มนี้เพื่อเพิ่มขั้นตอนใหม่ให้ทุก Order อัตโนมัติ ข้อมูลเดิมจะไม่หาย</div>
-        <button class="btn" style="background:#d97706;color:#fff;border-color:#d97706;font-weight:600" onclick="migrateSteps()">🔄 อัปเกรดขั้นตอนทั้งหมด</button>
-        <span id="migrate-result" style="font-size:12px;margin-left:10px"></span>
+      <div class="cfg-card">
+        <div class="cfg-card-hdr" style="background:#fff7ed;border-bottom-color:#fed7aa">
+          <div class="cfg-card-title" style="color:#9a3412">🔄 อัปเกรด Order เป็น 19 ขั้นตอน</div>
+        </div>
+        <div class="cfg-card-body">
+          <div style="font-size:12px;color:var(--mu)">Order ที่สร้างก่อนการอัปเดตยังมี 17 ขั้นตอน — กดปุ่มนี้เพื่อเพิ่มขั้นตอนใหม่ให้ทุก Order อัตโนมัติ ข้อมูลเดิมจะไม่หาย</div>
+          <div style="margin-top:auto;display:flex;align-items:center;gap:10px">
+            <button class="btn" style="background:#d97706;color:#fff;border-color:#d97706;font-weight:600" onclick="migrateSteps()">🔄 อัปเกรดขั้นตอนทั้งหมด</button>
+            <span id="migrate-result" style="font-size:12px"></span>
+          </div>
+        </div>
       </div>
 
-      <div style="background:#f6f8fa;border:1px solid var(--bd2);border-radius:var(--r);padding:16px;margin-bottom:12px">
-        <div style="font-size:13px;font-weight:600;margin-bottom:4px">📥 Backup Database</div>
-        <div style="font-size:12px;color:var(--mu);margin-bottom:12px">ดาวน์โหลดไฟล์ฐานข้อมูลทั้งหมด (.db) — ใช้สำหรับย้ายเซิร์ฟเวอร์หรือสำรองข้อมูล</div>
-        <button class="btn btn-primary" style="background:#1d6f42;border-color:#1d6f42" onclick="doBackup()">📥 Download Backup (.db)</button>
-        <div style="font-size:11px;color:var(--mu);margin-top:8px">⚠️ เก็บไฟล์นี้ไว้ในที่ปลอดภัย — ประกอบด้วยข้อมูล Order ทั้งหมด</div>
-      </div>
-
-      <div style="background:#f6f8fa;border:1px solid var(--bd2);border-radius:var(--r);padding:16px">
-        <div style="font-size:13px;font-weight:600;margin-bottom:4px">🔗 Export JSON (API)</div>
-        <div style="font-size:12px;color:var(--mu);margin-bottom:12px">Export ข้อมูลทั้งหมดเป็น JSON — ใช้สำหรับเชื่อมต่อกับระบบ ERP หรือ SAP ในอนาคต</div>
-        <button class="btn btn-secondary" onclick="doJsonExport()">🔗 Open JSON Export</button>
-        <div style="font-size:11px;color:var(--mu);margin-top:8px">ข้อมูล: Orders, Items, Steps, Team, Suppliers, Config</div>
+      <!-- BACKUP -->
+      <div class="cfg-card">
+        <div class="cfg-card-hdr">
+          <div class="cfg-card-title">💾 สำรองข้อมูล & Export</div>
+        </div>
+        <div class="cfg-card-body">
+          <div style="font-size:12px;color:var(--mu)">ดาวน์โหลดไฟล์ฐานข้อมูลทั้งหมด (.db) เพื่อสำรองข้อมูล หรือ Export ข้อมูล JSON สำหรับเชื่อมต่อระบบภายนอก</div>
+          <div style="display:flex;gap:10px;margin-top:auto;flex-wrap:wrap">
+            <button class="btn btn-primary" style="background:#1d6f42;border-color:#1d6f42" onclick="doBackup()">📥 Download Backup (.db)</button>
+            <button class="btn btn-secondary" onclick="doJsonExport()">🔗 Open JSON Export</button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -1209,201 +1288,224 @@ async function delOrder(id){
 }
 function shAlert(msg,type){const el=document.getElementById('sa');if(!el)return;el.innerHTML=`<div class="alert alert-${type}" style="margin-bottom:12px">${msg}</div>`;setTimeout(()=>{if(el)el.innerHTML=''},3000)}
 
+// ── Config: State & Search ────────────────────────────────────
+let _searchCust = '', _searchSup = '', _searchTeam = '', _searchSaleTeam = '', _searchSale = '';
+
+function setSearchCust(v){ _searchCust = v; rCustGrid(); }
+function setSearchSup(v){ _searchSup = v; rSupGrid(); }
+function setSearchTeam(v){ _searchTeam = v; rTeam(); }
+function setSearchSaleTeam(v){ _searchSaleTeam = v; rSaleTeamGrid(); }
+function setSearchSale(v){ _searchSale = v; rSaleGrid(); }
+
 // ── Config: Team ──────────────────────────────────────────────
 function rTeam(){
-  document.getElementById('team-grid').innerHTML=_team.map((n,i)=>`
-    <div class="cfg-row">
-      <div class="cfg-row-main">${n}</div>
-      <button class="cfg-del" onclick="delMember(${i})">×</button>
-    </div>`).join('');
-}
-async function migrateSteps(){
-  if(!confirm('อัปเกรด Order ทั้งหมดเป็น 19 ขั้นตอน?\nข้อมูลที่กรอกไปแล้วจะไม่หาย เฉพาะขั้นตอนใหม่จะถูกเพิ่ม'))return;
-  const el=document.getElementById('migrate-result');
-  el.style.color='var(--mu)';el.textContent='กำลังอัปเกรด...';
-  try{
-    const r=await fetch('/api/migrate-steps',{method:'POST',headers:{'Content-Type':'application/json'}});
-    const d=await r.json();
-    if(d.ok){
-      el.style.color='var(--done)';
-      el.textContent=`✅ อัปเกรดสำเร็จ ${d.migrated} Order → ${d.newStepCount} ขั้นตอน`;
-      await loadAll();rSide();
-      if(_active)rDetail(_active);
-    } else {
-      el.style.color='var(--late)';el.textContent='❌ เกิดข้อผิดพลาด: '+d.error;
-    }
-  }catch(e){el.style.color='var(--late)';el.textContent='❌ '+e.message;}
-}
-function doBackup(){
-  const token=prompt('กรุณาใส่ Admin Token เพื่อดาวน์โหลด Backup:');
-  if(!token)return;
-  const a=document.createElement('a');
-  a.href=`/api/backup?token=${encodeURIComponent(token)}`;
-  a.download='';a.click();
-}
-function doJsonExport(){
-  const token=prompt('กรุณาใส่ Admin Token เพื่อ Export JSON:');
-  if(!token)return;
-  window.open(`/api/export-json?token=${encodeURIComponent(token)}`,'_blank');
-}
-function rPRTab(){
-  // POI (ตปท.)
-  const pendingPoi = (_prs||[]).filter(p=>!p.linkedPOI && !p.isCancelled && p.domestic==='ตปท.');
-  const badgePoi = document.getElementById('pr-badge');
-  if(badgePoi){badgePoi.style.display=pendingPoi.length?'inline':'none';badgePoi.textContent=pendingPoi.length;}
-  document.getElementById('pr-tab-count').textContent=`${pendingPoi.length} PR รอเปิด POI จากทั้งหมด ${(_prs||[]).length} PR`;
-  document.getElementById('pr-tab-empty').style.display=pendingPoi.length?'none':'block';
-  document.getElementById('pr-tab-body').innerHTML=pendingPoi.map(p=>{
-    const domesticBadge=`<span style="font-size:10px;padding:1px 5px;border-radius:99px;background:#f0fdf4;color:#16a34a;border:1px solid #86efac;font-weight:600;margin-left:4px">✈️ ตปท.</span>`;
-    return`<tr style="border-bottom:1px solid var(--bd2)">
-      <td style="padding:10px 14px;font-weight:700">${p.prNo}${domesticBadge}</td>
-      <td style="padding:10px 14px;font-size:13px">${p.customerName||'—'}</td>
-      <td style="padding:10px 14px;font-size:12px;color:var(--mu)">${p.customerPO||'—'}</td>
-      <td style="padding:10px 14px;font-size:12px;color:${p.dueDate&&new Date(p.dueDate)<new Date()?'var(--late)':'var(--mu)'};font-weight:${p.dueDate&&new Date(p.dueDate)<new Date()?'600':'400'}">${p.dueDate||'—'}</td>
-      <td style="padding:10px 14px">${p.fineYN==='yes'?`<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:var(--late-bg);color:var(--late);border:1px solid var(--late-bd)">⚠️ ${p.finePct||'?'}%</span>`:'—'}</td>
-      <td style="padding:10px 14px;font-size:12px">${p.sale||'—'}</td>
-      <td style="padding:10px 14px"><span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:#fff8c5;color:#9a6700;border:1px solid #e3b341">⏳ รอเปิด POI</span></td>
-      <td style="padding:10px 14px"><button class="btn btn-sm btn-primary" onclick="openNewFromPR(${p.id})">+ เปิด POI จาก PR นี้</button></td>
-    </tr>`;
-  }).join('');
-
-  // PO (ในประเทศ / นปท.)
-  const pendingPo = (_prs||[]).filter(p=>!p.linkedPOI && !p.isCancelled && p.domestic!=='ตปท.');
-  const badgePo = document.getElementById('pr-po-badge');
-  if(badgePo){badgePo.style.display=pendingPo.length?'inline':'none';badgePo.textContent=pendingPo.length;}
-  const countEl = document.getElementById('pr-po-tab-count');
-  if(countEl) countEl.textContent=`${pendingPo.length} PR รอเปิด PO จากทั้งหมด ${(_prs||[]).length} PR`;
-  const emptyEl = document.getElementById('pr-po-tab-empty');
-  if(emptyEl) emptyEl.style.display=pendingPo.length?'none':'block';
-  const bodyEl = document.getElementById('pr-po-tab-body');
-  if(bodyEl) bodyEl.innerHTML=pendingPo.map(p=>{
-    const label=p.domestic==='นปท.'?'🏠 นปท.':'🏠 ในประเทศ';
-    const domesticBadge=`<span style="font-size:10px;padding:1px 5px;border-radius:99px;background:#e0f2fe;color:#0550ae;border:1px solid #7dd3fc;font-weight:600;margin-left:4px">${label}</span>`;
-    return`<tr style="border-bottom:1px solid var(--bd2)">
-      <td style="padding:10px 14px;font-weight:700">${p.prNo}${domesticBadge}</td>
-      <td style="padding:10px 14px;font-size:13px">${p.customerName||'—'}</td>
-      <td style="padding:10px 14px;font-size:12px;color:var(--mu)">${p.customerPO||'—'}</td>
-      <td style="padding:10px 14px;font-size:12px;color:${p.dueDate&&new Date(p.dueDate)<new Date()?'var(--late)':'var(--mu)'};font-weight:${p.dueDate&&new Date(p.dueDate)<new Date()?'600':'400'}">${p.dueDate||'—'}</td>
-      <td style="padding:10px 14px">${p.fineYN==='yes'?`<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:var(--late-bg);color:var(--late);border:1px solid var(--late-bd)">⚠️ ${p.finePct||'?'}%</span>`:'—'}</td>
-      <td style="padding:10px 14px;font-size:12px">${p.sale||'—'}</td>
-      <td style="padding:10px 14px"><span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:#fff8c5;color:#9a6700;border:1px solid #e3b341">⏳ รอเปิด PO</span></td>
-      <td style="padding:10px 14px"><button class="btn btn-sm btn-primary" onclick="openNewFromPR(${p.id})">+ เปิด PO จาก PR นี้</button></td>
-    </tr>`;
+  const all = [...(_team||[])];
+  const countEl = document.getElementById('team-count');
+  if(countEl) countEl.textContent = `${all.length} คน`;
+  
+  const q = (_searchTeam||'').trim().toLowerCase();
+  const filtered = q ? all.filter(n => n.toLowerCase().includes(q)) : all;
+  
+  const container = document.getElementById('team-grid');
+  if(!container) return;
+  
+  if(!filtered.length) {
+    container.innerHTML = `<div style="padding:20px;text-align:center;font-size:12px;color:var(--mu)">${q ? 'ไม่พบข้อมูลที่ค้นหา' : 'ยังไม่มีสมาชิกทีมงาน'}</div>`;
+    return;
+  }
+  
+  container.innerHTML = filtered.map(n => {
+    const origIdx = _team.indexOf(n);
+    return `
+    <div class="cfg-item-row" title="${esc(n)}">
+      <span class="cfg-item-name">👤 ${esc(n)}</span>
+      <button class="cfg-del-btn" onclick="delMember(${origIdx >= 0 ? origIdx : 0})" title="ลบ">✕</button>
+    </div>`;
   }).join('');
 }
 async function addMember(){
-  const v=document.getElementById('new-member').value.trim();if(!v)return;
-  if(_team.includes(v)){alert('มีชื่อนี้อยู่แล้ว');return}
-  _team.push(v);await put('/api/config/team',{team:_team});
-  document.getElementById('new-member').value='';rTeam();
+  const inp = document.getElementById('new-member');
+  const v = inp ? inp.value.trim() : '';
+  if(!v) return;
+  if(_team.includes(v)){ alert('มีชื่อนี้อยู่แล้ว'); return; }
+  _team.push(v);
+  await put('/api/config/team', {team:_team});
+  if(inp) inp.value = '';
+  rTeam();
 }
 async function delMember(i){
-  if(!confirm('ลบสมาชิกคนนี้?'))return;
-  _team.splice(i,1);await put('/api/config/team',{team:_team});rTeam();
+  if(!confirm(`ลบสมาชิก "${_team[i]}"?`)) return;
+  _team.splice(i,1);
+  await put('/api/config/team', {team:_team});
+  rTeam();
 }
 
-// ── Config: Suppliers ─────────────────────────────────────────
-function showCustDrop(i,q){
-  const drop=document.getElementById('cust-drop-'+i);
-  if(!drop)return;
-  const filtered=(_customers||[]).filter(c=>c.toLowerCase().includes((q||'').toLowerCase()))
-    .sort((a,b) => a.localeCompare(b, 'th'));
-  drop.innerHTML=filtered.length
-    ?filtered.map(c=>`<div class="sup-option" onmousedown="pickCust(${i},'${c.replace(/'/g,"\\'")}')">${c}</div>`).join('')
-    :'<div style="padding:8px 12px;font-size:12px;color:var(--mu)">ไม่พบ — เพิ่มลูกค้าได้ที่ ⚙️ ตั้งค่า</div>';
-  drop.classList.add('show');
-}
-function hideCustDrop(i){
-  const d=document.getElementById('cust-drop-'+i);
-  if(d)d.classList.remove('show');
-  const inp=document.querySelector('#item-row-'+i+' input[placeholder*="ลูกค้า"]');
-  if(!inp)return;
-  const val=inp.value.trim();
-  const matched=(_customers||[]).find(c=>c.toLowerCase()===val.toLowerCase());
-  if(val===''){
-    updItem(i,'customer','');
-    inp.value='';
-  }else if(matched){
-    updItem(i,'customer',matched);
-    inp.value=matched;
-  }else{
-    const lastVal=(_modalItems[i]&&_modalItems[i].customer)||'';
-    inp.value=lastVal;
-  }
-}
-function pickCust(i,name){
-  updItem(i,'customer',name);
-  const inp=document.querySelector('#item-row-'+i+' input[placeholder*="ลูกค้า"]');
-  if(inp)inp.value=name;
-  hideCustDrop(i);
-}
+// ── Config: Sale Teams ────────────────────────────────────────
 function rSaleTeamGrid(){
-  document.getElementById('saleteam-grid').innerHTML=(_saleTeams||[]).map((s,i)=>`
-    <div class="cfg-row"><div class="cfg-row-main">👔 ${s}</div>
-    <button class="cfg-del" onclick="delSaleTeam(${i})">×</button></div>`).join('');
+  const all = [...(_saleTeams||[])];
+  const countEl = document.getElementById('saleteam-count');
+  if(countEl) countEl.textContent = `${all.length} ทีม`;
+  
+  const q = (_searchSaleTeam||'').trim().toLowerCase();
+  const filtered = q ? all.filter(s => s.toLowerCase().includes(q)) : all;
+  
+  const container = document.getElementById('saleteam-grid');
+  if(!container) return;
+  
+  if(!filtered.length) {
+    container.innerHTML = `<div style="padding:20px;text-align:center;font-size:12px;color:var(--mu)">${q ? 'ไม่พบข้อมูลที่ค้นหา' : 'ยังไม่มีทีมขาย'}</div>`;
+    return;
+  }
+  
+  container.innerHTML = filtered.map(s => {
+    const origIdx = _saleTeams.indexOf(s);
+    return `
+    <div class="cfg-item-row" title="${esc(s)}">
+      <span class="cfg-item-name">👔 ${esc(s)}</span>
+      <button class="cfg-del-btn" onclick="delSaleTeam(${origIdx >= 0 ? origIdx : 0})" title="ลบ">✕</button>
+    </div>`;
+  }).join('');
 }
 async function addSaleTeam(){
-  const v=document.getElementById('new-saleteam').value.trim();if(!v)return;
-  if(!_saleTeams)_saleTeams=[];
-  if(_saleTeams.includes(v)){alert('มีอยู่แล้ว');return;}
-  _saleTeams.push(v);await put('/api/config/saleTeams',{saleTeams:_saleTeams});
-  document.getElementById('new-saleteam').value='';rSaleTeamGrid();
+  const inp = document.getElementById('new-saleteam');
+  const v = inp ? inp.value.trim() : '';
+  if(!v) return;
+  if(!_saleTeams) _saleTeams = [];
+  if(_saleTeams.includes(v)){ alert('มีอยู่แล้ว'); return; }
+  _saleTeams.push(v);
+  await put('/api/config/saleTeams', {saleTeams:_saleTeams});
+  if(inp) inp.value = '';
+  rSaleTeamGrid();
 }
 async function delSaleTeam(i){
-  if(!confirm('ลบ?'))return;
-  _saleTeams.splice(i,1);await put('/api/config/saleTeams',{saleTeams:_saleTeams});rSaleTeamGrid();
+  if(!confirm(`ลบทีม "${_saleTeams[i]}"?`)) return;
+  _saleTeams.splice(i,1);
+  await put('/api/config/saleTeams', {saleTeams:_saleTeams});
+  rSaleTeamGrid();
 }
+
+// ── Config: Sales ─────────────────────────────────────────────
 function rSaleGrid(){
-  document.getElementById('sale-grid').innerHTML=(_sales||[]).map((s,i)=>`
-    <div class="cfg-row"><div class="cfg-row-main">🧑‍💼 ${s}</div>
-    <button class="cfg-del" onclick="delSale(${i})">×</button></div>`).join('');
+  const all = [...(_sales||[])];
+  const countEl = document.getElementById('sale-count');
+  if(countEl) countEl.textContent = `${all.length} คน`;
+  
+  const q = (_searchSale||'').trim().toLowerCase();
+  const filtered = q ? all.filter(s => s.toLowerCase().includes(q)) : all;
+  
+  const container = document.getElementById('sale-grid');
+  if(!container) return;
+  
+  if(!filtered.length) {
+    container.innerHTML = `<div style="padding:20px;text-align:center;font-size:12px;color:var(--mu)">${q ? 'ไม่พบข้อมูลที่ค้นหา' : 'ยังไม่มีรายชื่อ Sale'}</div>`;
+    return;
+  }
+  
+  container.innerHTML = filtered.map(s => {
+    const origIdx = _sales.indexOf(s);
+    return `
+    <div class="cfg-item-row" title="${esc(s)}">
+      <span class="cfg-item-name">🧑‍💼 ${esc(s)}</span>
+      <button class="cfg-del-btn" onclick="delSale(${origIdx >= 0 ? origIdx : 0})" title="ลบ">✕</button>
+    </div>`;
+  }).join('');
 }
 async function addSale(){
-  const v=document.getElementById('new-sale').value.trim();if(!v)return;
-  if(!_sales)_sales=[];
-  if(_sales.includes(v)){alert('มีอยู่แล้ว');return;}
-  _sales.push(v);await put('/api/config/sales',{sales:_sales});
-  document.getElementById('new-sale').value='';rSaleGrid();
+  const inp = document.getElementById('new-sale');
+  const v = inp ? inp.value.trim() : '';
+  if(!v) return;
+  if(!_sales) _sales = [];
+  if(_sales.includes(v)){ alert('มีอยู่แล้ว'); return; }
+  _sales.push(v);
+  await put('/api/config/sales', {sales:_sales});
+  if(inp) inp.value = '';
+  rSaleGrid();
 }
 async function delSale(i){
-  if(!confirm('ลบ?'))return;
-  _sales.splice(i,1);await put('/api/config/sales',{sales:_sales});rSaleGrid();
+  if(!confirm(`ลบ Sale "${_sales[i]}"?`)) return;
+  _sales.splice(i,1);
+  await put('/api/config/sales', {sales:_sales});
+  rSaleGrid();
 }
+
+// ── Config: Customers ─────────────────────────────────────────
 function rCustGrid(){
-  const sorted = [...(_customers||[])].sort((a,b) => a.localeCompare(b, 'th'));
-  document.getElementById('cust-grid').innerHTML=sorted.map(c=>`
-    <div class="cfg-row">
-      <div class="cfg-row-main">👤 ${c}</div>
-      <button class="cfg-del" onclick="delCustomer('${c.replace(/'/g, "\\'")}')">×</button>
+  const all = [...(_customers||[])].sort((a,b) => a.localeCompare(b, 'th'));
+  const countEl = document.getElementById('cust-count');
+  if(countEl) countEl.textContent = `${all.length} รายการ`;
+  
+  const q = (_searchCust||'').trim().toLowerCase();
+  const filtered = q ? all.filter(c => c.toLowerCase().includes(q)) : all;
+  
+  const container = document.getElementById('cust-grid');
+  if(!container) return;
+  
+  if(!filtered.length) {
+    container.innerHTML = `<div style="padding:24px;text-align:center;font-size:12px;color:var(--mu)">${q ? 'ไม่พบข้อมูลที่ค้นหา' : 'ยังไม่มีข้อมูลลูกค้า'}</div>`;
+    return;
+  }
+  
+  container.innerHTML = filtered.map(c => `
+    <div class="cfg-item-row" title="${esc(c)}">
+      <span class="cfg-item-name">👤 ${esc(c)}</span>
+      <button class="cfg-del-btn" onclick="delCustomer(decodeURIComponent('${encodeURIComponent(c)}'))" title="ลบ">✕</button>
     </div>`).join('');
 }
 async function addCustomer(){
-  const v=document.getElementById('new-cust').value.trim();if(!v)return;
-  if(_customers.includes(v)){alert('มีลูกค้านี้อยู่แล้ว');return}
-  _customers.push(v);await put('/api/config/customers',{customers:_customers});
-  document.getElementById('new-cust').value='';rCustGrid();
+  const inp = document.getElementById('new-cust');
+  const v = inp ? inp.value.trim() : '';
+  if(!v) return;
+  if(_customers.includes(v)){ alert('มีลูกค้านี้อยู่แล้ว'); return; }
+  _customers.push(v);
+  await put('/api/config/customers', {customers:_customers});
+  if(inp) inp.value = '';
+  rCustGrid();
 }
 async function delCustomer(name){
-  if(!confirm(`ลบลูกค้า ${name}?`))return;
-  _customers=_customers.filter(x=>x!==name);await put('/api/config/customers',{customers:_customers});rCustGrid();
+  if(!confirm(`ลบลูกค้า "${name}"?`)) return;
+  _customers = _customers.filter(x => x !== name);
+  await put('/api/config/customers', {customers:_customers});
+  rCustGrid();
 }
+
+// ── Config: Suppliers ─────────────────────────────────────────
 function rSupGrid(){
-  const sorted = [...(_suppliers||[])].sort((a,b) => a.localeCompare(b, 'th'));
-  document.getElementById('sup-grid').innerHTML=sorted.map(s=>`
-    <div class="cfg-row">
-      <div class="cfg-row-main">🏭 ${s}</div>
-      <button class="cfg-del" onclick="delSupplier('${s.replace(/'/g, "\\'")}')">×</button>
+  const all = [...(_suppliers||[])].sort((a,b) => a.localeCompare(b, 'th'));
+  const countEl = document.getElementById('sup-count');
+  if(countEl) countEl.textContent = `${all.length} รายการ`;
+  
+  const q = (_searchSup||'').trim().toLowerCase();
+  const filtered = q ? all.filter(s => s.toLowerCase().includes(q)) : all;
+  
+  const container = document.getElementById('sup-grid');
+  if(!container) return;
+  
+  if(!filtered.length) {
+    container.innerHTML = `<div style="padding:24px;text-align:center;font-size:12px;color:var(--mu)">${q ? 'ไม่พบข้อมูลที่ค้นหา' : 'ยังไม่มีข้อมูล Supplier'}</div>`;
+    return;
+  }
+  
+  container.innerHTML = filtered.map(s => `
+    <div class="cfg-item-row" title="${esc(s)}">
+      <span class="cfg-item-name">🏭 ${esc(s)}</span>
+      <button class="cfg-del-btn" onclick="delSupplier(decodeURIComponent('${encodeURIComponent(s)}'))" title="ลบ">✕</button>
     </div>`).join('');
 }
 async function addSupplier(){
-  const v=document.getElementById('new-sup').value.trim();if(!v)return;
-  if(_suppliers.includes(v)){alert('มี Supplier นี้อยู่แล้ว');return}
-  _suppliers.push(v);await put('/api/config/suppliers',{suppliers:_suppliers});
-  document.getElementById('new-sup').value='';rSupGrid();
+  const inp = document.getElementById('new-sup');
+  const v = inp ? inp.value.trim() : '';
+  if(!v) return;
+  if(_suppliers.includes(v)){ alert('มี Supplier นี้อยู่แล้ว'); return; }
+  _suppliers.push(v);
+  await put('/api/config/suppliers', {suppliers:_suppliers});
+  if(inp) inp.value = '';
+  rSupGrid();
 }
 async function delSupplier(name){
-  if(!confirm(`ลบ Supplier ${name}?`))return;
-  _suppliers=_suppliers.filter(x=>x!==name);await put('/api/config/suppliers',{suppliers:_suppliers});rSupGrid();
+  if(!confirm(`ลบ Supplier "${name}"?`)) return;
+  _suppliers = _suppliers.filter(x => x !== name);
+  await put('/api/config/suppliers', {suppliers:_suppliers});
+  rSupGrid();
 }
 
 // ── Config: Steps ─────────────────────────────────────────────
