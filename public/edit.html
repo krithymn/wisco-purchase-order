@@ -1118,6 +1118,37 @@ function pickSupplier(val) {
   hideSupDrop();
 }
 
+// ── Customer dropdown searchable autocomplete ─────────────────
+function showCustDrop(i, q) {
+  const drop = document.getElementById('cust-drop-' + i);
+  if (!drop) return;
+  const custs = [...(_customers || [])];
+  custs.sort((a,b) => a.localeCompare(b, 'th'));
+  const filtered = custs.filter(c => c.toLowerCase().includes((q || '').toLowerCase()));
+  drop.innerHTML = filtered.length
+    ? filtered.map(c => {
+        const encoded = encodeURIComponent(c);
+        return `<div class="sup-option" onmousedown="pickCust(${i}, decodeURIComponent('${encoded}'))">${esc(c)}</div>`;
+      }).join('')
+    : '<div style="padding:8px 12px;font-size:12px;color:var(--mu)">ไม่พบลูกค้า</div>';
+  drop.classList.add('show');
+}
+function hideCustDrop(i) {
+  const d = document.getElementById('cust-drop-' + i);
+  if (d) d.classList.remove('show');
+  const inp = document.querySelector('#item-row-' + i + ' input[placeholder*="ลูกค้า"]');
+  if (!inp) return;
+  const val = inp.value.trim();
+  updItem(i, 'customer', val);
+}
+function pickCust(i, name) {
+  updItem(i, 'customer', name);
+  const inp = document.querySelector('#item-row-' + i + ' input[placeholder*="ลูกค้า"]');
+  if (inp) inp.value = name;
+  const d = document.getElementById('cust-drop-' + i);
+  if (d) d.classList.remove('show');
+}
+
 // ── Order modal ───────────────────────────────────────────────
 function openNew(){
   document.getElementById('modal-t').textContent='เพิ่ม Order ใหม่';
