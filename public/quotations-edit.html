@@ -707,9 +707,10 @@ async function saveQuotation() {
 
   const selectedStatus = document.getElementById('f-status').value;
   const dbStatus = STATUS_MAP_UI_TO_DB[selectedStatus] || selectedStatus;
-  _quoteItems.forEach(it => {
-    it.status = dbStatus;
-  });
+  const original = _quotations.find(q => q.id === _editId);
+  if (!original || dbStatus !== original.status) {
+    _quoteItems.forEach(it => { it.status = dbStatus; });
+  }
 
   const offerDateVal = toISO(document.getElementById('f-offer-date').value || '');
   document.getElementById('f-completed-date').value = document.getElementById('f-offer-date').value;
@@ -855,36 +856,82 @@ function rList() {
   }).join('');
 }
 
-function renderReadonlyCloseout(q) {
-  const container = document.getElementById('closeout-readonly-list');
-  if (!container) return;
-  let items = [];
+
+let _closeoutSaving = false;
+const CLOSEOUT_STATUSES = ['PENDING', 'WIN', 'LOST', 'HOLD', 'CANCEL'];
+
+function getCloseoutItems(q) {
   try {
-    items = JSON.parse(q.product || '[]');
-    if (!Array.isArray(items)) items = [];
-  } catch(e) {
-    items = q.product ? [{ product: q.product, quantity: '1', status: q.status || 'PENDING' }] : [];
-  }
-  if (items.length === 0) {
-    container.innerHTML = `<div style="font-size:12px; color:var(--mu)">ไม่มีรายการสินค้า</div>`;
+    const items = JSON.parse(q.product || '[]');
+    if (Array.isArray(items)) return items;
+  } catch(e) {}
+  return q.product ? [{ product: q.product, quantity: '1', status: q.status || 'PENDING', pr_no: q.pr_no || '', po_no: q.po_no || '' }] : [];
+}
+
+function renderCloseout(q) {
+  const container = document.getElementById('closeout-list');
+  if (!container) return;
+  const items = getCloseoutItems(q);
+  if (!items.length) {
+    container.innerHTML = '<div style="font-size:12px; color:var(--mu)">ไม่มีรายการสินค้า</div>';
     return;
   }
-  container.innerHTML = items.map(it => {
-    const badgeClass = `b-${(it.status || 'PENDING').toLowerCase()}`;
-    const prInfo = it.status === 'WIN' && it.pr_no ? `
-      <div style="font-size:11px; color:var(--mu); margin-top:4px">
-        PR: <strong>${it.pr_no}</strong>${it.po_no ? ` | PO: <strong>${it.po_no}</strong>` : ''}
-      </div>` : '';
+  container.innerHTML = '<p style="font-size:12px;color:var(--mu)">เลือกผลการนำเสนอของแต่ละสินค้า ระบบจะบันทึกทันที</p>' + items.map((it, index) => {
+    const status = it.status || 'PENDING';
+    const options = CLOSEOUT_STATUSES.includes(status) ? CLOSEOUT_STATUSES : [status, ...CLOSEOUT_STATUSES];
     return `
-      <div style="padding:10px; background:var(--s2); border:1px solid var(--bd); border-radius:var(--r)">
-        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px">
-          <span style="font-size:13px; font-weight:600; color:var(--tx)">${esc(it.product)} (x${esc(it.quantity)})</span>
-          <span class="badge ${badgeClass}">${it.status || 'PENDING'}</span>
-        </div>
-        ${prInfo}
-      </div>
-    `;
-  }).join('');
+      <div style="padding:10px; background:var(--s2); border:1px solid var(--bd); border-radius:8px">
+        <label for="closeout-status-${index}" style="display:block;font-size:13px;font-weight:600;margin-bottom:8px">${esc(it.product)} (x${esc(it.quantity)})</label>
+        <select id="closeout-status-${index}" onchange="saveCloseoutStatus(${q.id}, ${index}, this.value)" style="width:100%;padding:8px;background:var(--sur);color:var(--tx);border:1px solid var(--bd);border-radius:8px">
+          ${options.map(value => `<option value="${esc(value)}" ${value === status ? 'selected' : ''}>${esc(value)}</option>`).join('')}
+        </select>
+        ${it.pr_no ? `<div style="font-size:11px;color:var(--mu);margin-top:6px">PR: ${esc(it.pr_no)}${it.po_no ? ' | PO: ' + esc(it.po_no) : ''}</div>` : ''}
+      </div>`;
+  }).join('') + '<div id="closeout-feedback" role="status" style="font-size:12px;color:var(--mu)"></div>';
+}
+
+async function saveCloseoutStatus(id, index, status) {
+  if (_closeoutSaving || !CLOSEOUT_STATUSES.includes(status)) return;
+  const q = _quotations.find(x => x.id === id);
+  if (!q) return;
+  const items = getCloseoutItems(q);
+  if (!items[index]) return;
+  items[index] = { ...items[index], status };
+  _closeoutSaving = true;
+  const controls = document.querySelectorAll('#closeout-list select');
+  controls.forEach(el => { el.disabled = true; });
+  const feedback = document.getElementById('closeout-feedback');
+  if (feedback) feedback.textContent = 'กำลังบันทึก...';
+  try {
+    const response = await fetch(`/api/quotations/${id}/item-statuses`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({items})
+    });
+    if (!response.ok) throw new Error('บันทึกสถานะไม่สำเร็จ กรุณาลองอีกครั้ง');
+    const result = await response.json();
+    q.product = JSON.stringify(items);
+    q.status = result.status;
+    const won = items.find(it => it.status === 'WIN');
+    q.pr_no = won?.pr_no || '';
+    q.po_no = won?.po_no || '';
+    rList();
+    if (_selected?.id === id) {
+      _selected = q;
+      if (feedback) feedback.textContent = '✓ บันทึกสถานะเรียบร้อย';
+      // Keep the proposal control aligned without re-rendering unsaved form fields.
+      const proposalStatus = document.getElementById('act-status');
+      if (proposalStatus) proposalStatus.value = STATUS_MAP_DB_TO_UI[q.status] || q.status;
+    }
+  } catch(err) {
+    if (_selected?.id === id) {
+      renderCloseout(q);
+      document.getElementById('closeout-feedback').textContent = err.message;
+    }
+  } finally {
+    _closeoutSaving = false;
+    controls.forEach(el => { el.disabled = false; });
+  }
 }
 
 function selectQuote(id) {
@@ -1061,14 +1108,14 @@ function selectQuote(id) {
         <!-- Closeout -->
         <div class="section-card" style="margin-bottom:0; height:100%">
           <div class="section-title">🟢 ผลการนำเสนอ (Close Out)</div>
-          <div id="closeout-readonly-list" style="display:flex; flex-direction:column; gap:10px; margin-top:8px">
+          <div id="closeout-list" style="display:flex; flex-direction:column; gap:10px; margin-top:8px">
             <!-- populated dynamically -->
           </div>
         </div>
       </div>
     </div>
   `;
-  renderReadonlyCloseout(q);
+  renderCloseout(q);
 }
 
 async function updateProposalInfo(id) {
@@ -1084,7 +1131,8 @@ async function updateProposalInfo(id) {
     const r = await fetch(`/api/quotations/${id}/progress`, {
       method: 'PATCH',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ offerDate, completedDate, totalOffer, offerCurrency, status, remark })
+      body: JSON.stringify({ offerDate, completedDate, totalOffer, offerCurrency, remark,
+        ...(status !== _selected.status ? {status} : {}) })
     });
     if (r.ok) {
       alert('✓ บันทึกรายละเอียดเสนอราคาเรียบร้อย');
@@ -1112,7 +1160,10 @@ function getCurrentProposalEntryData() {
   }
   if (offerEl) data.totalOffer = parseFloat(offerEl.value) || 0.0;
   if (currencyEl) data.offerCurrency = currencyEl.value;
-  if (statusEl) data.status = STATUS_MAP_UI_TO_DB[statusEl.value] || statusEl.value;
+  if (statusEl) {
+    const status = STATUS_MAP_UI_TO_DB[statusEl.value] || statusEl.value;
+    if (status !== _selected.status) data.status = status;
+  }
   if (remarkEl) data.remark = remarkEl.value.trim();
   
   return data;
@@ -1174,6 +1225,7 @@ refresh();
 
 // Auto-refresh every 15 seconds to sync admin quotations
 setInterval(async () => {
+  if (_closeoutSaving) return;
   await loadData();
   rList();
   if (_selected) {
@@ -1248,3 +1300,4 @@ if (document.readyState === 'loading') {
 
 </body>
 </html>
+
