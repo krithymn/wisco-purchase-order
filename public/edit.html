@@ -644,6 +644,8 @@ function isPP(o,i){ return o.prepayment && i===11; } // 💳 at index 11
 function calcDeadline(o,i){
   if(!o.startDate) return null;
   let d=new Date(o.startDate);
+  // Legacy/imported dates can be invalid. Keep the order editable without inventing a deadline.
+  if(!Number.isFinite(d.getTime())) return null;
   for(let j=0;j<=i;j++){
     if(o.skippedSteps&&o.skippedSteps[j]) continue; // skip skipped steps
     // use planned days only if explicitly set (>0), otherwise use default
@@ -652,7 +654,7 @@ function calcDeadline(o,i){
   }
   return d;
 }
-function fmtDateStr(d){ return d?d.toISOString().split('T')[0]:''; }
+function fmtDateStr(d){ return d&&Number.isFinite(d.getTime())?d.toISOString().split('T')[0]:''; }
 
 // ── Status logic ─────────────────────────────────────────────
 // Special case: step has custom days different from default
@@ -753,6 +755,8 @@ function rDetail(id){
     if(isStepSpecial(o,i)) specCount++;
   }
 
+  const invalidStartDate=!!o.startDate&&!Number.isFinite(new Date(o.startDate).getTime());
+  const dateWarning=invalidStartDate?'<div role="alert" style="padding:12px 16px;margin-bottom:14px;border:1px solid #d29922;border-radius:8px;background:#fff8c5;color:#633c01">⚠️ วันที่เปิด PO ไม่ถูกต้อง — กรุณากดแก้ไขและตรวจสอบวันที่เปิด PO ระบบยังไม่คำนวณกำหนดแต่ละขั้นตอนจนกว่าจะแก้ไขวันที่ (Invalid opening date — edit this order to correct it.)</div>':'';
   let cancelBanner='';
   if(o.isCancelled){
     cancelBanner=`<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:var(--r);margin-bottom:12px;background:#f1f5f9;border:1px solid #cbd5e1;color:#64748b">
@@ -857,7 +861,7 @@ function rDetail(id){
     <button class="btn btn-sm btn-danger" onclick="delOrder('${id}')">🗑 ลบ</button>
   </div>
 </div>
-${cancelBanner}${prepBanner}
+${dateWarning}${cancelBanner}${prepBanner}
 ${o.notes?`<div class="card" style="margin-bottom:14px;background:var(--spec-bg);border:1px solid var(--spec-bd);color:var(--spec);padding:12px 16px;border-radius:var(--r);font-size:13px">
   <strong>📝 หมายเหตุ (Remark):</strong> ${o.notes}
 </div>`:''}
