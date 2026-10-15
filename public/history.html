@@ -244,6 +244,7 @@ input[type=checkbox].chk{width:15px;height:15px;cursor:pointer;accent-color:var(
       <div class="field-grid">
         <label class="field-chk"><input type="checkbox" class="ef" data-f="customer" checked> ลูกค้า</label>
         <label class="field-chk"><input type="checkbox" class="ef" data-f="prNum" checked> PR Number</label>
+        <label class="field-chk"><input type="checkbox" class="ef" data-f="prDocDate" checked> วันที่เอกสาร PR (Excel)</label>
         <label class="field-chk"><input type="checkbox" class="ef" data-f="sendDate" checked> วันที่ส่ง PR</label>
         <label class="field-chk"><input type="checkbox" class="ef" data-f="product" checked> สินค้า / Valve</label>
         <label class="field-chk"><input type="checkbox" class="ef" data-f="qty" checked> จำนวน</label>
@@ -396,15 +397,29 @@ function chkAll(v){document.querySelectorAll('.ef').forEach(c=>c.checked=v);}
 function getF(){const f={};document.querySelectorAll('.ef').forEach(c=>f[c.dataset.f]=c.checked);return f;}
 function getOrders(){if(_scope==='selected')return _all.filter(o=>_selIds.includes(o.id));if(_scope==='filtered')return _filtered;return _all;}
 
-function doExport(){
+async function doExport(){
   const orders=getOrders();
   if(!orders.length){alert('ไม่มีข้อมูล');return;}
   const f=getF();closeExpModal();
-  _fmt==='excel'?doExcel(orders,f):doPDF(orders,f);
+  if(_fmt!=='excel'){doPDF(orders,f);return;}
+  try {
+    let prDates=new Map();
+    if(f.prDocDate){
+      const response=await fetch(API+'/api/prs');
+      if(!response.ok)throw new Error('PR dates unavailable');
+      const prs=await response.json();
+      if(!Array.isArray(prs))throw new Error('Invalid PR response');
+      prDates=new Map(prs.map(pr=>[String(pr.prNo||'').trim().toUpperCase(),pr.openDate||'']));
+    }
+    doExcel(orders,f,prDates);
+  } catch(error){
+    console.error('Excel export failed:',error);
+    alert('ไม่สามารถ Export Excel ได้ กรุณาลองใหม่ หรือตรวจสอบสิทธิ์เข้าถึงข้อมูล PR');
+  }
 }
 
 // ── EXCEL ─────────────────────────────────────────────────────
-function doExcel(orders,f){
+function doExcel(orders,f,prDates=new Map()){
   orders=[...orders].sort((a,b)=>{const m=id=>{const x=(id||'').match(/POI(\d{4})-(\d+)/i);return x?parseInt(x[1])*10000+parseInt(x[2]):0;};return m(a.id)-m(b.id);});
   const wb=XLSX.utils.book_new();
   const sLabel2=s=>({done:'เสร็จแล้ว',late:'เลยกำหนด',progress:'กำลังดำเนินการ',pending:'ยังไม่เริ่ม',spec:'Special Case'}[s]||s);
@@ -430,10 +445,11 @@ function doExcel(orders,f){
   const ws1=XLSX.utils.aoa_to_sheet(sh1);XLSX.utils.book_append_sheet(wb,ws1,'Summary');
 
   // Sheet 2: Items
-  const hasItem=f.customer||f.prNum||f.sendDate||f.product||f.qty||f.shipStat||f.shipNote;
+  const hasItem=f.customer||f.prNum||f.prDocDate||f.sendDate||f.product||f.qty||f.shipStat||f.shipNote;
   if(hasItem){
     const sh2=[]; const h2=['POI Number','Supplier'];
     if(f.customer)h2.push('ลูกค้า');if(f.prNum)h2.push('PR Number');
+    if(f.prDocDate)h2.push('วันที่เอกสาร PR');
     if(f.sendDate)h2.push('วันที่ส่ง PR');if(f.product)h2.push('สินค้า / Valve');
     if(f.qty)h2.push('จำนวน');if(f.shipStat)h2.push('สถานะรับสินค้า');if(f.shipNote)h2.push('Note');
     sh2.push(h2);
@@ -445,6 +461,7 @@ function doExcel(orders,f){
         subs.forEach((s2,si)=>{
           const row=[o.id,o.factory||''];
           if(f.customer)row.push(it.customer||'');if(f.prNum)row.push(it.prNumber||'');
+          if(f.prDocDate)row.push(prDates.get(String(it.prNumber||'').trim().toUpperCase())||'');
           if(f.sendDate)row.push(it.sendDate||'');if(f.product)row.push(s2.product||'');
           if(f.qty)row.push(s2.quantity||'');if(f.shipStat)row.push(o.isPartial?(ss[si]?'รับแล้ว':'รอรับ'):'N/A');
           if(f.shipNote)row.push(ss['note_'+si]||'');
